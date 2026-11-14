@@ -12,6 +12,11 @@
       "type": "string",
       "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
     },
+    "fileName": {
+      "description": "A plain file name, without a folder.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
     "spdx": {
       "description": "An SPDX licence expression. Terms SPDX does not list are written LicenseRef-<name> and defined in the registry row that uses them.",
       "type": "string",
@@ -128,8 +133,7 @@
         },
         "file": {
           "description": "The file name in the cache.",
-          "type": "string",
-          "minLength": 1
+          "$ref": "#/$defs/fileName"
         },
         "url": {
           "description": "Where the file, or the archive that holds it, is fetched from.",
@@ -174,6 +178,10 @@
         },
         "licence": {
           "$ref": "#/$defs/spdx"
+        },
+        "licenceEvidence": {
+          "description": "Where the font states its terms.",
+          "type": "string"
         },
         "licenceFile": {
           "description": "The licence text under LICENSES/.",
@@ -245,8 +253,7 @@
       "additionalProperties": false,
       "properties": {
         "file": {
-          "type": "string",
-          "minLength": 1
+          "$ref": "#/$defs/fileName"
         },
         "url": {
           "type": "string",

@@ -8,6 +8,7 @@ license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "mkpoli" }]
 dependencies = [
+    "httpx>=0.28",
     "jsonschema>=4.23",
     "typer>=0.16",
 ]
@@ -35,9 +36,10 @@ packages = ["src/han_decompose"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "schema" = "han_decompose/_schema"
+"pins" = "han_decompose/_pins"
 
 [tool.hatch.build.targets.sdist]
-include = ["/src", "/schema", "/tests", "/README.md", "/LICENSE"]
+include = ["/src", "/schema", "/pins", "/tests", "/README.md", "/LICENSE"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
