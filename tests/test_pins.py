@@ -178,6 +178,17 @@ def test_the_downloader_reports_an_address_that_does_not_answer(monkeypatch: pyt
         pins._download("https://tables.example/gone")
 
 
+def test_citations_leave_out_what_a_row_does_not_state() -> None:
+    font = {"id": "test@1", "name": "Test", "version": "1", "url": "https://fonts.example/Test.ttf", "sha256": "0" * 64}
+    font.update(upem="1000", licence="OFL-1.1", copyright="Copyright Test")
+    source = {"id": "table", "name": "Table", "url": "https://tables.example/", "role": "description", "pin": "v1"}
+    source.update(retrieved="2026-11-15", licence="MIT", attribution="Table authors")
+    text = pins.citations({"fonts": [font], "chains": {}}, {"sources": [source]})
+    assert "- Font: Test 1, 1000 units per em.\n" in text
+    assert "- Licence: OFL-1.1\n" in text and "- Licence: MIT\n" in text
+    assert "| File |" not in text
+
+
 def test_the_registries_follow_the_format() -> None:
     fonts, sources = pins.fonts(), pins.sources()
     identifiers = [row["id"] for row in fonts["fonts"]]
@@ -206,6 +217,18 @@ def test_unknown_names() -> None:
         pins.chain("kaisho")
     with pytest.raises(KeyError):
         list(pins.fetch_all({"unihan"}))
+
+
+def test_the_readme_cites_every_pin() -> None:
+    text = (ROOT / "pins" / "README.md").read_text(encoding="utf-8")
+    assert text == pins.citations()
+    assert CliRunner().invoke(app, ["citations"]).stdout == text
+    for row in pins.fonts()["fonts"]:
+        for value in (row["id"], row["sha256"], row["licence"], row["copyright"]):
+            assert value in text, (row["id"], value)
+    for row in pins.sources()["sources"]:
+        for value in (row["id"], row["licence"], row["attribution"], *(file["sha256"] for file in row["files"])):
+            assert value in text, (row["id"], value)
 
 
 def test_the_cache_follows_the_environment(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

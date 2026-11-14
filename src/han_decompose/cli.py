@@ -41,3 +41,9 @@ def fetch(
     except (pins.PinError, KeyError, OSError) as error:
         typer.echo(str(error.args[0]) if isinstance(error, KeyError) else str(error), err=True)
         raise typer.Exit(1) from error
+
+
+@app.command()
+def citations() -> None:
+    """Print `pins/README.md`: every pinned font and source with its version, digest and terms."""
+    typer.echo(pins.citations(), nl=False)

@@ -197,3 +197,70 @@ def fetch_all(
                 failures.append(f"{row['id']}: {error}")
     if failures:
         raise PinError("\n".join(failures))
+
+
+def citations(font_registry: Json | None = None, source_registry: Json | None = None) -> str:
+    """`pins/README.md`: every pinned font and source with its version, digest and terms, written
+    from the registries."""
+    font_registry, source_registry = font_registry or fonts(), source_registry or sources()
+    lines = [
+        "# Pinned inputs",
+        "",
+        "Every font and table a build reads, with its version, digest and terms. `fonts.json` and",
+        "`sources.json` hold the same facts for programs, and a release ships both. This page is written",
+        "from them by `han-decompose citations`.",
+        "",
+        "`han-decompose fetch` downloads each file into the cache and refuses one whose SHA-256 differs.",
+        "",
+        "## Fonts",
+    ]
+    chains = font_registry["chains"]
+    for row in font_registry["fonts"]:
+        places = [
+            f"`{name}` ({members.index(row['id']) + 1} of {len(members)})"
+            for name, members in chains.items()
+            if row["id"] in members
+        ]
+        about = [f"{row['name']} {row['version']}"]
+        if "nameVersion" in row:
+            about.append(f"name-table version `{row['nameVersion']}`")
+        about.append(f"{row['upem']} units per em")
+        if "instance" in row:
+            about.append("read at " + ", ".join(f"`{axis}` {value:g}" for axis, value in row["instance"].items()))
+        lines += [
+            "",
+            f"### `{row['id']}`",
+            "",
+            f"- Font: {', '.join(about)}.",
+            f"- File: <{row['url']}>"
+            + (f", member `{row['archive']['member']}` of the archive" if "archive" in row else ""),
+            f"- SHA-256: `{row['sha256']}`" + (f"; archive `{row['archive']['sha256']}`" if "archive" in row else ""),
+            f"- Licence: {row['licence']}"
+            + (f", stated in {row['licenceEvidence']}." if "licenceEvidence" in row else ""),
+            f"- Copyright: {row['copyright']}",
+        ]
+        if row.get("reservedNames"):
+            lines.append("- Reserved Font Names: " + ", ".join(row["reservedNames"]))
+        lines.append(
+            "- Chain: " + (", ".join(places) if places else "none; a reference for components no chain font draws.")
+        )
+    lines += ["", "## Sources"]
+    for row in source_registry["sources"]:
+        lines += [
+            "",
+            f"### `{row['id']}`",
+            "",
+            f"- Source: {row['name']}, <{row['url']}>",
+            f"- Role: {row['role']}",
+            f"- Pin: {row['pin']}; retrieved {row['retrieved']}.",
+            f"- Licence: {row['licence']}" + (f". {row['licenceEvidence']}" if "licenceEvidence" in row else ""),
+            f"- Attribution: {row['attribution']}",
+        ]
+        if "weakness" in row:
+            lines.append(f"- Limits: {row['weakness']}")
+        if row.get("files"):
+            lines += ["", "| File | SHA-256 | Address |", "|---|---|---|"]
+        for file in row.get("files", ()):
+            addresses = "<br>".join(f"<{url}>" for url in [file["url"], *file.get("mirrors", ())])
+            lines.append(f"| `{file['file']}` | `{file['sha256']}` | {addresses} |")
+    return "\n".join(lines) + "\n"
