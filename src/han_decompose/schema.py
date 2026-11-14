@@ -10,6 +10,7 @@ from typing import Any
 from jsonschema import Draft202012Validator
 
 from . import identifiers as I
+from .resources import resource
 
 Json = dict[str, Any]
 
@@ -49,8 +50,7 @@ class FormatError(ValueError):
 
 def schema_path() -> Path:
     """The schema file: the copy an installed package carries, or the checkout's `schema/`."""
-    packaged = Path(__file__).with_name("_schema") / SCHEMA_FILE
-    return packaged if packaged.exists() else Path(__file__).resolve().parents[2] / "schema" / SCHEMA_FILE
+    return resource("schema") / SCHEMA_FILE
 
 
 @cache
