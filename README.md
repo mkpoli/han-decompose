@@ -7,6 +7,11 @@ the font already draws.
 Its sibling [han-compose](https://github.com/mkpoli/han-compose) draws a character from its
 description.
 
+## Format
+
+[docs/format.md](docs/format.md) defines the files and their identifiers;
+`schema/1/han-decompose.schema.json` is the same definition as JSON Schema.
+
 ## Licences
 
 Code is under the MIT licence (`LICENSE`).
