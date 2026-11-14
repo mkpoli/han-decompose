@@ -1,0 +1,84 @@
+{
+  "format": "han-decompose/cuts@1.0",
+  "font": "noto-sans-cjk-jp@2.004",
+  "source": "babelstone",
+  "terms": {
+    "outline": "OFL-1.1",
+    "description": "LicenseRef-BabelStone-IDS",
+    "notices": ["© 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'.", "BabelStone IDS by Andrew West, File Date 2025-06-27, https://www.babelstone.co.uk/CJK/IDS.TXT"]
+  },
+  "readings": [
+    {
+      "glyph": "noto-sans-cjk-jp@2.004/U+50AC",
+      "subject": "u:50AC",
+      "description": "babelstone.9d9dea39",
+      "ids": "⿰亻崔",
+      "tags": "GHTJKPV",
+      "tree": "⿰亻⿱山隹",
+      "opened": [
+        {
+          "path": [1],
+          "component": "u:5D14",
+          "description": "babelstone.a674f7d6",
+          "ids": "⿱山隹"
+        }
+      ],
+      "method": {"name": "hand", "tool": "hand", "grain": "contour"},
+      "complete": true,
+      "cuts": [
+        {
+          "id": "noto-sans-cjk-jp@2.004/U+50AC~babelstone.9d9dea39~0",
+          "sig": "933d670e",
+          "path": [0],
+          "place": "L",
+          "component": "u:4EBB",
+          "text": "亻",
+          "contours": [9, 10],
+          "box": [15.98, -78.14, 335.21, 836.36],
+          "frame": [15.98, -78.14, 954.09, 836.36],
+          "status": "accepted",
+          "licence": {"outline": "OFL-1.1", "description": "LicenseRef-BabelStone-IDS"}
+        },
+        {
+          "id": "noto-sans-cjk-jp@2.004/U+50AC~babelstone.9d9dea39~1.0",
+          "sig": "785ad39d",
+          "path": [1, 0],
+          "place": "T",
+          "component": "u:5C71",
+          "text": "山",
+          "contours": [0, 2],
+          "box": [366, 595.22, 924.5, 831.92],
+          "frame": [248.78, -77.14, 954.09, 831.92],
+          "status": "accepted",
+          "licence": {"outline": "OFL-1.1", "description": "LicenseRef-BabelStone-IDS"}
+        },
+        {
+          "id": "noto-sans-cjk-jp@2.004/U+50AC~babelstone.9d9dea39~1.1",
+          "sig": "fd7108ea",
+          "path": [1, 1],
+          "place": "B",
+          "component": "u:96B9",
+          "text": "隹",
+          "contours": [1, 3, 4, 5, 6, 7, 8],
+          "box": [248.78, -77.14, 954.09, 591.31],
+          "frame": [248.78, -77.14, 954.09, 831.92],
+          "status": "accepted",
+          "licence": {"outline": "OFL-1.1", "description": "LicenseRef-BabelStone-IDS"}
+        }
+      ]
+    }
+  ],
+  "skipped": [
+    {
+      "subject": "u:5079",
+      "glyph": "noto-sans-cjk-jp@2.004/U+5079",
+      "description": "babelstone.9b8d4d2b",
+      "ids": "⿲亻丨备",
+      "tags": "GTP",
+      "reason": {
+        "code": "too-few-pieces",
+        "text": "2 pieces for 3 operands: contour 8, the 丨, overlaps contour 4 of 备."
+      }
+    }
+  ]
+}

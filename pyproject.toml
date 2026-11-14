@@ -8,6 +8,7 @@ license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "mkpoli" }]
 dependencies = [
+    "jsonschema>=4.23",
     "typer>=0.16",
 ]
 
@@ -22,6 +23,7 @@ dev = [
     "mypy>=1.18",
     "pytest>=8",
     "ruff>=0.14",
+    "types-jsonschema>=4.26.0.20261006",
 ]
 
 [build-system]
@@ -31,8 +33,11 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/han_decompose"]
 
+[tool.hatch.build.targets.wheel.force-include]
+"schema" = "han_decompose/_schema"
+
 [tool.hatch.build.targets.sdist]
-include = ["/src", "/tests", "/README.md", "/LICENSE"]
+include = ["/src", "/schema", "/tests", "/README.md", "/LICENSE"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
