@@ -1,5 +1,6 @@
 import hashlib
 import io
+import re
 import zipfile
 from pathlib import Path
 
@@ -187,6 +188,12 @@ def test_citations_leave_out_what_a_row_does_not_state() -> None:
     assert "- Font: Test 1, 1000 units per em.\n" in text
     assert "- Licence: OFL-1.1\n" in text and "- Licence: MIT\n" in text
     assert "| File |" not in text
+
+
+def test_the_licensing_page_names_every_licence_in_use() -> None:
+    text = (ROOT / "docs" / "licensing.md").read_text(encoding="utf-8")
+    rows = [*pins.fonts()["fonts"], *pins.sources()["sources"]]
+    assert {row["licence"] for row in rows} == set(re.findall(r"^\| [^|]*\(`([^`]+)`\) \|", text, re.MULTILINE))
 
 
 def test_the_registries_follow_the_format() -> None:

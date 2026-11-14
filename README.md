@@ -18,6 +18,13 @@ Code is under the MIT licence (`LICENSE`).
 
 Data files are outside it. Each data file keeps the licence of the font its outlines come from and
 lists the terms of the description sources its labels were read from.
+[docs/licensing.md](docs/licensing.md) says which terms reach which file.
+
+## Sources
+
+[pins/README.md](pins/README.md) cites every font and table a build reads, with its version,
+SHA-256 and licence. `uv run han-decompose fetch` downloads them into `~/.cache/han-decompose` and
+checks each digest.
 
 ## Development
 
