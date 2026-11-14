@@ -13,3 +13,21 @@ Code is under the MIT licence (`LICENSE`).
 
 Data files are outside it. Each data file keeps the licence of the font its outlines come from and
 lists the terms of the description sources its labels were read from.
+
+## Development
+
+The builder is a Python package managed with [uv](https://docs.astral.sh/uv/); the reader for
+JavaScript is the npm package in `packages/format`, managed with [bun](https://bun.sh/).
+
+```sh
+uv sync
+uv run pytest         # unit tests
+uv run mypy           # type check
+uv run ruff check     # lint
+uv build
+
+bun install
+bun test
+bun run typecheck
+bun run build
+```
