@@ -12,6 +12,7 @@
   "homepage": "https://github.com/mkpoli/han-decompose",
   "type": "module",
   "sideEffects": false,
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
