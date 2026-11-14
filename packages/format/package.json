@@ -1,0 +1,26 @@
+{
+  "name": "han-decompose",
+  "version": "0.0.1",
+  "description": "Reads han-decompose data: which contours of a font's Han glyph belong to which component of its ideographic description sequence.",
+  "license": "MIT",
+  "author": "mkpoli",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mkpoli/han-decompose.git",
+    "directory": "packages/format"
+  },
+  "homepage": "https://github.com/mkpoli/han-decompose",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json"
+  }
+}
