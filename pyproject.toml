@@ -8,6 +8,7 @@ license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "mkpoli" }]
 dependencies = [
+    "fonttools>=4.63",
     "httpx>=0.28",
     "jsonschema>=4.23",
     "typer>=0.16",
@@ -47,6 +48,10 @@ testpaths = ["tests"]
 [tool.mypy]
 files = ["src", "tests"]
 strict = true
+
+[[tool.mypy.overrides]]
+module = ["fontTools.*"]
+ignore_missing_imports = true
 
 [tool.ruff]
 target-version = "py312"
