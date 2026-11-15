@@ -1,6 +1,7 @@
 {
   "name": "han-decompose",
   "version": "0.0.1",
+  "private": true,
   "description": "Reads han-decompose data: which contours of a font's Han glyph belong to which component of its ideographic description sequence.",
   "license": "MIT",
   "author": "mkpoli",

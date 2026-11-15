@@ -140,6 +140,14 @@
           "type": "string",
           "format": "uri"
         },
+        "mirrors": {
+          "description": "Other places that serve the same bytes, tried in order after url.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
         "sha256": {
           "$ref": "#/$defs/sha256"
         },
@@ -886,7 +894,7 @@
       }
     },
     "componentRow": {
-      "description": "A row of components.tsv. relation, target, basis and tier are empty on a row that only names a component.",
+      "description": "A row of a components table. relation, target, basis and tier are empty on a row that only names a component.",
       "type": "object",
       "required": [
         "component",
