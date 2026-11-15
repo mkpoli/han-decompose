@@ -115,6 +115,7 @@ class Release:
         self.problems: list[str] = []
         self.guides: set[str] = set()
         self.fonts: set[str] = set()
+        self.cuts: set[str] = set()
         self.chains = {font: name for name, fonts in pins.fonts()["chains"].items() for font in fonts}
 
     def _count(self, font: str, source: str) -> Json:
@@ -149,6 +150,7 @@ class Release:
             chain = self.chains.get(font)
             for row in content["readings"]:
                 for cut in row["cuts"]:
+                    self.cuts.add(cut["id"])
                     count["cuts"][cut["status"]] = count["cuts"].get(cut["status"], 0) + 1
                     if cut["status"] in ACCEPTED:
                         count["components"].add(cut["component"])
@@ -156,16 +158,27 @@ class Release:
                             places = self.library.setdefault(chain, {}).setdefault(cut["component"], {})
                             places.setdefault(cut["place"], []).append((-_score(cut), cut["id"]))
         for run in runs:
-            for kind, held in (("forms", self.forms), ("library", self.lifted)):
-                for path in sorted((run / kind).glob("*.json.gz")) if (run / kind).is_dir() else []:
-                    content = _load(path)
-                    for component, value in content[kind].items():
-                        held.setdefault(content["chain"], {}).setdefault(component, value)
+            for path in sorted((run / "forms").glob("*.json.gz")) if (run / "forms").is_dir() else []:
+                content = _load(path)
+                for component, form in content["forms"].items():
+                    self.forms.setdefault(content["chain"], {}).setdefault(component, form)
+            for path in sorted((run / "library").glob("*.json.gz")) if (run / "library").is_dir() else []:
+                content = _load(path)
+                for component, listed in content["library"].items():
+                    # A component's libraries are joined place by place, the earlier run's cuts first.
+                    joined = self.lifted.setdefault(content["chain"], {}).setdefault(component, {})
+                    for place, names in listed.items():
+                        joined[place] = [*joined.get(place, []), *(n for n in names if n not in joined.get(place, []))]
 
     def indexes(self) -> None:
         """Write the form and library files: a lifted component keeps the library that confirms
         its form; every other component lists its accepted cuts by place, best first."""
         for chain, forms in sorted(self.forms.items()):
+            self.problems += [
+                f"forms/{chain}: the form of {component} names a cut no reading holds."
+                for component, form in sorted(forms.items())
+                if form["cut"] not in self.cuts
+            ]
             content = {"format": FORMS, "chain": chain, "forms": dict(sorted(forms.items()))}
             self.problems += [f"forms/{chain}: {problem}" for problem in problems("forms", content)]
             write(self.out / "forms" / f"{chain}.json.gz", dumps(content))
@@ -175,7 +188,11 @@ class Release:
                 library[component] = {
                     place: [name for _, name in sorted(cuts)] for place, cuts in sorted(places.items())
                 }
-            library.update(self.lifted.get(chain, {}))
+            # A cut another run's reading took the place of is no longer there to be listed.
+            for component, listed in self.lifted.get(chain, {}).items():
+                kept = {place: [name for name in names if name in self.cuts] for place, names in listed.items()}
+                library[component] = {place: names for place, names in sorted(kept.items()) if names}
+            library = {component: places for component, places in library.items() if places}
             content = {"format": LIBRARY, "chain": chain, "library": dict(sorted(library.items()))}
             self.problems += [f"library/{chain}: {problem}" for problem in problems("library", content)]
             write(self.out / "library" / f"{chain}.json.gz", dumps(content))

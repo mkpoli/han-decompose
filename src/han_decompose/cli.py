@@ -11,8 +11,9 @@ from . import identifiers as I
 from .cutters import library as libraries
 from .cutters import lift as lifts
 from .cutters import survey as surveys
-from .importers import composer_export
-from .outline import Chain
+from .importers import composer_export, numbered_forms
+from .outline import Chain, Face
+from .pieces import Drawing
 from .release import Release, pack
 from .schema import Json
 from .store import Store
@@ -290,3 +291,37 @@ def components(
         mine = [row for row in rows if row["source"] == source]
         (out / f"components.{source}.tsv").write_text(tsv.write_table("components", mine), encoding="utf-8")
         typer.echo(f"components.{source}.tsv\t{len(mine)}")
+
+
+@app.command("import-numbered")
+def import_numbered(
+    out: Annotated[Path, typer.Argument(help="An empty folder to write the files into.")],
+    cache: Annotated[Path | None, typer.Option(help="The cache folder the pinned files are in.")] = None,
+) -> None:
+    """Take over the numbered components han-compose cut for its Sans style: each form that is
+    whole contours of a host glyph becomes a reading of that host and the component's form."""
+    if out.exists() and any(out.iterdir()):
+        typer.echo(f"{out} is not empty.", err=True)
+        raise typer.Exit(1)
+    store = Store()
+    found = 0
+    try:
+        file, registry = numbered_forms.pinned(cache)
+        table = descriptions.table("babelstone", cache)
+        with Chain.pinned(numbered_forms.CHAIN, cache) as chain:
+            drawings = [Drawing(face) for face in chain.faces]
+            references = lifts.numbered(table, Drawing(Face.pinned(numbered.FONT, cache)))
+            for outcome in numbered_forms.imports(file, table, registry, drawings, references):
+                found += 1
+                for glyph, record in outcome.glyphs.items():
+                    store.record(*I.split_glyph_id(glyph), record)
+                for row in outcome.readings:
+                    store.reading(row)
+                assert outcome.form is not None
+                store.form(numbered_forms.CHAIN, outcome.component, outcome.form, outcome.library)
+            total = len(numbered_forms.forms(file, table))
+    except (pins.PinError, KeyError, OSError) as error:
+        typer.echo(str(error.args[0]) if isinstance(error, KeyError) else str(error), err=True)
+        raise typer.Exit(1) from error
+    typer.echo(f"forms imported\t{found}\tof {total} cut from a host")
+    typer.echo(f"files\t{len(store.write(out))}\t{out}")

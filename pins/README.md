@@ -190,3 +190,16 @@ from them by `han-decompose citations`.
 |---|---|---|
 | `custom-components.json.gz` | `3e88359acb1a5fa7d9202a004f0ce65266adf1fad03140d55ead835e57379261` | <https://raw.githubusercontent.com/mkpoli/ids-input/be70733a179085a16e48f7049b6cfec5e07f4496/data/custom-components.json.gz> |
 | `custom-ids.tsv` | `b1c394894f726e240a1e574a2226a42dfb1759e06387f64db59d45eb9e577d92` | <https://raw.githubusercontent.com/mkpoli/ids-input/be70733a179085a16e48f7049b6cfec5e07f4496/data/custom-ids.tsv> |
+
+### `han-compose-numbered-forms`
+
+- Source: han-compose numbered component forms (data/numbered-forms.json), <https://github.com/mkpoli/han-compose>
+- Role: cuts
+- Pin: commit 3b2c5103cfdf2e41bf5526c08ec6d4242d6bcd91; retrieved 2026-11-15.
+- Licence: OFL-1.1. https://raw.githubusercontent.com/mkpoli/han-compose/3b2c5103cfdf2e41bf5526c08ec6d4242d6bcd91/data/README.md: the Sans forms are cut from Noto Sans CJK JP and Plangothic glyphs under the SIL OFL. The Serif and Kaisho forms of the file are BabelStone Han PUA glyphs under the Arphic Public License and are not taken from it.
+- Attribution: han-compose, data/numbered-forms.json, https://github.com/mkpoli/han-compose; Sans forms cut with han-compose bf13d98 from Noto Sans CJK JP 2.004 and Plangothic 2.9.5795
+- Limits: The file holds outlines without the host or the contours they were cut from. A form is imported only where its outline is whole contours of a host glyph at the same position; the Serif and Kaisho forms, which are the PUA glyphs themselves, are not taken from it.
+
+| File | SHA-256 | Address |
+|---|---|---|
+| `numbered-forms.json` | `af63ab13f110ade1696c0353b148f18a2683232660609ddba3af0cc619c9ad2b` | <https://raw.githubusercontent.com/mkpoli/han-compose/3b2c5103cfdf2e41bf5526c08ec6d4242d6bcd91/data/numbered-forms.json> |
