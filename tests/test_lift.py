@@ -121,3 +121,46 @@ def test_a_subtraction_is_read_as_a_cut_of_the_component_itself() -> None:
     assert found["subject"] == "chise:CDP-8958" and found["description"].startswith("ids-input-components.")
     (cut,) = found["cuts"]
     assert cut["path"] == [] and cut["place"] == "" and cut["component"] == "ids:㇯冐⺜" and not found["complete"]
+
+
+def reference() -> dict[str, dict[str, tuple[str, float, float, int, float | None, str]]]:
+    out: dict[str, dict[str, tuple[str, float, float, int, float | None, str]]] = {"sans": {}, "serif": {}}
+    text = gzip.decompress((FIXTURES / "custom-forms.tsv.gz").read_bytes()).decode("utf-8")
+    for line in text.splitlines()[1:]:
+        chain, component, host, _, match, margin, agree, likeness, library = line.split("\t")
+        scores = (float(match), float(margin), int(agree), float(likeness) if likeness else None)
+        out[chain][I.component_of(component)] = (host, *scores, library)
+    return out
+
+
+@pytest.mark.reproduction
+@pytest.mark.parametrize("chain", ["sans", "serif"])
+def test_the_forms_ids_input_cut_for_han_compose_reproduce(chain: str) -> None:
+    """Every component has the form ids-input gave it: the same host, the same scores and the same
+    number of library cuts in each place. `expected.json` names the components that differ."""
+    pinned(chain)
+    wanted = reference()[chain]
+    expected = json.loads((FIXTURES / "expected.json").read_text(encoding="utf-8"))[chain]
+    mine = {}
+    kinds: dict[str, int] = {}
+    for outcome in lift.run(chain):
+        if outcome.form is None:
+            continue
+        kinds[outcome.kind] = kinds.get(outcome.kind, 0) + 1
+        cut = next(cut for row in outcome.readings for cut in row["cuts"] if cut["id"] == outcome.form["cut"])
+        host = chr(int(cut["id"].split("~")[0].split("/U+")[1], 16))
+        evidence = cut["evidence"]
+        library = " ".join(f"{place}:{len(cuts)}" for place, cuts in sorted(outcome.library.items()))
+        scores = (evidence["match"], evidence["margin"], evidence["agree"], evidence.get("reference"))
+        mine[outcome.component] = (host, *scores, library)
+    assert sorted(set(wanted) - set(mine)) == expected["lost"]
+    assert sorted(set(mine) - set(wanted)) == expected["gained"]
+    differ = []
+    for component in sorted(set(mine) & set(wanted)):
+        found, other = mine[component], wanted[component]
+        likeness = (found[4] is None) == (other[4] is None) and (found[4] is None or abs(found[4] - other[4]) < 0.0006)
+        if found[:4] != other[:4] or found[5] != other[5] or not likeness:
+            differ.append(component)
+    assert differ == expected["differ"]
+    assert {kind: kinds[kind] for kind in ("entity", "chain")} == expected["forms"]
+    assert sum(int(part.split(":")[1]) for row in mine.values() for part in row[5].split()) == expected["library"]
