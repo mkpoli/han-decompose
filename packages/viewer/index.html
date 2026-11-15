@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <title>Han Decompose</title>
+  <script>
+    // The theme and language kept from the last visit, set before the page paints.
+    try { const theme = JSON.parse(localStorage.getItem('han-decompose:theme') ?? 'null'); if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme } catch {}
+    try { const lang = JSON.parse(localStorage.getItem('han-decompose:locale') ?? 'null'); if (lang === 'ja') document.documentElement.lang = lang } catch {}
+  </script>
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
