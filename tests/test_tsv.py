@@ -10,8 +10,8 @@ GOLDEN = Path(__file__).parent / "golden"
 
 
 def test_the_golden_tables_are_the_cut_file_flattened(cuts: Json) -> None:
-    assert tsv.write_table("cuts", tsv.cut_rows(cuts)) == (GOLDEN / "cuts.tsv").read_text(encoding="utf-8")
-    assert tsv.write_table("skipped", tsv.skipped_rows(cuts)) == (GOLDEN / "skipped.tsv").read_text(encoding="utf-8")
+    for name, rows in (("cuts", tsv.cut_rows(cuts)), ("skipped", tsv.skipped_rows(cuts))):
+        assert tsv.write_table(name, rows) == (GOLDEN / f"{name}.babelstone.tsv").read_text(encoding="utf-8")
 
 
 def test_a_row_stands_alone(cuts: Json) -> None:
