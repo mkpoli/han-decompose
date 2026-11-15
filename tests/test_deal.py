@@ -1,13 +1,15 @@
 import json
+from collections.abc import Sequence
+from typing import Literal
 
 import numpy as np
 import pytest
 
 from han_decompose import descriptions, ids
 from han_decompose import geometry as G
-from han_decompose.cutters import deal
+from han_decompose.cutters import deal, reading
 from han_decompose.pieces import Drawing
-from han_decompose.schema import problems
+from han_decompose.schema import Json, problems
 
 from .conftest import FONT, GOLDEN
 from .fonts import pinned_face
@@ -140,3 +142,52 @@ def test_the_stacks_on_shan_of_ids_input_reproduce() -> None:
     assert set(found) == set(wanted)
     for char, (font, likeness, taken) in wanted.items():
         assert found[char][0] == font and abs(found[char][1] - likeness) < 0.0006 and found[char][2] == taken
+
+
+def jigmo() -> tuple[descriptions.Table, list[Drawing]]:
+    table = cached_table()
+    return table, [Drawing(pinned_face(font)) for font in ("jigmo2@20250912", "jigmo@20250912")]
+
+
+@pytest.mark.parametrize(
+    ("char", "code"),
+    [("\U00021d4d", "unlike-element"), ("\U00021d87", "layout-mismatch"), ("偹", "too-few-pieces")],
+)
+def test_a_glyph_that_does_not_close_is_skipped_with_its_reason(char: str, code: str) -> None:
+    table, drawings = jigmo()
+    if char == "偹":
+        drawings = [Drawing(pinned_face(FONT))]
+    glyph, description = drawings[0].glyph(f"U+{ord(char):04X}"), table.first(char)
+    assert glyph is not None and description is not None
+    with pytest.raises(deal.Skipped) as skipped:
+        deal.read(glyph, drawings, description, description.tree(), table.glyph)
+    assert skipped.value.code == code
+    row = reading.skipped(description, skipped.value.code, skipped.value.text, f"{glyph.font}/{glyph.selector}")
+    assert row["reason"] == {"code": code, "text": skipped.value.text} and row["subject"] == f"u:{ord(char):04X}"
+
+
+def test_a_gate_decides_a_cut_and_names_what_its_limits_rest_on() -> None:
+    table, drawing = cached_table(), Drawing(pinned_face(FONT))
+    glyph, description = drawing.glyph("U+4ED9"), table.first("仙")
+    assert glyph is not None and description is not None
+
+    def gate(cutter: deal.Cutter, node: ids.Node, group: Sequence[int]) -> tuple[Json, str | Literal[False]] | None:
+        if node.text != "山":
+            return None
+        return {"filled": {"value": 0.7, "limit": 0.6081, "against": f"{FONT}/U+5C71", "pass": False}}, "u:5C71"
+
+    row = deal.read(glyph, [drawing], description, description.tree(), table.glyph, whole=False, gate=gate)
+    left, right = row["cuts"]
+    assert left["status"] == "accepted" and "checks" not in left and "calibrated" not in left
+    assert right["status"] == "refused" and right["calibrated"] == "u:5C71" and set(right["checks"]) == {"filled"}
+    assert "redrawn" not in row["evidence"] and left["frame"] == right["frame"]
+    held = deal.read(glyph, [drawing], description, description.tree(), table.glyph)
+    assert 0.4 <= held["evidence"]["redrawn"] <= 1 and set(held["cuts"][1]["checks"]) == {"windows"}
+
+
+def test_the_fonts_start_with_the_glyphs_own() -> None:
+    table, drawings = jigmo()
+    glyph = Drawing(pinned_face(FONT)).glyph("U+4ED9")
+    assert glyph is not None
+    with pytest.raises(ValueError, match="start with the glyph's own"):
+        deal.Cutter(glyph, drawings, table.glyph)

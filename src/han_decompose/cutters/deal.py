@@ -14,6 +14,7 @@ recognised as 山. The division whose groups agree best wins, and it has to win 
 
 from collections.abc import Callable, Sequence
 from itertools import pairwise
+from typing import Literal
 
 import numpy as np
 
@@ -80,7 +81,7 @@ def likeness(left: G.Array, right: G.Array) -> float:
     return float(np.minimum(left, right).sum()) / total if total else 0.0
 
 
-def whole(drawing: Drawing, selector: str) -> G.Array | None:
+def standing(drawing: Drawing, selector: str) -> G.Array | None:
     """The fingerprint of a glyph as a font draws it alone, on its own box."""
     key = ("whole", selector)
     if key not in drawing.kept:
@@ -158,6 +159,8 @@ class Cutter:
     """
 
     def __init__(self, glyph: Glyph, drawings: Sequence[Drawing], glyph_of: Callable[[str], str | None]):
+        if not drawings or drawings[0].id != glyph.font:
+            raise ValueError(f"The fonts a component is looked for in start with the glyph's own, {glyph.font}.")
         self.glyph, self.drawings, self.glyph_of = glyph, drawings, glyph_of
         self.pieces = glyph.pieces
         self._prints: dict[tuple[int, ...], G.Array] = {}
@@ -191,7 +194,7 @@ class Cutter:
             return None
         selector = f"U+{ord(char):04X}"
         for index, drawing in enumerate(self.drawings):
-            shape = whole(drawing, selector)
+            shape = standing(drawing, selector)
             if shape is not None:
                 return shape, index == 0, drawing
         return None
@@ -332,8 +335,8 @@ def redrawn(cutter: Cutter, hands: Sequence[tuple[Node, Sequence[int]]]) -> floa
 
 
 #: Checks of one leaf beyond the cutter's own: the node and its pieces give the check records, and
-#: the component whose reviewed cuts set their limits, or False.
-Gate = Callable[["Cutter", Node, Sequence[int]], tuple[Json, str | bool] | None]
+#: the component whose reviewed cuts set the limits of those checks, or False.
+Gate = Callable[["Cutter", Node, Sequence[int]], tuple[Json, str | Literal[False]] | None]
 
 
 def cutter_for(glyph: Glyph, drawings: Sequence[Drawing], root: Node, glyph_of: Callable[[str], str | None]) -> Cutter:
@@ -386,14 +389,12 @@ def read(
     cuts = []
     for node, group in hands:
         path = paths[id(node)]
-        more: Json = {
-            "frame": reading.frame(
-                glyph, [indices for other, indices in held.items() if other[: len(path) - 1] == path[:-1]]
-            ),
-            "area": reading.number(sum(abs(glyph.pieces[index].area) for index in group), 2),
-        }
+        more: Json = {"area": reading.number(sum(abs(glyph.pieces[index].area) for index in group), 2)}
+        if path:
+            under = [indices for other, indices in held.items() if other[: len(path) - 1] == path[:-1]]
+            more["frame"] = reading.frame(glyph, under)
         checks: Json = {}
-        calibrated: str | bool | None = None
+        calibrated: str | Literal[False] = False
         mark = cutter.agreement(node, group)
         if mark is not None:
             more["evidence"] = {"fit": reading.number(mark[0], 4)}
@@ -408,7 +409,7 @@ def read(
                 calibrated = added[1]
         if checks:
             more["checks"] = checks
-            more["calibrated"] = calibrated if calibrated is not None else False
+            more["calibrated"] = calibrated
         status = "accepted" if all(check["pass"] for check in checks.values()) else "refused"
         cuts.append(reading.cut(glyph, description, root, path, node, held[path], status, **more))
     return reading.reading(glyph, description, root, "deal", "piece", cuts, evidence)
