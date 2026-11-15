@@ -7,8 +7,8 @@ from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
+from . import __version__, pins
 from . import identifiers as I
-from . import pins
 from .pieces import Glyph
 from .schema import Json
 from .tsv import number
@@ -67,6 +67,20 @@ def _selector(row: Json) -> str | None:
     return f"U+{value}" if kind == "u" else None
 
 
+def outline_head(font: str) -> Json:
+    """An outline file without its glyphs: the font, its licence and copyright line, and, for a
+    font whose licence asks that a changed copy say how it was changed, that notice."""
+    row = pins.font(font)
+    head: Json = {"format": OUTLINES, "font": font, "licence": row["licence"], "copyright": row["copyright"]}
+    if row["licence"] == "Arphic-1999":
+        head["notice"] = (
+            f"Outlines of {row['name']} {row['version']}, changed by han-decompose {__version__}: a selection of "
+            f"its glyphs, each contour kept in the font's order with its points scaled from {row['upem']} to 1000 "
+            "units per em and rounded to hundredths of a unit. Under the Arphic Public License, as the font is."
+        )
+    return {**head, "em": 1000, "q": 100, "glyphs": {}}
+
+
 def terms(font: str, source: str, guide: str | None = None) -> Json:
     """The terms a cut file states: the font's licence, the description source's, the guide's, and
     the copyright and attribution lines of each."""
@@ -90,6 +104,7 @@ class Store:
         self.glyphs: dict[str, dict[str, Json]] = {}
         self.readings: dict[tuple[str, str], list[Json]] = {}
         self.skipped: dict[tuple[str, str], list[Json]] = {}
+        self._read: set[tuple[str, str]] = set()
         self.forms: dict[str, dict[str, Json]] = {}
         self.library: dict[str, dict[str, dict[str, list[str]]]] = {}
 
@@ -104,8 +119,14 @@ class Store:
         self.glyphs.setdefault(font, {}).setdefault(selector, record)
 
     def reading(self, row: Json) -> None:
+        """Keep a reading. A glyph has one reading under a description: the first given stands.
+        Two components the registry records the same subtraction for (`㇯𠁾丶`) are read on the
+        same host under the same description, and share that reading."""
         font, _ = I.split_glyph_id(row["glyph"])
-        self.readings.setdefault((font, row["description"].rpartition(".")[0]), []).append(row)
+        key = (row["glyph"], row["description"])
+        if key not in self._read:
+            self._read.add(key)
+            self.readings.setdefault((font, row["description"].rpartition(".")[0]), []).append(row)
 
     def skip(self, row: Json, font: str) -> None:
         """Keep a skipped attempt in the files of `font`: the font of its glyph, or the first of
@@ -124,11 +145,7 @@ class Store:
         for font, held in self.glyphs.items():
             row = pins.font(font)
             for selector in sorted(held, key=_order):
-                file = out.setdefault(
-                    f"outlines/{font}/{I.shard(selector)}.json.gz",
-                    {"format": OUTLINES, "font": font, "licence": row["licence"], "copyright": row["copyright"]}
-                    | {"em": 1000, "q": 100, "glyphs": {}},
-                )
+                file = out.setdefault(f"outlines/{font}/{I.shard(selector)}.json.gz", outline_head(font))
                 file["glyphs"][selector] = held[selector]
         for font, source in sorted({*self.readings, *self.skipped}):
             guides = {row["method"].get("guide") for row in self.readings.get((font, source), ())} - {None}

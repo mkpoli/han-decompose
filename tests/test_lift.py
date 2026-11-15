@@ -108,19 +108,45 @@ def test_a_component_is_what_a_host_leaves_and_its_form_is_the_cut_that_stands()
 
 def test_a_subtraction_is_read_as_a_cut_of_the_component_itself() -> None:
     tables, drawings, references = pinned("sans")
-    row = next(row for row in lift.registry() if row["text"] == "&CDP-8958;")
-    recipe = lift.recipes(row, tables["chise"])[0]
-    assert (recipe.host, recipe.parts, recipe.op) == ("冐", ["⺜"], "㇯")
-    try:
-        got = lift.lift(drawings, recipe)
-    except Skipped as reason:
-        row_, font = lift.skipped(recipe, drawings, reason)
-        assert row_["subject"] == "chise:CDP-8958" and font == drawings[0].id
-        return
-    found = lift.record(got, "&CDP-8958;")
-    assert found["subject"] == "chise:CDP-8958" and found["description"].startswith("ids-input-components.")
+    rows = {row["text"]: row for row in lift.registry()}
+    # Two chains the registry records the same subtraction for, 𠁾 without 丶.
+    first, second = rows["#(-𠃍丨b一)"], rows["#(-𠃍𠄌)"]
+    assert first["subtraction"] == second["subtraction"] == "㇯𠁾丶"
+    recipe = lift.recipes(first, tables["zi-tools"])[0]
+    assert (recipe.host, recipe.parts, recipe.op) == ("𠁾", ["丶"], "㇯")
+    found = lift.record(lift.lift(drawings, recipe), first["text"])
+    assert found["subject"] == "zi:#(-𠃍丨b一)" and found["description"].startswith("ids-input-components.")
     (cut,) = found["cuts"]
-    assert cut["path"] == [] and cut["place"] == "" and cut["component"] == "ids:㇯冐⺜" and not found["complete"]
+    assert cut["path"] == [] and cut["place"] == "" and cut["component"] == "ids:㇯𠁾丶" and not found["complete"]
+    assert set(found["evidence"]) == {"match", "margin"}
+    store = Store()
+    outcomes = [lift.component(row, tables, drawings, references) for row in (first, second)]
+    for outcome in outcomes:
+        for glyph, record in outcome.glyphs.items():
+            store.record(*I.split_glyph_id(glyph), record)
+        for row in outcome.readings:
+            store.reading(row)
+    assert outcomes[0].form is not None and outcomes[1].form is not None
+    assert outcomes[0].form["cut"] == outcomes[1].form["cut"] and outcomes[0].form["sig"] == outcomes[1].form["sig"]
+    files = dict(store.files())
+    for name, content in files.items():
+        kind = name.split("/")[0]
+        outlines = files.get(f"outlines/{name.split('/')[1]}/{name.split('/')[-1]}") if kind == "cuts" else None
+        assert problems(kind, content, outlines) == [], name
+
+
+def test_a_host_that_gives_nothing_is_filed_with_the_glyph_that_was_read() -> None:
+    tables, drawings, _ = pinned("sans")
+    row = next(row for row in lift.registry() if row["text"] == "&CDP-8958;")
+    for recipe in lift.recipes(row, tables["chise"]):
+        try:
+            lift.lift(drawings, recipe)
+        except Skipped as reason:
+            attempt, font, glyph = lift.skipped(recipe, drawings, reason)
+            assert glyph is not None and attempt["glyph"] == f"{font}/{glyph.selector}" and glyph.font == font
+            assert attempt["reason"]["code"] == reason.code
+            return
+    pytest.fail("every host of the component lifted")
 
 
 def reference() -> dict[str, dict[str, tuple[str, float, float, int, float | None, str]]]:

@@ -10,17 +10,20 @@ from pathlib import Path
 
 from . import descriptions, pins
 from . import identifiers as I
+from .cutters.lift import PUA
 from .outline import Face
 from .pieces import Drawing, Glyph
 from .schema import Json
 
-FONT = "babelstone-han-pua@1.472"
+#: The font whose private use area draws the numbered components.
+FONT = PUA
 
 
 def rows(table: descriptions.Table) -> list[Json]:
     """A row of the component tables per numbered component: the component is the character at
-    its code point in BabelStone Han PUA, by note 6. A component note 6 gives no code point has a
-    row that only names it."""
+    its code point in BabelStone Han PUA, by note 6. The code point holds for the pinned version
+    of the font, which the row's basis names. A component note 6 gives no code point has a row
+    that only names it."""
     version = pins.font(FONT)["version"]
     out: list[Json] = []
     for name in sorted(table.numbered, key=lambda name: int(name[1:-1])):
@@ -28,7 +31,10 @@ def rows(table: descriptions.Table) -> list[Json]:
         base: Json = {"component": I.component_of(name), "kind": "babelstone", "text": name}
         if row.pua:
             target = I.component("u", f"{ord(row.pua):04X}")
-            basis = f"IDS.TXT note 6: its code point in BabelStone Han PUA {version} ({row.where})"
+            basis = (
+                f"IDS.TXT note 6 gives the component ({row.where}) this code point in the BabelStone Han PUA font; "
+                f"version {version} of the font draws it there"
+            )
             out.append({**base, "relation": "same", "target": target, "basis": basis, "tier": "source"})
         else:
             out.append({**base, "relation": "", "target": "", "basis": "", "tier": ""})

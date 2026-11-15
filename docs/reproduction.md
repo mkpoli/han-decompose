@@ -121,6 +121,5 @@ attempt with its reason: 2,726 and 3,223.
   `scripts/build_donor_parts.py`, `scripts/build_mountain_instances.py`, `analysis/`,
   `data/donor-parts.json`, `data/mountain-instances.json.gz`,
   `data/component-instances-口.json.gz`.
-- ids-input `main`: `scripts/build_custom_cuts.py`; han-compose `main`: `data/custom-forms.json.gz`,
-  `data/numbered-forms.json`.
+- ids-input `main`: `scripts/build_custom_cuts.py`; han-compose `main`: `data/custom-forms.json.gz`.
 - Fonts and tables as pinned in `pins/`.
