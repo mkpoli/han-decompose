@@ -118,12 +118,18 @@ def instances(row: Json, target: str) -> list[Json]:
 
 
 def survey(
-    table: Table, drawings: Sequence[Drawing], target: str, only: Sequence[str] | None = None
+    table: Table,
+    drawings: Sequence[Drawing],
+    target: str,
+    only: Sequence[str] | None = None,
+    holds: set[str] | None = None,
 ) -> Iterator[Outcome]:
-    """Every character whose description reaches `target`, in code point order, read or skipped."""
-    holds = holders(table, target)
+    """Every character whose description reaches `target`, in code point order, read or skipped;
+    with `only`, those of them it names, in its order. `holds` is `holders(table, target)` where
+    the caller has it already."""
+    holds = holders(table, target) if holds is None else holds
     gate = gates.gate(table.glyph, target)
-    for char in sorted(holds) if only is None else [char for char in dict.fromkeys(only) if char in table.rows]:
+    for char in sorted(holds) if only is None else [char for char in dict.fromkeys(only) if char in holds]:
         description = table.first(char)
         assert description is not None
         selector = f"U+{ord(char):04X}"
@@ -149,7 +155,7 @@ def survey(
                 except Skipped as reason:
                     last = (reason.code, f"{drawing.id}, {count(cap, 'component')} deep: {reason.text}")
                     continue
-                except (ValueError, RecursionError) as error:
+                except (ValueError, KeyError, RecursionError) as error:
                     last = ("unreadable-description", f"{drawing.id}: unreadable description: {error}")
                     continue
                 outcome = Outcome(char, reading=row, opened=cap, fullest=offered[0][0])
@@ -158,7 +164,7 @@ def survey(
             if outcome is not None:
                 break
         if outcome is None:
-            code, text = last or ("no-instance", f"no reading reaches {target}")
+            code, text = last or ("unreadable-description", f"no reading of the description reaches {target}")
             first = drawn[0].glyph(selector)
             assert first is not None
             glyph_id = I.glyph_id(drawn[0].id, selector)
@@ -173,14 +179,15 @@ def survey(
 _STATE: dict[str, object] = {}
 
 
-def _open(chain: str, source: str, cache: Path | None) -> None:
+def _open(chain: str, source: str, target: str, cache: Path | None) -> None:
     _STATE["drawings"] = [Drawing(face) for face in Chain.pinned(chain, cache).faces]
     _STATE["table"] = descriptions.table(source, cache)
+    _STATE["holds"] = holders(descriptions.table(source, cache), target)
 
 
 def _work(job: tuple[str, list[str]]) -> list[Outcome]:
     target, chars = job
-    return list(survey(_STATE["table"], _STATE["drawings"], target, chars))  # type: ignore[arg-type]
+    return list(survey(_STATE["table"], _STATE["drawings"], target, chars, _STATE["holds"]))  # type: ignore[arg-type]
 
 
 def run(
@@ -190,6 +197,6 @@ def run(
     point order whatever their number."""
     chars = sorted(holders(descriptions.table(source, cache), target))
     jobs = [(target, chars[at : at + 40]) for at in range(0, len(chars), 40)]
-    with ProcessPoolExecutor(workers, initializer=_open, initargs=(chain, source, cache)) as pool:
+    with ProcessPoolExecutor(workers, initializer=_open, initargs=(chain, source, target, cache)) as pool:
         for outcomes in pool.map(_work, jobs):
             yield from outcomes

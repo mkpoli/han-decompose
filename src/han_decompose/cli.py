@@ -91,6 +91,9 @@ def survey(
     """Cut one component out of every character whose description reaches it, and count what was
     found: characters read, cuts of the component that passed both checks, cuts refused, and
     characters skipped by reason."""
+    if out is not None and out.exists() and any(out.iterdir()):
+        typer.echo(f"{out} is not empty.", err=True)
+        raise typer.Exit(1)
     store = Store()
     read = accepted = characters = refused = 0
     reasons: dict[str, int] = {}

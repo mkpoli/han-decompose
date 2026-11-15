@@ -6,7 +6,7 @@ import pytest
 
 from han_decompose import descriptions, ids, pins
 from han_decompose import identifiers as I
-from han_decompose.cutters import survey
+from han_decompose.cutters import reading, survey
 from han_decompose.descriptions import Table
 from han_decompose.pieces import Drawing
 from han_decompose.schema import problems
@@ -102,6 +102,21 @@ def test_what_a_survey_finds_is_written_as_files_of_the_format(tmp_path: Path) -
         and all(path.read_bytes() == (tmp_path / "again" / path.relative_to(tmp_path)).read_bytes() for path in written)
     )
     assert json.loads(gzip.decompress(written[0].read_bytes()))["source"] == "babelstone"
+
+
+def test_a_skipped_attempt_without_a_glyph_is_filed_by_its_subject() -> None:
+    store = Store()
+    description = table().first("仙")
+    assert description is not None
+    store.skip(reading.skipped(description, "no-face", "no font of the chain draws it"), "noto-sans-cjk-jp@2.004")
+    ((name, content),) = store.files()
+    assert name == "cuts/noto-sans-cjk-jp@2.004/babelstone/04e.json.gz"
+    assert problems("cuts", content) == [] and "glyph" not in content["skipped"][0]
+
+
+def test_a_character_the_component_does_not_reach_is_not_attempted() -> None:
+    found, drawings = pinned()
+    assert list(survey.survey(found, drawings, "口", only="仙")) == []
 
 
 def reference(target: str) -> dict[str, tuple[str, int, list[tuple[int, float, float, float]]]]:

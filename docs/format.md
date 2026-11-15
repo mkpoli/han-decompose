@@ -132,9 +132,9 @@ LICENSES/  NOTICE.md  SHA256SUMS
 
 `<block>` is the glyph's code point divided by 256, in lower-case hex of at least three digits:
 `050` holds U+5000–U+50FF and `20b` holds U+20B00–U+20BFF. A variation sequence goes by its base.
-Glyphs selected by index are in `gid`. A skipped attempt whose subject no font draws is filed by
-the subject's code point, in the files of the chain's first font; a subject that is no character,
-in `gid`.
+Glyphs selected by index are in `gid`. A skipped attempt without a glyph (no font draws
+the subject, or the glyph has no ink) is filed by the subject's code point, in the files of the
+chain's first font; a subject that is no character, in `gid`.
 
 Every JSON file is UTF-8 on one line, with sorted keys, the separators `,` and `:`, and characters
 outside ASCII written as themselves. A number without a fractional part is written without one
