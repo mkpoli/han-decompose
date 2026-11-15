@@ -7,8 +7,8 @@ from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
+from . import __version__, pins
 from . import identifiers as I
-from . import pins
 from .pieces import Glyph
 from .schema import Json
 from .tsv import number
@@ -65,6 +65,20 @@ def _selector(row: Json) -> str | None:
         return I.split_glyph_id(row["glyph"])[1]
     kind, value = I.split_component(row["subject"])
     return f"U+{value}" if kind == "u" else None
+
+
+def outline_head(font: str) -> Json:
+    """An outline file without its glyphs: the font, its licence and copyright line, and, for a
+    font whose licence asks that a changed copy say how it was changed, that notice."""
+    row = pins.font(font)
+    head: Json = {"format": OUTLINES, "font": font, "licence": row["licence"], "copyright": row["copyright"]}
+    if row["licence"] == "Arphic-1999":
+        head["notice"] = (
+            f"Outlines of {row['name']} {row['version']}, changed by han-decompose {__version__}: a selection of "
+            f"its glyphs, each contour kept in the font's order with its points scaled from {row['upem']} to 1000 "
+            "units per em and rounded to hundredths of a unit. Under the Arphic Public License, as the font is."
+        )
+    return {**head, "em": 1000, "q": 100, "glyphs": {}}
 
 
 def terms(font: str, source: str, guide: str | None = None) -> Json:
@@ -131,11 +145,7 @@ class Store:
         for font, held in self.glyphs.items():
             row = pins.font(font)
             for selector in sorted(held, key=_order):
-                file = out.setdefault(
-                    f"outlines/{font}/{I.shard(selector)}.json.gz",
-                    {"format": OUTLINES, "font": font, "licence": row["licence"], "copyright": row["copyright"]}
-                    | {"em": 1000, "q": 100, "glyphs": {}},
-                )
+                file = out.setdefault(f"outlines/{font}/{I.shard(selector)}.json.gz", outline_head(font))
                 file["glyphs"][selector] = held[selector]
         for font, source in sorted({*self.readings, *self.skipped}):
             guides = {row["method"].get("guide") for row in self.readings.get((font, source), ())} - {None}

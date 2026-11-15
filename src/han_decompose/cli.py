@@ -6,7 +6,7 @@ from typing import Annotated
 
 import typer
 
-from . import __version__, pins
+from . import __version__, descriptions, numbered, pins
 from . import identifiers as I
 from .cutters import lift as lifts
 from .cutters import survey as surveys
@@ -139,13 +139,16 @@ def lift(
     workers: Annotated[int, typer.Option(help="How many processes cut at once.")] = 4,
     cache: Annotated[Path | None, typer.Option(help="The cache folder the pinned files are in.")] = None,
 ) -> None:
-    """Lift every CHISE entity and zi.tools chain of the component registry out of the characters
-    written with it, and count the forms that stand, by kind, and the cuts in their libraries."""
+    """Lift every CHISE entity, zi.tools chain and numbered component of the component registry
+    out of the characters written with it, and count the forms that stand, by kind, and the cuts
+    in their libraries. The glyph BabelStone Han PUA draws for a numbered component is written
+    with the outlines where a cut was held against it."""
     if out is not None and out.exists() and any(out.iterdir()):
         typer.echo(f"{out} is not empty.", err=True)
         raise typer.Exit(1)
     store = Store()
     tried: dict[str, int] = {}
+    held: set[str] = set()
     stand: dict[str, int] = {}
     hosts = readings = skipped = 0
     try:
@@ -155,6 +158,11 @@ def lift(
                 store.record(*I.split_glyph_id(glyph), record)
             for row in outcome.readings:
                 store.reading(row)
+                held.update(
+                    cut["evidence"]["referenceGlyph"]
+                    for cut in row["cuts"]
+                    if cut.get("evidence", {}).get("referenceGlyph", "").startswith(numbered.FONT)
+                )
             for row, font in outcome.skipped:
                 store.skip(row, font)
             readings += len(outcome.readings)
@@ -163,6 +171,10 @@ def lift(
                 stand[outcome.kind] = stand.get(outcome.kind, 0) + 1
                 hosts += sum(len(cuts) for cuts in outcome.library.values())
                 store.form(chain, outcome.component, outcome.form, outcome.library)
+        # The glyphs BabelStone Han PUA draws for the numbered components that were lifted.
+        for reference in numbered.glyphs(descriptions.table("babelstone", cache), cache).values():
+            if I.glyph_id(reference.font, reference.selector) in held:
+                store.glyph(reference)
     except BrokenProcessPool as error:
         typer.echo("A process could not start: run `han-decompose fetch` and check the cache.", err=True)
         raise typer.Exit(1) from error

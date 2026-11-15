@@ -203,6 +203,7 @@ One file holds glyphs of one font and of one block. `format` is `han-decompose/o
 |---|---|
 | `font` | Font identifier. |
 | `licence`, `copyright` | The font's, repeated from the registry. |
+| `notice` | How the font's data was changed, in the files of a font whose licence asks a changed copy to say so (the Arphic Public License). |
 | `em`, `q` | 1000 and 100. |
 | `glyphs` | Selector → glyph. |
 
