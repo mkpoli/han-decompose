@@ -1,0 +1,5 @@
+# format=han-decompose/cuts-tsv@1.0
+cut_id	sig	font	glyph	char	source	description	ids	tree	path	place	level	whole	component	text	contours	grain	box	frame	method	tool	fit	margin	agree	reference	filled	skeleton	calibrated	status	licence_outline	licence_description	licence_guide
+noto-sans-cjk-jp@2.004/U+50AC~babelstone.9d9dea39~0	933d670e	noto-sans-cjk-jp@2.004	U+50AC	催	babelstone	babelstone.9d9dea39	⿰亻崔	⿰亻⿱山隹	0	L	1	1	u:4EBB	亻	9 10	contour	15.98 -78.14 335.21 836.36	15.98 -78.14 954.09 836.36	hand	hand								accepted	OFL-1.1	LicenseRef-BabelStone-IDS	
+noto-sans-cjk-jp@2.004/U+50AC~babelstone.9d9dea39~1.0	785ad39d	noto-sans-cjk-jp@2.004	U+50AC	催	babelstone	babelstone.9d9dea39	⿰亻崔	⿰亻⿱山隹	1.0	T	2	0	u:5C71	山	0 2	contour	366 595.22 924.5 831.92	248.78 -77.14 954.09 831.92	hand	hand								accepted	OFL-1.1	LicenseRef-BabelStone-IDS	
+noto-sans-cjk-jp@2.004/U+50AC~babelstone.9d9dea39~1.1	fd7108ea	noto-sans-cjk-jp@2.004	U+50AC	催	babelstone	babelstone.9d9dea39	⿰亻崔	⿰亻⿱山隹	1.1	B	2	0	u:96B9	隹	1 3 4 5 6 7 8	contour	248.78 -77.14 954.09 591.31	248.78 -77.14 954.09 831.92	hand	hand								accepted	OFL-1.1	LicenseRef-BabelStone-IDS	
