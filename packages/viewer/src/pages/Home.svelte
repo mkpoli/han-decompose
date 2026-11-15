@@ -102,13 +102,13 @@
     <section class="section">
       <h2>{t("home.release")}</h2>
       <dl class="stats">
-        <div class="stat"><dd class="mono">{rel.manifest.release}</dd><dt>{t("home.name")}</dt></div>
-        <div class="stat"><dd class="mono">{rel.manifest.tool.name} {rel.manifest.tool.version}</dd><dt>{t("home.tool")}</dt></div>
-        <div class="stat"><dd class="num">{n(rel.fonts.fonts.length)}</dd><dt>{t("home.fonts")}</dt></div>
-        <div class="stat"><dd class="num">{n(rel.sources.sources.length)}</dd><dt>{t("home.sources")}</dt></div>
-        <div class="stat"><dd class="num">{n(sum.readings)}</dd><dt>{t("count.readings")}</dt></div>
-        <div class="stat"><dd class="num">{n(sum.cuts)}</dd><dt>{t("count.cuts")}</dt></div>
-        <div class="stat"><dd class="num">{n(sum.skipped)}</dd><dt>{t("count.skipped")}</dt></div>
+        <div class="stat"><dt>{t("home.name")}</dt><dd class="mono">{rel.manifest.release}</dd></div>
+        <div class="stat"><dt>{t("home.tool")}</dt><dd class="mono tool">{rel.manifest.tool.name} {rel.manifest.tool.version}</dd></div>
+        <div class="stat"><dt>{t("home.fonts")}</dt><dd class="num">{n(rel.fonts.fonts.length)}</dd></div>
+        <div class="stat"><dt>{t("home.sources")}</dt><dd class="num">{n(rel.sources.sources.length)}</dd></div>
+        <div class="stat"><dt>{t("count.readings")}</dt><dd class="num">{n(sum.readings)}</dd></div>
+        <div class="stat"><dt>{t("count.cuts")}</dt><dd class="num">{n(sum.cuts)}</dd></div>
+        <div class="stat"><dt>{t("count.skipped")}</dt><dd class="num">{n(sum.skipped)}</dd></div>
       </dl>
     </section>
   {/snippet}
@@ -137,14 +137,16 @@
   }
   .stats {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr));
+    align-items: stretch;
     gap: var(--ui-space-md);
     margin: 0;
   }
   .stat {
     display: flex;
-    flex-direction: column-reverse;
-    gap: var(--ui-space-3xs);
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: var(--ui-space-2xs);
     padding: var(--ui-space-lg) var(--ui-space-xl);
     border: 1px solid var(--ui-color-border);
     border-radius: var(--ui-radius-lg);
@@ -156,6 +158,10 @@
     font-size: var(--ui-text-lg);
     font-weight: var(--ui-weight-semibold);
     overflow-wrap: anywhere;
+  }
+  .stat dd.tool {
+    font-size: var(--ui-text-md);
+    line-height: 1.6;
   }
   .stat dt {
     color: var(--ui-color-ink-muted);
