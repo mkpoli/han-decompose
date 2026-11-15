@@ -22,3 +22,7 @@ export const libraryPath = (chain: string): string => `library/${chain}.json.gz`
 export const cutsTablePath = (source: string): string => `cuts.${source}.tsv.gz`;
 export const skippedTablePath = (source: string): string => `skipped.${source}.tsv.gz`;
 export const componentsTablePath = (source: string): string => `components.${source}.tsv`;
+
+/** A release path as a URL path: each segment percent-encoded, so `@` in a font identifier reaches
+ *  the host as `%40`, the spelling it serves without a redirect. */
+export const urlPath = (path: string): string => path.split("/").map(encodeURIComponent).join("/");

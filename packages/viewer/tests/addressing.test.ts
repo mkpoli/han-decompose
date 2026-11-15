@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { blockOf, blockOfRef, cutsPath, outlinePath } from "../src/lib/addressing.ts";
+import { blockOf, blockOfRef, cutsPath, outlinePath, urlPath } from "../src/lib/addressing.ts";
 
 test("a block is the code point divided by 256, in lower hex of at least three digits", () => {
   expect(blockOf("U+50AC")).toBe("050");
@@ -25,4 +25,10 @@ test("a subject that is no character is filed under gid", () => {
 test("shard paths follow the layout", () => {
   expect(outlinePath("noto-sans-cjk-jp@2.004", "050")).toBe("outlines/noto-sans-cjk-jp@2.004/050.json.gz");
   expect(cutsPath("jigmo2@20250912", "chise", "20b")).toBe("cuts/jigmo2@20250912/chise/20b.json.gz");
+});
+
+test("a release path keeps its slashes and percent-encodes the rest of each segment", () => {
+  expect(urlPath("outlines/noto-sans-cjk-jp@2.004/079.json.gz")).toBe("outlines/noto-sans-cjk-jp%402.004/079.json.gz");
+  expect(urlPath("cuts/jigmo2@20250912/zi-tools/20b.json.gz")).toBe("cuts/jigmo2%4020250912/zi-tools/20b.json.gz");
+  expect(urlPath("manifest.json")).toBe("manifest.json");
 });
