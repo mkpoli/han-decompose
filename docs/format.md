@@ -270,8 +270,8 @@ A cut:
 | `box` | yes | Box of the cut's contours. |
 | `frame` | | Box of the parent node's ink. |
 | `gap`, `area`, `ink` | | Distance to the nearest sibling ink, filled area, and summed length of the contours' polygons. |
-| `evidence` | | Scores of the cut: `fit` or `match`, `margin`, `agree`, `reference`. |
-| `checks` | | Per check (`filled`, `skeleton`, `windows`): `value`, `limit`, `pass`, and `against`, the glyph compared with. |
+| `evidence` | | Scores of the cut: `fit` or `match`, `margin`, `agree`, `reference`, and `referenceGlyph`, the glyph `reference` was measured against. |
+| `checks` | | Per check: `value`, `limit`, `pass`, and `against`, the glyph compared with. A dealt cut has `filled`, `skeleton` and `windows`; a lifted component has the one that decided it, `reference`, `agree` or `single`. |
 | `calibrated` | | The component whose reviewed labels set the checks' limits, or `false`. |
 | `status` | yes | `accepted`, `refused` (a check failed), `reviewed-right` or `reviewed-wrong`. |
 | `licence` | yes | `outline` and `description` as in the file's `terms`; `guide`, as in the terms, exactly when the reading's method names a guide. |
@@ -321,8 +321,10 @@ reference → the cut chosen as the component's form in that chain:
 component reference → place (4.4) → cut identifiers, best first. A cut is listed when it
 confirms the component's form.
 
-A cut whose path is the root is a cut of its reading's subject: a component that has no
-character is read on a host glyph under a description of its own (`㇯冐⺜`, 冐 without ⺜).
+A component that has no character can be read on a host glyph under a description of its own:
+`㇯冐⺜`, 冐 without ⺜, is read on the glyph of 冐. The reading's one cut is the root, which
+holds what is left of the host, and its `component` is the description as a subtree. A
+subtraction that several components share is read once, under the first of them.
 
 ## 5. Tables
 

@@ -1,5 +1,6 @@
 """The `han-decompose` command."""
 
+from concurrent.futures.process import BrokenProcessPool
 from pathlib import Path
 from typing import Annotated
 
@@ -170,6 +171,9 @@ def lift(
                 stand[outcome.kind] = stand.get(outcome.kind, 0) + 1
                 hosts += sum(len(cuts) for cuts in outcome.library.values())
                 store.form(chain, outcome.component, outcome.form, outcome.library)
+    except BrokenProcessPool as error:
+        typer.echo("A process could not start: run `han-decompose fetch` and check the cache.", err=True)
+        raise typer.Exit(1) from error
     except (pins.PinError, KeyError, OSError) as error:
         typer.echo(str(error.args[0]) if isinstance(error, KeyError) else str(error), err=True)
         raise typer.Exit(1) from error

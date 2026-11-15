@@ -90,6 +90,7 @@ class Store:
         self.glyphs: dict[str, dict[str, Json]] = {}
         self.readings: dict[tuple[str, str], list[Json]] = {}
         self.skipped: dict[tuple[str, str], list[Json]] = {}
+        self._read: set[tuple[str, str]] = set()
         self.forms: dict[str, dict[str, Json]] = {}
         self.library: dict[str, dict[str, dict[str, list[str]]]] = {}
 
@@ -104,8 +105,14 @@ class Store:
         self.glyphs.setdefault(font, {}).setdefault(selector, record)
 
     def reading(self, row: Json) -> None:
+        """Keep a reading. A glyph has one reading under a description: the first given stands.
+        Two components the registry records the same subtraction for (`㇯𠁾丶`) are read on the
+        same host under the same description, and share that reading."""
         font, _ = I.split_glyph_id(row["glyph"])
-        self.readings.setdefault((font, row["description"].rpartition(".")[0]), []).append(row)
+        key = (row["glyph"], row["description"])
+        if key not in self._read:
+            self._read.add(key)
+            self.readings.setdefault((font, row["description"].rpartition(".")[0]), []).append(row)
 
     def skip(self, row: Json, font: str) -> None:
         """Keep a skipped attempt in the files of `font`: the font of its glyph, or the first of
