@@ -74,6 +74,25 @@ def test_the_readings_of_ids_input_come_out_for_its_cuts() -> None:
         assert cuts[0]["checks"]["filled"]["limit"] == 0.6081 and cuts[0]["checks"]["skeleton"]["limit"] == 0.0499
 
 
+def test_limits_are_borrowed_outside_the_fonts_and_the_component_they_were_set_on() -> None:
+    try:
+        table = descriptions.table("babelstone")
+    except Exception:
+        pytest.skip("The pinned tables are not in the cache; run `han-decompose fetch`.")
+    sans = [Drawing(face) for face in pinned_chain("sans").faces]
+    serif = [Drawing(face) for face in pinned_chain("serif").faces]
+    description = table.first("仙")
+    assert description is not None
+    for drawings, calibrated in ((sans, ["u:5C71"]), (serif, [False])):
+        glyph = drawings[0].glyph("U+4ED9")
+        assert glyph is not None
+        row = deal.read(
+            glyph, drawings, description, description.tree(), table.glyph, whole=False, gate=gates.gate(table.glyph)
+        )
+        assert [cut["calibrated"] for cut in row["cuts"] if cut["text"] == "山"] == calibrated
+        assert [cut["calibrated"] for cut in row["cuts"] if cut["text"] == "亻"] == [False]
+
+
 def test_a_reading_past_a_limit_refuses_the_cut() -> None:
     assert gates._reading(0.0499, 0.0499, "f@1/U+5C71").passes is False
     assert gates._reading(0.04985, 0.0499, "f@1/U+5C71") == gates.Reading(0.0498, 0.0499, "f@1/U+5C71", True)

@@ -4,8 +4,9 @@ Both checks compare the cut with the component as a font draws it alone, each st
 to fill a square, so size and proportion are set aside and the figure is what is compared. A cut
 is measured against every font of the chain that draws the component and keeps its best reading.
 
-The limits were set on 山: 208 cuts judged by eye (44 wrong, 164 right) and a sweep that
-confirmed 55 wrong ones. For any other component they are borrowed, and its cuts say so.
+The limits were set on 山 in Noto Sans CJK JP and Plangothic: 208 cuts judged by eye (44 wrong,
+164 right) and a sweep that confirmed 55 wrong ones. For any other component, and for 山 in any
+other font, they are borrowed, and the cuts say so.
 """
 
 from collections.abc import Callable, Sequence
@@ -19,8 +20,9 @@ from ..pieces import Drawing
 from ..schema import Json
 from . import filled, skeleton
 
-#: The component whose reviewed cuts set the limits.
+#: The component whose reviewed cuts set the limits, and the fonts those cuts were read in.
 CALIBRATED_ON = "山"
+CALIBRATED_IN = frozenset({"noto-sans-cjk-jp@2.004", "plangothic-p1@2.9.5795", "plangothic-p2@2.9.5795"})
 
 
 @dataclass(frozen=True)
@@ -93,6 +95,7 @@ def gate(glyph_of: Callable[[str], str | None], only: str | None = None) -> Gate
             name: {"value": row.value, "limit": row.limit, "against": row.against, "pass": row.passes}
             for name, row in found.items()
         }
-        return records, I.component_of(char) if char == CALIBRATED_ON else False
+        calibrated = char == CALIBRATED_ON and cutter.glyph.font in CALIBRATED_IN
+        return records, I.component_of(char) if calibrated else False
 
     return run
