@@ -2,8 +2,8 @@
 
 CHISE writes a glyph of the Adobe-Japan1 collection that has no code point of its own as an
 entity, `&AJ1-01815;`: CID 1815. Adobe's kanji table says which character each CID is a glyph of:
-the kanji of JIS X 0208 it is the base glyph of, the code point the UniJIS CMap gives it, or the
-variation sequence registered for it. Each entity gives two rows: the entity is the CID, and the
+the kanji of JIS X 0208 it is the base glyph of, the code point the UniJIS CMap reaches it
+from, or the variation sequence registered for it. Each entity gives two rows: the entity is the CID, and the
 CID is a glyph of a character.
 """
 
@@ -37,25 +37,27 @@ def table(path: Path) -> dict[int, list[str]]:
 def glyph_of(fields: list[str]) -> tuple[str, str, str]:
     """The character a CID is a glyph of, as a component reference, with what the relation rests
     on and its kind: `jis` (the base glyph of a JIS X 0208 kanji), `code-point` (a later addition
-    the UniJIS CMap maps to a code point of its own) or `sequence` (reached only by a variation
+    that the UniJIS CMap reaches from a code point) or `sequence` (reached only by a variation
     sequence).
 
-    A CID that the CMap maps to several code points (a Kangxi radical beside its ideograph) goes
-    by the base of its variation sequence, which is the ideograph."""
+    The character is the base of the CID's variation sequence. That settles the CIDs the CMap
+    reaches from a Kangxi radical as well as from its ideograph, and CID 15391, which it reaches
+    from the radical U+2E95 alone: each is a glyph of the ideograph."""
     cid, jis, cmap, sequences = fields[0], fields[1], fields[17], fields[19]
     sequence = _SEQUENCE.search(sequences)
     points = _POINT.findall(cmap) if cmap != "*" else []
-    if not points:
-        if sequence is None:
-            raise ValueError(f"aj17-kanji.txt: CID {cid} has neither a code point nor a variation sequence.")
-        target = I.component("u", f"{sequence[1]}.{sequence[2]}")
-        return target, f"aj17-kanji.txt field 20: the variation sequence <U+{sequence[1]},U+{sequence[2]}>", "sequence"
-    point = sequence[1] if sequence is not None and sequence[1] in points else points[0]
-    target = I.component("u", point)
-    mapped = "UniJIS-UTF32-H maps the CID to " + ", ".join(f"U+{other}" for other in points)
+    if sequence is None and not points:
+        raise ValueError(f"aj17-kanji.txt: CID {cid} has neither a code point nor a variation sequence.")
+    target = I.component("u", sequence[1] if sequence is not None else points[0])
+    basis = []
     if jis != "*":
-        return target, f"aj17-kanji.txt field 2: the base glyph of JIS X 0208 {jis}; field 18: {mapped}", "jis"
-    return target, f"aj17-kanji.txt field 18: {mapped}", "code-point"
+        basis.append(f"field 2: the base glyph of JIS X 0208 {jis}")
+    if points:
+        basis.append("field 18: UniJIS-UTF32-H maps " + " and ".join(f"U+{point}" for point in points) + " to the CID")
+    if sequence is not None:
+        basis.append(f"field 20: the variation sequence <U+{sequence[1]},U+{sequence[2]}>")
+    kind = "jis" if jis != "*" else "code-point" if points else "sequence"
+    return target, "aj17-kanji.txt " + "; ".join(basis), kind
 
 
 def rows(entities: list[str], kanji: dict[int, list[str]]) -> list[Json]:

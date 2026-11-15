@@ -85,8 +85,8 @@ def components(
     name, each with the character Adobe's kanji table makes it a glyph of."""
     try:
         rows = aj1.pinned(cache)
-    except (pins.PinError, ValueError, OSError) as error:
-        typer.echo(str(error), err=True)
+    except (pins.PinError, ValueError, KeyError, OSError) as error:
+        typer.echo(str(error.args[0]) if isinstance(error, KeyError) else str(error), err=True)
         raise typer.Exit(1) from error
     out.mkdir(parents=True, exist_ok=True)
     for source in sorted({row["source"] for row in rows}):
