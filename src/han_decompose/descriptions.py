@@ -62,7 +62,15 @@ class Table:
     numbered: dict[str, Numbered] = field(default_factory=dict)
 
     def add(self, subject: str, text: str, tags: str | None = None) -> None:
-        self.rows.setdefault(subject, []).append(Description(self.source, subject, text, tags))
+        """Add a description. A text the source gives twice for a subject is one description,
+        with the tags of each occurrence joined by a space."""
+        rows = self.rows.setdefault(subject, [])
+        for index, row in enumerate(rows):
+            if row.text == text:
+                joined = " ".join(part for part in (row.tags, tags) if part) or None
+                rows[index] = Description(self.source, subject, text, joined)
+                return
+        rows.append(Description(self.source, subject, text, tags))
 
     def of(self, subject: str) -> list[Description]:
         return self.rows.get(subject, [])
@@ -88,7 +96,10 @@ def babelstone(path: Path) -> Table:
     notes left out, and the numbered components of note 6."""
     table = Table("babelstone")
     for line in _lines(path):
-        if match := _NUMBERED.fullmatch(line):
+        if line.startswith("#\t{"):
+            match = _NUMBERED.fullmatch(line)
+            if match is None or (match["char"] and f"{ord(match['char']):04X}" != match["point"]):
+                raise ValueError(f"IDS.TXT: the numbered component in {line!r} does not read.")
             written = match["written"]
             table.numbered[match["name"]] = Numbered(
                 match["name"],
@@ -145,11 +156,11 @@ def zi_tools(path: Path) -> Table:
 @cache
 def table(source: str, cache_folder: Path | None = None) -> Table:
     """The pinned table of a description source, read from the cache."""
+    if source not in SOURCES:
+        raise KeyError(f"{source} is not a description source.")
     paths = pins.source_paths(pins.source(source), cache_folder, fetch=False)
     if source == "babelstone":
         return babelstone(paths["IDS.TXT"])
     if source == "chise":
         return chise(paths.values())
-    if source == "zi-tools":
-        return zi_tools(paths["ids_lv1.txt"])
-    raise KeyError(f"{source} is not a description source.")
+    return zi_tools(paths["ids_lv1.txt"])

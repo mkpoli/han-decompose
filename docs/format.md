@@ -64,6 +64,9 @@ The text is the IDS as the source writes it, without what the source attaches to
 
 `⿰亻崔` gives `9d9dea39`, so BabelStone's description of 催 is `babelstone.9d9dea39`.
 
+A text a source gives twice for one subject is one description; the tags of each occurrence are
+joined by a space.
+
 Eight hex digits do not keep every text of a source apart. A description identifier is used
 together with its subject or its glyph, and the text itself (`ids`) stands beside it wherever it
 appears.

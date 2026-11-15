@@ -6,12 +6,13 @@ from han_decompose import descriptions, pins
 
 IDS_TXT = (
     "﻿# Ideographic Description Sequences\r\n"
-    "#\t{42}\ttop of 录 (F2D4 )\t彐\r\n"
-    "#\t{5}\tleft of 叚 (F2A9 )\t？\r\n"
-    "#\t{82}\ttop of 書 (F2E3 )\t⿱𦘒一\r\n"
+    "#\t{42}\ttop of 录 (F2D4 \uf2d4)\t彐\r\n"
+    "#\t{5}\tleft of 叚 (F2A9 \uf2a9)\t？\r\n"
+    "#\t{82}\ttop of 書 (F2E3 \uf2e3)\t⿱𦘒一\r\n"
     "#\t{63}\t\r\n"
     "U+4E03\t七\t^〾⿻一乚$(GHJKPV)\t^〾⿻一㇄$(T)\r\n"
     "U+50AC\t催\t^⿰亻崔$(GHTJKPV)\t*an earlier sequence\r\n"
+    "U+570A\t圊\t^⿴囗青$(GH[S])\t^⿴囗靑$(JK)\t^⿴囗青$(T)\r\n"
     "U+5F54\t彔\t^⿱{42}氺$\r\n"
 )
 
@@ -25,13 +26,14 @@ def test_babelstone_keeps_each_sequence_with_its_regions(tmp_path: Path) -> None
     assert table.first("彔") == descriptions.Description("babelstone", "彔", "⿱{42}氺")
     assert table.first("催").id == "babelstone.9d9dea39"  # type: ignore[union-attr]
     assert table.first("山") is None and table.of("山") == []
+    assert [(row.text, row.tags) for row in table.of("圊")] == [("⿴囗青", "GH[S] T"), ("⿴囗靑", "JK")]
 
 
 def test_babelstone_numbered_components_come_from_note_6(tmp_path: Path) -> None:
     path = tmp_path / "IDS.TXT"
     path.write_bytes(IDS_TXT.encode("utf-8"))
     table = descriptions.babelstone(path)
-    assert table.numbered["{42}"] == descriptions.Numbered("{42}", "top of 录", "", "彐")
+    assert table.numbered["{42}"] == descriptions.Numbered("{42}", "top of 录", "\uf2d4", "彐")
     assert table.numbered["{5}"].written is None and table.numbered["{63}"].pua == ""
     assert table.glyph("{42}") == "彐" and table.glyph("山") == "山"
     assert table.glyph("{5}") is None and table.glyph("{82}") is None and table.glyph("⿱山隹") is None
@@ -45,6 +47,15 @@ def test_babelstone_refuses_a_line_it_cannot_read(tmp_path: Path) -> None:
     path.write_text("U+50AD\t催\t^⿰亻崔$\n", encoding="utf-8")
     with pytest.raises(ValueError, match="writes U\\+50AD"):
         descriptions.babelstone(path)
+    for line in ("#\t{42}\ttop of 录\t彐\n", "#\t{42}\ttop of 录 (F2D5 \uf2d4)\t彐\n"):
+        path.write_text(line, encoding="utf-8")
+        with pytest.raises(ValueError, match="numbered component"):
+            descriptions.babelstone(path)
+
+
+def test_only_a_description_source_has_a_table() -> None:
+    with pytest.raises(KeyError, match="adobe-japan1 is not a description source"):
+        descriptions.table("adobe-japan1")
 
 
 def test_chise_reads_the_third_field_and_apparent_descriptions(tmp_path: Path) -> None:
