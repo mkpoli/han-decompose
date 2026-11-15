@@ -296,21 +296,28 @@ class Cutter:
         whose pieces cannot be dealt stays whole. `trail` holds the components opened above."""
         if not group:
             raise Skipped("too-few-pieces", f"no pieces left for {node.text}")
-        parts = None
         if node.leaf and opener is not None and len(group) > 1:
             inside = opener(node, trail)
             if inside is not None:
+                # The opening holds only if the whole of the component's description can be
+                # dealt; where any part of it fails, the leaf stays whole and nothing of the
+                # attempt is kept.
+                marks, margins = len(self.marks), len(self.margins)
+                node.operator, node.children, node.opened = inside.operator, inside.children, inside.opened
                 try:
-                    parts = self.best(inside, group)
+                    return self._operands(node, group, opener, (*trail, self.glyph_of(node.text) or node.text))
                 except Skipped:
-                    parts = None
-                else:
-                    node.operator, node.children, node.opened = inside.operator, inside.children, inside.opened
-                    trail = (*trail, self.glyph_of(node.text) or node.text)
+                    node.operator, node.children, node.opened = None, [], None
+                    del self.marks[marks:], self.margins[margins:]
         if node.leaf:
             return [(node, list(group))]
+        return self._operands(node, group, opener, trail)
+
+    def _operands(
+        self, node: Node, group: Sequence[int], opener: Opener | None, trail: tuple[str, ...]
+    ) -> list[tuple[Node, list[int]]]:
         out: list[tuple[Node, list[int]]] = []
-        for child, part in zip(node.children, parts or self.best(node, group), strict=True):
+        for child, part in zip(node.children, self.best(node, group), strict=True):
             out.extend(self.cut(child, part, opener, trail))
         return out
 

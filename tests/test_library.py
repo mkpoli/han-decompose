@@ -70,6 +70,27 @@ def test_a_glyph_is_cut_as_deep_as_its_pieces_allow() -> None:
     assert counts.readings == 1 and sum(counts.skipped.values()) == 1
 
 
+def test_an_opening_that_fails_further_down_leaves_the_leaf_whole() -> None:
+    _, drawings = pinned()
+    wrong = Table("babelstone")
+    for char, text in {"催": "⿰亻崔", "崔": "⿱山⿰隹山", "隹": "隹", "山": "山", "亻": "亻"}.items():
+        wrong.add(char, text)
+    store, counts = Store(), library.Counts()
+    description = wrong.first("催")
+    assert description is not None
+    library.one(description, drawings, wrong, store, counts)
+    ((_, readings),) = store.readings.items()
+    (row,) = readings
+    # 崔 deals into 山 and a rest, but the rest is one piece and cannot be 隹 beside 山: the
+    # opening is dropped whole and 崔 stays a leaf.
+    assert row["tree"] == "⿰亻崔" and "opened" not in row
+    assert [(cut["text"], cut["contours"]) for cut in row["cuts"]] == [
+        ("亻", [9, 10]),
+        ("崔", [0, 1, 2, 3, 4, 5, 6, 7, 8]),
+    ]
+    assert counts.skipped == {} and row["evidence"]["likeness"] == min(cut["evidence"]["fit"] for cut in row["cuts"])
+
+
 def test_a_block_is_written_once_and_a_second_run_goes_on_after_it(tmp_path: Path) -> None:
     pinned()
     ((block, counts),) = list(library.run("sans", "babelstone", tmp_path, workers=1, only=["050"]))

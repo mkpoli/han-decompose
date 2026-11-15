@@ -17,14 +17,14 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from .. import descriptions, gates, pins
+from .. import descriptions, gates
 from .. import identifiers as I
 from ..descriptions import Description, Table
 from ..ids import Node
 from ..outline import Chain
 from ..pieces import Drawing
 from ..schema import Json
-from ..store import Store, dumps, write
+from ..store import Store, dumps, outline_head, write
 from . import reading
 from .deal import Skipped, read
 
@@ -107,7 +107,7 @@ def one(description: Description, drawings: Sequence[Drawing], table: Table, sto
         except Skipped as reason:
             last = (reason.code, f"{drawing.id}: {reason.text}")
             continue
-        except (ValueError, KeyError, RecursionError) as error:
+        except (ValueError, RecursionError) as error:
             last = ("unreadable-description", f"{drawing.id}: the description does not read: {error}")
             continue
         store.glyph(glyph)
@@ -147,8 +147,11 @@ def _work(job: tuple[str, list[str], str]) -> tuple[str, Counts]:
         for description in table.of(char):
             one(description, _STATE["drawings"], table, store, counts)
     store.write(Path(out))
+    # The marker says the block is done: it is written last, and whole or not at all.
     marker = Path(out) / "blocks" / f"{block}.json"
-    write(marker, dumps({**counts.summary(), "against": sorted(counts.against)}))
+    partial = marker.with_suffix(".part")
+    write(partial, dumps({**counts.summary(), "against": sorted(counts.against)}))
+    partial.replace(marker)
     return block, counts
 
 
@@ -168,7 +171,10 @@ def run(
         if (only is None or block in only) and not (out / "blocks" / f"{block}.json").exists()
     ]
     # Blocks differ in cost by an order of magnitude; one per task keeps the processes even.
-    with ProcessPoolExecutor(workers, initializer=_open, initargs=(chain, source, cache)) as pool:
+    # A process is replaced after 16 blocks, so what it keeps per glyph does not grow without end.
+    with ProcessPoolExecutor(
+        workers, initializer=_open, initargs=(chain, source, cache), max_tasks_per_child=16
+    ) as pool:
         yield from pool.map(_work, jobs, chunksize=1)
 
 
@@ -188,12 +194,7 @@ def named(out: Path, chain: str, cache: Path | None = None) -> int:
         font, selector = I.split_glyph_id(glyph_id)
         path = out / "outlines" / font / f"{I.shard(selector)}.json.gz"
         if path not in files:
-            if path.exists():
-                files[path] = json.loads(gzip.decompress(path.read_bytes()))
-            else:
-                row = pins.font(font)
-                files[path] = {"format": "han-decompose/outlines@1.0", "font": font, "licence": row["licence"]}
-                files[path] |= {"copyright": row["copyright"], "em": 1000, "q": 100, "glyphs": {}}
+            files[path] = json.loads(gzip.decompress(path.read_bytes())) if path.exists() else outline_head(font)
         if selector not in files[path]["glyphs"]:
             glyph = drawings[font].glyph(selector)
             if glyph is not None and glyph.contours:
