@@ -949,6 +949,98 @@
           ]
         }
       }
+    },
+    "formsFile": {
+      "description": "forms/<chain>.json.gz: for each component, the cut chosen as its form in a chain.",
+      "type": "object",
+      "required": [
+        "format",
+        "chain",
+        "forms"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "const": "han-decompose/forms@1.0"
+        },
+        "chain": {
+          "type": "string",
+          "minLength": 1
+        },
+        "forms": {
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/componentRef"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "required": [
+              "cut",
+              "sig",
+              "basis"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "cut": {
+                "$ref": "#/$defs/cutId"
+              },
+              "sig": {
+                "$ref": "#/$defs/sig"
+              },
+              "basis": {
+                "enum": [
+                  "reference",
+                  "agree",
+                  "single",
+                  "hand"
+                ]
+              },
+              "hosts": {
+                "description": "How many hosts gave a cut of the component.",
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "libraryFile": {
+      "description": "library/<chain>.json.gz: for each component, its cuts by place, best first.",
+      "type": "object",
+      "required": [
+        "format",
+        "chain",
+        "library"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "const": "han-decompose/library@1.0"
+        },
+        "chain": {
+          "type": "string",
+          "minLength": 1
+        },
+        "library": {
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/componentRef"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "minProperties": 1,
+            "additionalProperties": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/$defs/cutId"
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

@@ -7,6 +7,7 @@ import typer
 
 from . import __version__, pins
 from . import identifiers as I
+from .cutters import lift as lifts
 from .cutters import survey as surveys
 from .importers import composer_export
 from .outline import Chain
@@ -126,5 +127,48 @@ def survey(
     typer.echo(f"cuts of {component} refused\t{refused}")
     for code, total in sorted(reasons.items()):
         typer.echo(f"skipped: {code}\t{total}")
+    if out is not None:
+        typer.echo(f"files\t{len(store.write(out))}\t{out}")
+
+
+@app.command()
+def lift(
+    chain: Annotated[str, typer.Option(help="The font chain to read the glyphs in.")] = "sans",
+    out: Annotated[Path | None, typer.Option(help="A folder to write the files into.")] = None,
+    workers: Annotated[int, typer.Option(help="How many processes cut at once.")] = 4,
+    cache: Annotated[Path | None, typer.Option(help="The cache folder the pinned files are in.")] = None,
+) -> None:
+    """Lift every CHISE entity and zi.tools chain of the component registry out of the characters
+    written with it, and count the forms that stand, by kind, and the cuts in their libraries."""
+    if out is not None and out.exists() and any(out.iterdir()):
+        typer.echo(f"{out} is not empty.", err=True)
+        raise typer.Exit(1)
+    store = Store()
+    tried: dict[str, int] = {}
+    stand: dict[str, int] = {}
+    hosts = readings = skipped = 0
+    try:
+        for outcome in lifts.run(chain, workers, cache):
+            tried[outcome.kind] = tried.get(outcome.kind, 0) + 1
+            for glyph, record in outcome.glyphs.items():
+                store.record(*I.split_glyph_id(glyph), record)
+            for row in outcome.readings:
+                store.reading(row)
+            for row, font in outcome.skipped:
+                store.skip(row, font)
+            readings += len(outcome.readings)
+            skipped += len(outcome.skipped)
+            if outcome.form is not None:
+                stand[outcome.kind] = stand.get(outcome.kind, 0) + 1
+                hosts += sum(len(cuts) for cuts in outcome.library.values())
+                store.form(chain, outcome.component, outcome.form, outcome.library)
+    except (pins.PinError, KeyError, OSError) as error:
+        typer.echo(str(error.args[0]) if isinstance(error, KeyError) else str(error), err=True)
+        raise typer.Exit(1) from error
+    for kind in sorted(tried):
+        typer.echo(f"forms: {kind}\t{stand.get(kind, 0)}\tof {tried[kind]}")
+    typer.echo(f"library cuts\t{hosts}")
+    typer.echo(f"hosts read\t{readings}")
+    typer.echo(f"hosts skipped\t{skipped}")
     if out is not None:
         typer.echo(f"files\t{len(store.write(out))}\t{out}")

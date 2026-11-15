@@ -144,7 +144,7 @@ same value. A `.gz` file is gzip with its modification time set to 0. No file ho
 Every JSON file names its format: `han-decompose/<kind>@<major>.<minor>`. A minor version adds
 properties; a major version changes or removes them.
 
-`manifest.json`, the `library`, `forms` and `references` files are reserved in this version.
+`manifest.json` and the `references` files are reserved in this version.
 
 ### 4.1 `fonts.json`
 
@@ -303,6 +303,26 @@ A skipped attempt holds `subject`, `glyph` when a font draws the subject, `descr
 | `no-ink` | The glyph draws nothing. |
 | `unlike-whole` | The operands, each drawn where its pieces sit, do not come out as the glyph. |
 | `unreadable-description` | The description does not read as a tree. |
+
+### 4.5 Form and library files
+
+Both are indexes over cuts and hold no geometry. One file covers one chain.
+
+`forms/<chain>.json.gz`, `format` `han-decompose/forms@1.0`: `chain`, and `forms`, component
+reference → the cut chosen as the component's form in that chain:
+
+| Property | Required | Value |
+|---|---|---|
+| `cut`, `sig` | yes | The cut and its signature (2.6). |
+| `basis` | yes | What the choice rests on: `reference` (a reference glyph), `agree` (other hosts leave the same shape), `single` (one host whose parts lift away unmistakably) or `hand`. |
+| `hosts` | | How many hosts gave a cut of the component. |
+
+`library/<chain>.json.gz`, `format` `han-decompose/library@1.0`: `chain`, and `library`,
+component reference → place (4.4) → cut identifiers, best first. A cut is listed when it
+confirms the component's form.
+
+A cut whose path is the root is a cut of its reading's subject: a component that has no
+character is read on a host glyph under a description of its own (`㇯冐⺜`, 冐 without ⺜).
 
 ## 5. Tables
 
