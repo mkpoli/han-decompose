@@ -1,7 +1,8 @@
 """Lift a component no code point names out of the characters written with it.
 
-A CHISE entity (`&CDP-8958;`) or a zi.tools stroke chain (`#(-𠃍㇉)`) has no glyph of its own, but
-the characters described with it do. Where such a character is the component beside encoded parts
+A CHISE entity (`&CDP-8958;`), a zi.tools stroke chain (`#(-𠃍㇉)`) or a numbered component of
+BabelStone IDS (`{50}`) has no glyph in the fonts of a chain, but the characters described with it
+do. Where such a character is the component beside encoded parts
 only, the font draws them as pieces that do not touch, and the component is what is left once each
 part's pieces are lifted away. A host whose part touches the component gives nothing.
 
@@ -9,7 +10,8 @@ In a host, the pieces given to a part are the group whose fingerprint best match
 alone, on the side the operator puts it, by a margin over every other group. What is left stands
 as the component when it is confirmed:
 
-- by the component's GlyphWiki glyph, where there is one, which then decides alone;
+- by a reference glyph, where there is one, which then decides alone: the GlyphWiki glyph of an
+  entity, the glyph BabelStone Han PUA draws for a numbered component;
 - else by what another host leaves, two hosts agreeing;
 - else, from one host, only when its parts lift away unmistakably.
 """
@@ -34,7 +36,7 @@ from .. import geometry as G
 from .. import identifiers as I
 from ..descriptions import Description, Table
 from ..ids import Node, leaves, parse, spelled, walk, without_notes
-from ..outline import Chain
+from ..outline import Chain, Face
 from ..pieces import Drawing, Glyph
 from ..schema import Json
 from . import reading
@@ -64,7 +66,9 @@ ENCLOSING = frozenset("⿴⿵⿶⿷⿸⿹⿺⿼⿽")
 #: The operators whose operands make a component's library of places.
 LEARNED = frozenset("⿰⿱⿸⿺⿵⿹⿶⿴⿷")
 #: The source of the descriptions a kind of component is found in.
-SOURCE_OF = {"entity": "chise", "chain": "zi-tools"}
+SOURCE_OF = {"entity": "chise", "chain": "zi-tools", "numbered": "babelstone"}
+#: The font whose private use area draws the numbered components.
+PUA = "babelstone-han-pua@1.472"
 #: The source a subtraction is recorded in.
 REGISTRY = "ids-input-components"
 
@@ -482,8 +486,20 @@ def component(
     return out
 
 
+def numbered(table: Table, pua: Drawing) -> dict[str, tuple[str, G.Array | None]]:
+    """Each numbered component's glyph in BabelStone Han PUA, by the component's text: the glyph's
+    identifier and its print."""
+    out = {}
+    for name, row in table.numbered.items():
+        glyph = pua.glyph(f"U+{ord(row.pua):04X}") if row.pua else None
+        if glyph is not None and glyph.pieces:
+            out[name] = (I.glyph_id(pua.id, glyph.selector), print_of(mask(glyph.outline)))
+    return out
+
+
 def registry(cache: Path | None = None) -> list[Json]:
-    """The components to lift: the entities and chains of the pinned ids-input registry."""
+    """The components to lift: the entities, chains and numbered components of the pinned
+    ids-input registry."""
     paths = pins.source_paths(pins.source(REGISTRY), cache, fetch=False)
     rows: list[Json] = json.loads(gzip.decompress(paths["custom-components.json.gz"].read_bytes()))["components"]
     return [row for row in rows if row["kind"] in SOURCE_OF]
@@ -497,6 +513,7 @@ def _open(chain: str, cache: Path | None) -> None:
     _STATE["tables"] = {source: descriptions.table(source, cache) for source in set(SOURCE_OF.values())}
     paths = pins.source_paths(pins.source("glyphwiki"), cache, fetch=False)
     _STATE["references"] = glyphwiki(json.loads(gzip.decompress(paths["custom-outlines.json.gz"].read_bytes())))
+    _STATE["references"] |= numbered(_STATE["tables"]["babelstone"], Drawing(Face.pinned(PUA, cache)))
 
 
 def _work(rows: list[Json]) -> list[Outcome]:
@@ -504,8 +521,8 @@ def _work(rows: list[Json]) -> list[Outcome]:
 
 
 def run(chain: str = "sans", workers: int = 4, cache: Path | None = None) -> Iterator[Outcome]:
-    """Every entity and chain of the registry lifted in one chain, on several processes, in the
-    registry's order whatever their number."""
+    """Every entity, chain and numbered component of the registry lifted in one chain, on several
+    processes, in the registry's order whatever their number."""
     rows = registry(cache)
     jobs = [rows[at : at + 20] for at in range(0, len(rows), 20)]
     with ProcessPoolExecutor(workers, initializer=_open, initargs=(chain, cache)) as pool:
