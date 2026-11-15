@@ -12,7 +12,8 @@ description.
 [docs/format.md](docs/format.md) defines the files and their identifiers;
 `schema/1/han-decompose.schema.json` is the same definition as JSON Schema.
 [docs/parity.md](docs/parity.md) records the check that contours are counted as han-compose counts
-them.
+them. [docs/reproduction.md](docs/reproduction.md) holds the cutters against the ids-input data they came
+from.
 
 ## Licences
 
