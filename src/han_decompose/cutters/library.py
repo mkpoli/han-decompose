@@ -30,6 +30,8 @@ from .deal import Skipped, read
 
 #: How many components deep a leaf may be opened.
 MAX_LEVELS = 6
+#: How many values a font keeps per process before they are dropped and made again.
+KEPT = 20000
 
 
 def opener(table: Table) -> Any:
@@ -147,6 +149,11 @@ def _work(job: tuple[str, list[str], str]) -> tuple[str, Counts]:
         for description in table.of(char):
             one(description, _STATE["drawings"], table, store, counts)
     store.write(Path(out))
+    # What a font keeps per component (fingerprints, gate references) is bounded, so a process
+    # that reads a whole table does not grow without end.
+    for drawing in _STATE["drawings"]:
+        if len(drawing.kept) > KEPT:
+            drawing.kept.clear()
     # The marker says the block is done: it is written last, and whole or not at all.
     marker = Path(out) / "blocks" / f"{block}.json"
     partial = marker.with_suffix(".part")
@@ -171,10 +178,7 @@ def run(
         if (only is None or block in only) and not (out / "blocks" / f"{block}.json").exists()
     ]
     # Blocks differ in cost by an order of magnitude; one per task keeps the processes even.
-    # A process is replaced after 16 blocks, so what it keeps per glyph does not grow without end.
-    with ProcessPoolExecutor(
-        workers, initializer=_open, initargs=(chain, source, cache), max_tasks_per_child=16
-    ) as pool:
+    with ProcessPoolExecutor(workers, initializer=_open, initargs=(chain, source, cache)) as pool:
         yield from pool.map(_work, jobs, chunksize=1)
 
 
