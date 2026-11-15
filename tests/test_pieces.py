@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 import pathops
+import pytest
 
 from han_decompose import geometry as G
 from han_decompose import pieces
@@ -54,6 +55,13 @@ def test_ink_too_small_to_be_a_piece_joins_the_nearest_one() -> None:
     assert partition([box(0, 0, 300, 300), box(600, 0, 900, 300), box(560, 100, 565, 105)]) == [[0], [1, 2]]
 
 
+def test_a_contour_that_cuts_a_notch_goes_with_the_contour_it_cuts() -> None:
+    first, second = box(0, 0, 300, 300), box(400, 0, 700, 300)
+    notch = box(500, 200, 600, 300, hole=True)
+    assert partition([first, second, notch]) == [[0], [1, 2]]
+    assert partition([notch, first, second]) == [[0, 2], [1]]
+
+
 def test_one_contour_that_meets_itself_at_a_point_is_one_piece() -> None:
     hourglass = polygon((0, 0), (0, 300), (300, 300), (300, 600), (600, 600), (600, 300), (300, 300), (300, 0))
     whole = pathops.Path()
@@ -75,6 +83,8 @@ def test_the_pieces_of_a_glyph_are_read_from_the_font(tmp_path: Path) -> None:
     assert pair.contours == face.contours("U+4E8C")
     assert drawing.glyph("U+4E8C") is pair
     assert drawing.glyph("U+5C71") is None
+    ring = drawing.glyph("U+3007")
+    assert ring is not None and ring.partition() == [[0]] and ring.tiles
     space = drawing.glyph("U+0020")
     assert space is not None and space.pieces == [] and not space.tiles
     assert problems("outlines", outline_file("test@1", {"U+4E8C": pair.record()})) == []
@@ -105,6 +115,27 @@ def test_an_island_inside_a_counter_is_a_piece_of_its_own() -> None:
     assert glyph is not None and glyph.partition() == [[0, 1], [2, 3]]
     scaled = Drawing(pinned_face("jigmo@20250912")).glyph("U+56DE")
     assert scaled is not None and scaled.partition() == [[0, 1], [2, 3]] and scaled.tiles
+
+
+def test_the_contours_of_a_piece_draw_the_piece() -> None:
+    drawing = Drawing(pinned_face("plangothic-p1@2.9.5795"))
+    # 𢌀: contour 0 is a notch cut into the piece of contour 1.
+    notched = drawing.glyph("U+22300")
+    assert notched is not None and notched.partition() == [[0, 1], [2], [3]] and notched.tiles
+    # 𦲘: pathops cannot merge its outlines, so it has no pieces to deal out.
+    broken = drawing.glyph("U+26C98")
+    assert broken is not None and broken.pieces == [] and not broken.tiles
+    assert broken.partition() == [[0, 1, 2, 3]]
+
+
+def test_a_font_holds_a_bounded_number_of_glyphs_at_once(monkeypatch: pytest.MonkeyPatch) -> None:
+    drawing = Drawing(pinned_face(FONT))
+    monkeypatch.setattr(Drawing, "HELD", 2)
+    first = drawing.glyph("U+50AC")
+    drawing.glyph("U+56DE")
+    assert drawing.glyph("U+50AC") is first
+    drawing.glyph("U+5C71")
+    assert list(drawing._glyphs) == ["U+50AC", "U+5C71"]
 
 
 def test_components_plangothic_draws_as_one_contour_are_one_piece() -> None:

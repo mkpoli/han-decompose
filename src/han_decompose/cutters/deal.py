@@ -17,6 +17,7 @@ from itertools import pairwise
 from typing import Literal
 
 import numpy as np
+import pathops
 
 from .. import geometry as G
 from ..descriptions import Description
@@ -369,7 +370,10 @@ def read(
     checks of single leaves. A cut that fails a check is kept and marked refused.
     """
     cutter = cutter_for(glyph, drawings, root, glyph_of)
-    hands = cutter.cut(root, list(range(len(glyph.pieces))))
+    try:
+        hands = cutter.cut(root, list(range(len(glyph.pieces))))
+    except pathops.PathOpsError as error:
+        raise Skipped("does-not-tile", "the outlines of a group of pieces could not be merged") from error
     evidence: Json = {}
     if cutter.marks:
         evidence["likeness"] = reading.number(min(cutter.marks), 4)
