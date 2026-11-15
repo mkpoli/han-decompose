@@ -140,6 +140,14 @@
           "type": "string",
           "format": "uri"
         },
+        "mirrors": {
+          "description": "Other places that serve the same bytes, tried in order after url.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
         "sha256": {
           "$ref": "#/$defs/sha256"
         },

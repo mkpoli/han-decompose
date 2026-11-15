@@ -94,6 +94,21 @@ def test_a_font_inside_an_archive(tmp_path: Path) -> None:
         pins.font_path(wrong, tmp_path, download=web)
 
 
+def test_a_font_comes_from_its_mirror_once_its_address_serves_a_newer_version(tmp_path: Path) -> None:
+    mirror = "https://mirror.example/Test-1.ttf"
+    web = Web({"https://fonts.example/Test.ttf": b"version 2", mirror: b"font"})
+    path = pins.font_path(font_row(b"font", mirrors=[mirror]), tmp_path, download=web)
+    assert path.read_bytes() == b"font" and web.asked == ["https://fonts.example/Test.ttf", mirror]
+    packed = io.BytesIO()
+    with zipfile.ZipFile(packed, "w") as archive:
+        archive.writestr("Test.ttf", b"font")
+    data = packed.getvalue()
+    web = Web({"https://mirror.example/Test.zip": data})
+    row = font_row(b"font", url="https://fonts.example/Test.zip", archive={"sha256": sha(data), "member": "Test.ttf"})
+    row = {**row, "file": "Packed-1.ttf", "mirrors": ["https://mirror.example/Test.zip"]}
+    assert pins.font_path(row, tmp_path, download=web).read_bytes() == b"font"
+
+
 def test_a_mirror_serves_what_the_first_address_no_longer_does(tmp_path: Path) -> None:
     mirror = "https://archive.example/table.txt"
     web = Web({"https://tables.example/table.txt": b"a newer edition", mirror: b"table"})
