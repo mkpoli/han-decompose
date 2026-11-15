@@ -1,0 +1,29 @@
+/** A map that forgets the least recently used entry once it holds more than `limit`. */
+export class Lru<K, V> {
+  private readonly map = new Map<K, V>();
+
+  constructor(private readonly limit: number) {}
+
+  get(key: K): V | undefined {
+    const value = this.map.get(key);
+    if (value !== undefined) {
+      this.map.delete(key);
+      this.map.set(key, value);
+    }
+    return value;
+  }
+
+  set(key: K, value: V): void {
+    this.map.delete(key);
+    this.map.set(key, value);
+    while (this.map.size > this.limit) this.map.delete(this.map.keys().next().value as K);
+  }
+
+  delete(key: K): void {
+    this.map.delete(key);
+  }
+
+  get size(): number {
+    return this.map.size;
+  }
+}

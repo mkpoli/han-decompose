@@ -1,0 +1,161 @@
+@import "./design/index.css";
+
+/* The viewer's own values: its accent, the colours of the nodes of a reading and the face of Han
+   text. Everything else is the design system's. */
+:root {
+  --ui-color-accent: light-dark(#0b6e6e, #5fd0cc);
+  --ui-color-accent-hover: light-dark(#085757, #7fe0dc);
+  --ui-color-accent-active: light-dark(#064343, #a0ece8);
+  --ui-color-accent-soft: light-dark(#e3f3f2, #17302f);
+  --ui-color-on-accent: light-dark(#ffffff, #07211f);
+
+  --hd-cjk: "Noto Sans CJK JP", "Noto Sans JP", "Hiragino Sans", "Yu Gothic", "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+
+  /* One colour per node of a reading, by path order. */
+  --hd-node-1: light-dark(#0072b2, #4aa3e0);
+  --hd-node-2: light-dark(#d55e00, #ff8a3d);
+  --hd-node-3: light-dark(#009e73, #2fc79a);
+  --hd-node-4: light-dark(#cc79a7, #e59bc4);
+  --hd-node-5: light-dark(#b58900, #e6b422);
+  --hd-node-6: light-dark(#7b4fb0, #b48ee0);
+  --hd-node-7: light-dark(#56b4e9, #7cc8f2);
+  --hd-node-8: light-dark(#6b8e23, #a5c24a);
+}
+
+html {
+  background: var(--ui-color-canvas);
+}
+
+body {
+  min-block-size: 100dvh;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  min-block-size: 100dvh;
+}
+
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-3xl);
+  padding: var(--ui-space-xl) var(--ui-space-xl) var(--ui-space-4xl);
+}
+
+@media (min-width: 900px) {
+  main {
+    padding-inline: var(--ui-space-3xl);
+  }
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  line-height: var(--ui-leading-tight);
+}
+
+h1 {
+  font-size: var(--ui-text-xl);
+}
+
+h2 {
+  font-size: var(--ui-text-lg);
+}
+
+h3 {
+  font-size: var(--ui-text-md);
+}
+
+.page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ui-space-sm) var(--ui-space-md);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-lg);
+  min-inline-size: 0;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-sm);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ui-space-sm);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--ui-space-md);
+}
+
+.muted {
+  color: var(--ui-color-ink-muted);
+}
+
+.mono {
+  font-family: var(--ui-font-mono);
+  font-size: 0.92em;
+}
+
+.han {
+  font-family: var(--hd-cjk);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+.scroll-x {
+  overflow-x: auto;
+}
+
+table.data {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: var(--ui-text-sm);
+}
+
+table.data th,
+table.data td {
+  padding: var(--ui-space-sm) var(--ui-space-md);
+  border-block-end: 1px solid var(--ui-color-border);
+  text-align: start;
+  vertical-align: baseline;
+}
+
+table.data th {
+  color: var(--ui-color-ink-muted);
+  font-weight: var(--ui-weight-medium);
+  white-space: nowrap;
+}
+
+table.data td.num,
+table.data th.num {
+  text-align: end;
+}
+
+.status[data-status="accepted"],
+.status[data-status="reviewed-right"] {
+  color: var(--ui-color-accent);
+}
+
+.empty-note {
+  padding: var(--ui-space-3xl);
+  color: var(--ui-color-ink-muted);
+  text-align: center;
+}
