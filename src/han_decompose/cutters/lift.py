@@ -10,8 +10,9 @@ In a host, the pieces given to a part are the group whose fingerprint best match
 alone, on the side the operator puts it, by a margin over every other group. What is left stands
 as the component when it is confirmed:
 
-- by a reference glyph, where there is one, which then decides alone: the GlyphWiki glyph of an
-  entity, the glyph BabelStone Han PUA draws for a numbered component;
+- by the component's GlyphWiki glyph, where an entity has one, which then decides alone;
+- for a numbered component, by the glyph BabelStone Han PUA draws for it. That glyph is in
+  another style than the fonts of a chain, so it confirms a cut and never overrules the hosts;
 - else by what another host leaves, two hosts agreeing;
 - else, from one host, only when its parts lift away unmistakably.
 """
@@ -42,6 +43,9 @@ from ..schema import Json
 from . import reading
 from .deal import GRID, Skipped
 
+#: The font whose private use area draws the numbered components.
+PUA = "babelstone-han-pua@1.472"
+
 #: The raster the pieces are read on: one cell per this many units.
 UNIT = 8
 #: A group of pieces is the part when it matches the part drawn alone at least this well…
@@ -67,8 +71,6 @@ ENCLOSING = frozenset("⿴⿵⿶⿷⿸⿹⿺⿼⿽")
 LEARNED = frozenset("⿰⿱⿸⿺⿵⿹⿶⿴⿷")
 #: The source of the descriptions a kind of component is found in.
 SOURCE_OF = {"entity": "chise", "chain": "zi-tools", "numbered": "babelstone"}
-#: The font whose private use area draws the numbered components.
-PUA = "babelstone-han-pua@1.472"
 #: The source a subtraction is recorded in.
 REGISTRY = "ids-input-components"
 
@@ -327,9 +329,13 @@ def lift(drawings: Sequence[Drawing], recipe: Recipe) -> Lift:
     )
 
 
-def settle(lifts: Sequence[Lift], reference: G.Array | None) -> tuple[Lift | None, dict[str, list[Lift]]]:
+def settle(
+    lifts: Sequence[Lift], reference: G.Array | None, decides: bool = True
+) -> tuple[Lift | None, dict[str, list[Lift]]]:
     """Which of a component's lifts stands as its form, and its library: every host whose cut
-    confirms the form, by the place the operator gives the component, best match first."""
+    confirms the form, by the place the operator gives the component, best match first. A
+    reference that `decides` is the only judge of a cut; one that does not can confirm a cut the
+    hosts leave unconfirmed."""
     best: tuple[float, Lift] | None = None
     for got in lifts:
         got.agree = len({
@@ -340,7 +346,11 @@ def settle(lifts: Sequence[Lift], reference: G.Array | None) -> tuple[Lift | Non
         got.reference = like(got.print, reference) if reference is not None else None
         # A glyph to hold the cut against decides: hosts agreeing on a cut it rejects agree on a
         # misreading.
-        got.stands = got.reference >= REFERENCE if got.reference is not None else got.agree >= 1 or got.single
+        by_hosts = got.agree >= 1 or got.single
+        if got.reference is None:
+            got.stands = by_hosts
+        else:
+            got.stands = got.reference >= REFERENCE or (not decides and by_hosts)
         score = (got.reference or 0) + got.agree + got.match
         if got.stands and (best is None or score > best[0]):
             best = (score, got)
@@ -361,7 +371,9 @@ def settle(lifts: Sequence[Lift], reference: G.Array | None) -> tuple[Lift | Non
 
 def basis(form: Lift) -> str:
     """What a form rests on: the reference glyph, hosts agreeing, or one clear host."""
-    return "reference" if form.reference is not None else "agree" if form.agree else "single"
+    if form.reference is not None and form.reference >= REFERENCE:
+        return "reference"
+    return "agree" if form.agree else "single"
 
 
 def record(got: Lift, text: str, reference_glyph: str | None = None) -> Json:
@@ -375,6 +387,7 @@ def record(got: Lift, text: str, reference_glyph: str | None = None) -> Json:
         evidence["reference"] = reading.number(got.reference, 4)
         if reference_glyph:
             evidence["referenceGlyph"] = reference_glyph
+    if got.reference is not None and (got.reference >= REFERENCE or not got.stands):
         checks = {"reference": {"value": evidence["reference"], "limit": REFERENCE, "pass": got.stands}}
     elif got.agree or not got.single:
         checks = {"agree": {"value": got.agree, "limit": 1, "pass": got.stands}}
@@ -475,7 +488,7 @@ def component(
             if glyph is not None:
                 out.glyphs.setdefault(attempt["glyph"], glyph.record())
     name, reference = references.get(text, (None, None))
-    form, library = settle(lifts, reference)
+    form, library = settle(lifts, reference, decides=row["kind"] != "numbered")
     rows = {id(got): record(got, text, name) for got in lifts}
     for got in lifts:
         out.readings.append(rows[id(got)])

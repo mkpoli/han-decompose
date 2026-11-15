@@ -451,6 +451,11 @@
           "additionalProperties": {
             "$ref": "#/$defs/glyph"
           }
+        },
+        "notice": {
+          "description": "How the font's data was changed, where the font's licence asks for that to be said.",
+          "type": "string",
+          "minLength": 1
         }
       }
     },
