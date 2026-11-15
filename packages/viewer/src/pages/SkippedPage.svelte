@@ -80,9 +80,9 @@
         />
       </div>
       <div class="row" role="group" aria-label={t("skipped.reasons")}>
-        <button type="button" class="ui-chip" data-interactive aria-current={reason === "all"} onclick={() => { reason = "all"; reset(); }}>{t("filter.all")} <span class="num">{n(scoped.length)}</span></button>
+        <button type="button" class="ui-chip" data-interactive aria-pressed={reason === "all"} data-variant={reason === "all" ? "selected" : undefined} onclick={() => { reason = "all"; reset(); }}>{t("filter.all")} <span class="num">{n(scoped.length)}</span></button>
         {#each [...counts].sort((a, b) => b[1] - a[1]) as [code, count] (code)}
-          <button type="button" class="ui-chip" data-interactive aria-current={reason === code} onclick={() => { reason = code; reset(); }}>
+          <button type="button" class="ui-chip" data-interactive aria-pressed={reason === code} data-variant={reason === code ? "selected" : undefined} onclick={() => { reason = code; reset(); }}>
             <span class="mono">{code}</span> <span class="num">{n(count)}</span>
           </button>
         {/each}

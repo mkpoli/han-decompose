@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { chainOf, countsOf, fontOf, sourceOf, sourcesOfFont } from "../lib/data.ts";
+  import { chainOf, dataUrl, countsOf, fontOf, sourceOf, sourcesOfFont } from "../lib/data.ts";
   import { n, t } from "../lib/i18n.svelte.ts";
   import ReleaseGate from "../ui/ReleaseGate.svelte";
 
@@ -29,7 +29,7 @@
           <dt>{t("font.licence")}</dt>
           <dd>
             {font.licence}
-            {#if font.licenceFile}<a href={`/data/LICENSES/${font.licenceFile}`} target="_blank" rel="noreferrer">{font.licenceFile}</a>{/if}
+            {#if font.licenceFile}<a href={dataUrl(`LICENSES/${font.licenceFile}`)} target="_blank" rel="noreferrer">{font.licenceFile}</a>{/if}
           </dd>
           {#if font.licenceEvidence}<dt>{t("font.licenceEvidence")}</dt><dd>{font.licenceEvidence}</dd>{/if}
           <dt>{t("font.copyright")}</dt><dd>{font.copyright}</dd>
@@ -68,7 +68,7 @@
                   <td class="num">{n(c.skipped)}</td>
                 </tr>
               {:else}
-                <tr><td colspan="7" class="muted">{t("font.noCounts")}</td></tr>
+                <tr><td colspan="8" class="muted">{t("font.noCounts")}</td></tr>
               {/each}
             </tbody>
           </table>
