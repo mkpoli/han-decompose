@@ -6,8 +6,11 @@ from typing import Annotated
 import typer
 
 from . import __version__, pins
+from . import identifiers as I
+from .cutters import survey as surveys
 from .importers import composer_export
 from .outline import Chain
+from .store import Store
 
 app = typer.Typer(no_args_is_help=True, add_completion=False, help=__doc__)
 
@@ -74,3 +77,54 @@ def parity(
     typer.echo(f"from another font\t{len(result.other_face)}\t{' '.join(result.other_face[:20])}")
     if not result.exact:
         raise typer.Exit(1)
+
+
+@app.command()
+def survey(
+    component: Annotated[str, typer.Argument(help="The component to cut out, as one character.")],
+    chain: Annotated[str, typer.Option(help="The font chain to read the glyphs in.")] = "sans",
+    source: Annotated[str, typer.Option(help="The description source.")] = "babelstone",
+    out: Annotated[Path | None, typer.Option(help="A folder to write outline and cut files into.")] = None,
+    workers: Annotated[int, typer.Option(help="How many processes cut at once.")] = 4,
+    cache: Annotated[Path | None, typer.Option(help="The cache folder the pinned files are in.")] = None,
+) -> None:
+    """Cut one component out of every character whose description reaches it, and count what was
+    found: characters read, cuts of the component that passed both checks, cuts refused, and
+    characters skipped by reason."""
+    if out is not None and out.exists() and any(out.iterdir()):
+        typer.echo(f"{out} is not empty.", err=True)
+        raise typer.Exit(1)
+    store = Store()
+    read = accepted = characters = refused = 0
+    reasons: dict[str, int] = {}
+    try:
+        for outcome in surveys.run(component, chain, source, workers, cache):
+            for glyph, record in outcome.glyphs.items():
+                store.record(*I.split_glyph_id(glyph), record)
+            if outcome.reading is not None:
+                read += 1
+                found = surveys.instances(outcome.reading, component)
+                accepted += len(found)
+                characters += bool(found)
+                refused += sum(
+                    cut["text"] == component and cut["status"] == "refused" for cut in outcome.reading["cuts"]
+                )
+                store.reading(outcome.reading)
+            elif outcome.skipped is not None:
+                code = outcome.skipped["reason"]["code"]
+                reasons[code] = reasons.get(code, 0) + 1
+                font = (
+                    outcome.skipped["glyph"].split("/")[0] if "glyph" in outcome.skipped else pins.chain(chain)[0]["id"]
+                )
+                store.skip(outcome.skipped, font)
+    except (pins.PinError, KeyError, OSError) as error:
+        typer.echo(str(error.args[0]) if isinstance(error, KeyError) else str(error), err=True)
+        raise typer.Exit(1) from error
+    typer.echo(f"read\t{read}")
+    typer.echo(f"characters with {component}\t{characters}")
+    typer.echo(f"cuts of {component} accepted\t{accepted}")
+    typer.echo(f"cuts of {component} refused\t{refused}")
+    for code, total in sorted(reasons.items()):
+        typer.echo(f"skipped: {code}\t{total}")
+    if out is not None:
+        typer.echo(f"files\t{len(store.write(out))}\t{out}")

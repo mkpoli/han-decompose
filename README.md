@@ -13,6 +13,8 @@ description.
 `schema/1/han-decompose.schema.json` is the same definition as JSON Schema.
 [docs/parity.md](docs/parity.md) records the check that contours are counted as han-compose counts
 them. [docs/design.md](docs/design.md) gives the data model, the plan and what has been decided.
+[docs/reproduction.md](docs/reproduction.md) holds the cutters against the ids-input data they came
+from.
 
 ## Licences
 

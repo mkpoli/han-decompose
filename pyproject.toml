@@ -46,6 +46,8 @@ include = ["/src", "/schema", "/pins", "/tests", "/README.md", "/LICENSE"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "-m 'not reproduction'"
+markers = ["reproduction: a whole survey held against ids-input's, minutes long; run with -m reproduction"]
 
 [tool.mypy]
 files = ["src", "tests"]

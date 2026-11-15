@@ -15,7 +15,7 @@ from typing import Literal
 
 from .. import geometry as G
 from .. import identifiers as I
-from ..cutters.deal import Cutter, Gate
+from ..cutters.deal import Cutter, Gate, Skipped
 from ..ids import Node
 from ..pieces import Drawing
 from ..schema import Json
@@ -89,6 +89,8 @@ def gate(glyph_of: Callable[[str], str | None], only: str | None = None) -> Gate
         if char is None or (only is not None and char != only):
             return None
         against = references(cutter.drawings, f"U+{ord(char):04X}")
+        if not against and only is not None:
+            raise Skipped("no-reference-glyph", f"no font of the chain draws {only} to hold a cut against")
         if not against:
             return None
         found = check(G.union_of([cutter.pieces[index] for index in group]), against)
