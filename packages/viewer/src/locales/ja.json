@@ -67,13 +67,12 @@
   "basis.imported": "取り込み",
   "basis.hand": "手動",
   "help.component.forms": "代表字形とは、書体系列内でその部品を代表するものとして選ばれた分割のことです。根拠は、その選択が何に基づくかを示します。",
-  "help.component.library": "ライブラリの分割は代表字形を裏付ける実例です。各タイルには、親字における分割と、適合度または一致度が表示されます。",
+  "help.component.library": "Library cuts confirm the form. Each tile shows the cut in its host, with its fit or match. Cuts load 48 at a time, and sorting applies to the ones loaded so far.",
   "library.sort": "並び順",
   "library.order": "最適順",
   "library.evidence": "スコア",
   "library.size": "サイズ",
   "library.more": "さらに{count}件表示",
-  "library.capped": "先頭の{count}件の分割のみ表示しています。",
   "relation.relation": "関係",
   "relation.other": "部品",
   "relation.basis": "根拠",
@@ -125,6 +124,10 @@
   "verdict.open": "未判定",
   "verdict.right": "正解",
   "verdict.wrong": "不正解",
-  "help.review.order": "採用された分割は、適合度の低いものから順に並んでいます。判定は分割とその輪郭集合の組に紐づきます。",
-  "help.review.keys": "操作キー：R（正解）、W（不正解）、J（次へ）、K（前へ）。判定の保存は開発サーバーでのみ行われます。"
+  "help.review.order": "Cuts are queued weakest fit first, the weakest 2000 of the chosen source and status. A verdict binds to the cut and its contour set.",
+  "help.review.keys": "操作キー：R（正解）、W（不正解）、J（次へ）、K（前へ）。判定の保存は開発サーバーでのみ行われます。",
+  "status.reviewed": "Reviewed",
+  "filter.status": "Status",
+  "filter.basis": "Basis",
+  "basis.none": "None"
 }

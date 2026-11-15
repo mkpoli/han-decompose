@@ -134,7 +134,6 @@ export const cutsShardOfSubject = (font: string, source: string, ref: string): P
 
 export const forms = (chain: string): Promise<FormsFile | null> => json<FormsFile>(formsPath(chain));
 export const library = (chain: string): Promise<LibraryFile | null> => json<LibraryFile>(libraryPath(chain));
-export const cutsTable = (source: string): Promise<Table | null> => table(cutsTablePath(source));
 export const skippedTable = (source: string): Promise<Table | null> => table(skippedTablePath(source));
 export const componentsTable = (source: string): Promise<Table | null> => table(componentsTablePath(source));
 export const releaseVerdicts = (): Promise<Table | null> => table("verdicts.tsv");

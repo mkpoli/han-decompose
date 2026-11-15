@@ -67,13 +67,12 @@
   "basis.imported": "Imported",
   "basis.hand": "Hand",
   "help.component.forms": "The form is the cut chosen to stand for the component in a chain. Its basis says what the choice rests on.",
-  "help.component.library": "Library cuts confirm the form. Each tile shows the cut in its host, with its fit or match.",
+  "help.component.library": "Library cuts confirm the form. Each tile shows the cut in its host, with its fit or match. Cuts load 48 at a time, and sorting applies to the ones loaded so far.",
   "library.sort": "Sort",
   "library.order": "Best first",
   "library.evidence": "Evidence",
   "library.size": "Size",
   "library.more": "Show {count} more",
-  "library.capped": "The first {count} cuts are shown.",
   "relation.relation": "Relation",
   "relation.other": "Component",
   "relation.basis": "Basis",
@@ -125,6 +124,10 @@
   "verdict.open": "Open",
   "verdict.right": "Right",
   "verdict.wrong": "Wrong",
-  "help.review.order": "Accepted cuts are queued with the weakest fit first. A verdict binds to the cut and its contour set.",
-  "help.review.keys": "Keys: R right, W wrong, J next, K previous. Verdicts are written in a development server only."
+  "help.review.order": "Cuts are queued weakest fit first, the weakest 2000 of the chosen source and status. A verdict binds to the cut and its contour set.",
+  "help.review.keys": "Keys: R right, W wrong, J next, K previous. Verdicts are written in a development server only.",
+  "status.reviewed": "Reviewed",
+  "filter.status": "Status",
+  "filter.basis": "Basis",
+  "basis.none": "None"
 }
