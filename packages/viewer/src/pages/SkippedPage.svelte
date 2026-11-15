@@ -94,7 +94,7 @@
         <div class="scroll-x">
           <table class="data">
             <thead>
-              <tr><th>{t("skipped.character")}</th><th>{t("skipped.ids")}</th><th>{t("skipped.reason")}</th><th>{t("filter.font")}</th><th>{t("filter.source")}</th></tr>
+              <tr><th>{t("skipped.character")}</th><th>{t("skipped.ids")}</th><th>{t("skipped.reason")}</th><th class="wide">{t("filter.font")}</th><th class="wide">{t("filter.source")}</th></tr>
             </thead>
             <tbody>
               {#each view as row, i (at * PAGE + i)}
@@ -107,8 +107,8 @@
                   </td>
                   <td class="ids"><Ids text={row.ids} /></td>
                   <td class="why"><span class="ui-chip mono" data-variant="danger">{row.reason_code}</span><span class="muted">{row.reason}</span></td>
-                  <td class="mono">{row.font}</td>
-                  <td class="mono">{row.source}</td>
+                  <td class="mono wide">{row.font}</td>
+                  <td class="mono wide">{row.source}</td>
                 </tr>
               {/each}
             </tbody>
@@ -140,6 +140,11 @@
     align-items: flex-start;
     gap: var(--ui-space-2xs);
     min-inline-size: 220px;
+  }
+  @media (max-width: 719px) {
+    .wide {
+      display: none;
+    }
   }
   .pager {
     justify-content: center;

@@ -32,17 +32,17 @@
 <style>
   .op {
     display: inline-block;
-    inline-size: 0.8em;
-    block-size: 0.8em;
+    inline-size: 0.95em;
+    block-size: 0.95em;
     margin-inline: 0.06em;
     vertical-align: -0.08em;
     fill: none;
     stroke: currentColor;
-    stroke-width: 1;
+    stroke-width: 1.3;
     stroke-linecap: round;
     stroke-linejoin: round;
   }
   .op rect {
-    opacity: 0.45;
+    opacity: 0.7;
   }
 </style>
