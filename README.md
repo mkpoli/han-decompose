@@ -12,7 +12,8 @@ description.
 [docs/format.md](docs/format.md) defines the files and their identifiers;
 `schema/1/han-decompose.schema.json` is the same definition as JSON Schema.
 [docs/parity.md](docs/parity.md) records the check that contours are counted as han-compose counts
-them. [docs/reproduction.md](docs/reproduction.md) holds the cutters against the ids-input data they came
+them. [docs/design.md](docs/design.md) gives the data model, the plan and what has been decided.
+[docs/reproduction.md](docs/reproduction.md) holds the cutters against the ids-input data they came
 from.
 
 ## Licences
@@ -32,7 +33,8 @@ checks each digest.
 ## Development
 
 The builder is a Python package managed with [uv](https://docs.astral.sh/uv/); the reader for
-JavaScript is the npm package in `packages/format`, managed with [bun](https://bun.sh/).
+JavaScript is the package in `packages/format`, managed with [bun](https://bun.sh/) and not
+published to npm.
 
 ```sh
 uv sync
