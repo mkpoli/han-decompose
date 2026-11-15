@@ -4,7 +4,7 @@
   import type { ResolvedCut } from "../lib/data.ts";
   import { n } from "../lib/i18n.svelte.ts";
   import { boxViewBox, EM_VIEWBOX } from "../lib/path.ts";
-  import { routeHref } from "../lib/router.ts";
+  import { charHref } from "../lib/router.ts";
   import { isRefused, nodeColour, nodeIndex, pathKey, score } from "../lib/reading.ts";
   import GlyphSvg from "./GlyphSvg.svelte";
 
@@ -15,7 +15,7 @@
   const value = $derived(score(cut));
 </script>
 
-<a class="tile" href={routeHref({ name: "char", id: resolved.selector })} title={cut.id}>
+<a class="tile" href={charHref(resolved.selector, resolved.font)} title={cut.id}>
   {#if resolved.glyph}
     <span class="draw">
       <GlyphSvg

@@ -6,7 +6,7 @@
   import { resolveCut, type Release } from "../lib/data.ts";
   import { n, t } from "../lib/i18n.svelte.ts";
   import { boxViewBox } from "../lib/path.ts";
-  import { routeHref } from "../lib/router.ts";
+  import { charHref } from "../lib/router.ts";
   import { nodeColour, nodeIndex, pathKey } from "../lib/reading.ts";
   import ComponentLabel from "./ComponentLabel.svelte";
   import GlyphSvg from "./GlyphSvg.svelte";
@@ -76,7 +76,7 @@
           {#if cut.evidence?.margin !== undefined}<span>{t("evidence.margin")} {n(cut.evidence.margin)}</span>{/if}
           {#if cut.evidence?.reference !== undefined}<span>{t("evidence.reference")} {n(cut.evidence.reference)}</span>{/if}
         </div>
-        <a class="id mono muted" href={routeHref({ name: "char", id: r.selector })}>{cut.id}</a>
+        <a class="id mono muted" href={charHref(r.selector, r.font)}>{cut.id}</a>
         {#if editable}
           <div class="row">
             <button type="button" class="ui-button" data-variant="primary" aria-pressed={verdict === "right"} onclick={(event) => { event.stopPropagation(); onverdict("right"); }}>

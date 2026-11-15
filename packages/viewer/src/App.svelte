@@ -19,7 +19,7 @@
   {#if route.name === "home"}
     <Home />
   {:else if route.name === "char"}
-    {#key route.id}<CharPage id={route.id} />{/key}
+    {#key `${route.font ?? ""}/${route.id}`}<CharPage id={route.id} font={route.font} />{/key}
   {:else if route.name === "component"}
     {#key route.ref}<ComponentPage ref={route.ref} />{/key}
   {:else if route.name === "font"}

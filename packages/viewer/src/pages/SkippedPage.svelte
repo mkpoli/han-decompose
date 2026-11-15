@@ -2,7 +2,7 @@
   import { skippedTable, type Release } from "../lib/data.ts";
   import { n, t } from "../lib/i18n.svelte.ts";
   import { selectorOfChar } from "../lib/ids.ts";
-  import { routeHref } from "../lib/router.ts";
+  import { charHref } from "../lib/router.ts";
   import Glyph from "../ui/Glyph.svelte";
   import Ids from "../ui/Ids.svelte";
   import Help from "../ui/Help.svelte";
@@ -102,7 +102,7 @@
                 <tr>
                   <td class="char">
                     {#if selector}
-                      <a href={routeHref({ name: "char", id: selector })}><Glyph {selector} text={row.char || undefined} /> <span class="mono muted">{selector}</span></a>
+                      <a href={charHref(selector, row.font)}><Glyph {selector} text={row.char || undefined} /> <span class="mono muted">{selector}</span></a>
                     {:else}–{/if}
                   </td>
                   <td class="ids"><Ids text={row.ids} /></td>

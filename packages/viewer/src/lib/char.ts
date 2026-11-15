@@ -17,13 +17,13 @@ export interface FontRow {
   cells: SourceCell[];
 }
 
-export async function charRows(rel: Release, selector: string): Promise<FontRow[]> {
+export async function charRows(rel: Release, selector: string, only?: string): Promise<FontRow[]> {
   const block = blockOf(selector);
   if (!block) return [];
   const ref = selectorRef(selector);
   const rows = await Promise.all(
     chainFonts(rel).flatMap(({ chain, fonts }) =>
-      fonts.map(async (font): Promise<FontRow> => {
+      fonts.filter((font) => only === undefined || font.id === only).map(async (font): Promise<FontRow> => {
         const here = `${font.id}/${selector}`;
         const [g, cells] = await Promise.all([
           glyph(font.id, selector),
@@ -33,7 +33,7 @@ export async function charRows(rel: Release, selector: string): Promise<FontRow[
               return {
                 source,
                 readings: shard?.readings.filter((r) => r.glyph === here) ?? [],
-                skipped: shard?.skipped.filter((s) => s.glyph === here || (s.glyph === undefined && s.subject === ref)) ?? [],
+                skipped: shard?.skipped.filter((s) => s.glyph === here || (s.glyph === undefined && ref !== null && s.subject === ref)) ?? [],
               };
             }),
           ),

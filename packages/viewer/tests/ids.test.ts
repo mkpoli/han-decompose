@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { codePointId, componentRef, componentText, glyphSelector, needsOutline, parseCutId, parseSelector, pathText, selectorOfChar, selectorText } from "../src/lib/ids.ts";
+import { codePointId, componentRef, isCutId, selectorRef, componentText, glyphSelector, needsOutline, parseCutId, parseSelector, pathText, selectorOfChar, selectorText } from "../src/lib/ids.ts";
 import { search } from "../src/lib/search.ts";
 
 test("code points are upper hex of at least four digits", () => {
@@ -81,4 +81,28 @@ test("search leads a character to its page and a component to its own", () => {
   expect(search("{42}", ctx)).toEqual([{ kind: "component", ref: "bs:42", text: "{42}" }]);
   expect(search("noto sans", ctx)).toEqual([{ kind: "font", id: "noto-sans-cjk-jp@2.004", name: "Noto Sans CJK JP" }]);
   expect(search("  ", ctx)).toEqual([]);
+});
+
+test("variation selectors are U+FE00–U+FE0F and U+E0100–U+E01EF", () => {
+  expect(parseSelector("U+845B.FE0F")).not.toBeNull();
+  expect(parseSelector("U+845B.E01EF")).not.toBeNull();
+  expect(parseSelector("U+845B.E01F0")).toBeNull();
+  expect(parseSelector("U+845B.E01FF")).toBeNull();
+  expect(parseSelector("U+845B.FE10")).toBeNull();
+  expect(selectorOfChar("葛\u{E01F0}")).toBeNull();
+});
+
+test("an indexed glyph is no component", () => {
+  expect(selectorRef("gid.12")).toBeNull();
+  expect(selectorRef("U+5C71")).toBe("u:5C71");
+});
+
+test("a cut identifier follows section 2.6", () => {
+  expect(isCutId("noto-sans-cjk-jp@2.004/U+5019~chise.74d9fdff~1.1")).toBe(true);
+  expect(isCutId("jigmo2@20250912/gid.7~ids-input-components.0123abcd~-")).toBe(true);
+  expect(isCutId("jigmo2@20250912/U+5019~chise.74d9fdff~01")).toBe(false);
+  expect(isCutId("jigmo2@20250912/U+5019~chise.74D9FDFF~1")).toBe(false);
+  expect(isCutId("jigmo2@20250912/U+5019~chise.74d9fdff~1\n")).toBe(false);
+  expect(isCutId("jigmo2/U+5019~chise.74d9fdff~1")).toBe(false);
+  expect(isCutId("jigmo2@1/U+5019~chise.74d9fdff~1~x")).toBe(false);
 });

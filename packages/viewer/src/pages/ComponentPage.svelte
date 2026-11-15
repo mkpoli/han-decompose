@@ -3,7 +3,7 @@
   import { chainFonts, fontOf, forms, library, resolveCut, type Release } from "../lib/data.ts";
   import { n, t, tx } from "../lib/i18n.svelte.ts";
   import { componentText, refSelector } from "../lib/ids.ts";
-  import { routeHref } from "../lib/router.ts";
+  import { charHref, routeHref } from "../lib/router.ts";
   import ComponentLabel from "../ui/ComponentLabel.svelte";
   import CutTile from "../ui/CutTile.svelte";
   import GlyphSvg from "../ui/GlyphSvg.svelte";
@@ -80,7 +80,7 @@
                   {#if resolved}<div class="alone"><CutTile {resolved} alone caption={false} /></div>{/if}
                   <dl class="facts">
                     {#if form.hosts !== undefined}<dt>{t("component.hosts")}</dt><dd class="num">{n(form.hosts)}</dd>{/if}
-                    {#if resolved}<dt>{t("component.host")}</dt><dd><a href={routeHref({ name: "char", id: resolved.selector })}><Glyph selector={resolved.selector} /> <span class="mono">{resolved.selector}</span></a></dd>{/if}
+                    {#if resolved}<dt>{t("component.host")}</dt><dd><a href={charHref(resolved.selector, resolved.font)}><Glyph selector={resolved.selector} /> <span class="mono">{resolved.selector}</span></a></dd>{/if}
                   </dl>
                 </div>
               {/if}

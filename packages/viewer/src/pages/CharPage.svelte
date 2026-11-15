@@ -13,15 +13,18 @@
   import SkippedCard from "../ui/SkippedCard.svelte";
   import Glyph from "../ui/Glyph.svelte";
 
-  let { id }: { id: string } = $props();
+  let { id, font }: { id: string; font?: string | undefined } = $props();
+  const componentRef = $derived(selectorRef(id));
 
   const sourcesOf = (rows: FontRow[]): string[] => [...new Set(rows.flatMap((r) => r.cells.filter((c) => c.readings.length || c.skipped.length).map((c) => c.source)))];
 </script>
 
 <div class="page-head">
-  <h1 class="character"><Glyph selector={id} text={selectorText(id)} /></h1>
+  {#if componentRef}<h1 class="character"><Glyph selector={id} text={selectorText(id)} /></h1>{:else}<h1 class="mono">{id}</h1>{/if}
   <span class="ui-chip mono">{id}</span>
-  <a class="ui-button" href={routeHref({ name: "component", ref: selectorRef(id) })}>{t("char.asComponent")}<Icon name="arrow-right" size={16} /></a>
+  {#if componentRef}
+    <a class="ui-button" href={routeHref({ name: "component", ref: componentRef })}>{t("char.asComponent")}<Icon name="arrow-right" size={16} /></a>
+  {/if}
   <Help>
     <p>{t("help.char.colours")}</p>
     <p>{t("help.char.refused")}</p>
@@ -30,7 +33,7 @@
 
 <ReleaseGate>
   {#snippet children(rel)}
-    {#await charRows(rel, id)}
+    {#await charRows(rel, id, font)}
       <Loading />
     {:then rows}
       {#if !rows.length}

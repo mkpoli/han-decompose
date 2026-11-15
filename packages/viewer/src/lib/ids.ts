@@ -1,6 +1,7 @@
 /** Identifiers of docs/format.md section 2: code points, selectors, components and cuts. */
 
-const VARIATION = /^(?:FE0[0-9A-F]|E01[0-9A-F]{2})$/;
+/** U+FE00–U+FE0F and U+E0100–U+E01EF. */
+const VARIATION = /^(?:FE0[0-9A-F]|E01[0-9A-E][0-9A-F])$/;
 
 /** `U+50AC` for a code point: upper-case hex of at least four digits. */
 export function codePointId(cp: number): string {
@@ -113,9 +114,18 @@ export function refSelector(ref: string): string | null {
   return ref.startsWith("u:") ? `U+${ref.slice(2)}` : null;
 }
 
-/** The reference of a character's selector. */
-export function selectorRef(selector: string): string {
-  return `u:${selector.slice(2)}`;
+/** The reference of a character's selector; null for a glyph selected by index, which no component names. */
+export function selectorRef(selector: string): string | null {
+  return selector.startsWith("U+") ? `u:${selector.slice(2)}` : null;
+}
+
+const SLUG = "[a-z0-9]+(?:-[a-z0-9]+)*";
+const CUT_ID = new RegExp(`^(${SLUG}@[A-Za-z0-9]+(?:\\.[A-Za-z0-9]+)*)/([^~/]+)~(${SLUG}\\.[0-9a-f]{8})~(-|(?:0|[1-9][0-9]*)(?:\\.(?:0|[1-9][0-9]*))*)$`);
+
+/** Whether a text is a cut identifier of docs/format.md 2.6, down to the selector. */
+export function isCutId(text: string): boolean {
+  const match = CUT_ID.exec(text);
+  return match !== null && parseSelector(match[2] ?? "") !== null;
 }
 
 export interface CutId {
