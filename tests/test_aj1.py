@@ -30,7 +30,8 @@ def test_a_cid_is_a_glyph_of_the_character_adobe_gives_it(tmp_path: Path) -> Non
     assert aj1.glyph_of(kanji[13763])[::2] == ("u:5DE5", "sequence")
     assert aj1.glyph_of(kanji[15391]) == (
         "u:5F50",
-        "aj17-kanji.txt field 18: UniJIS-UTF32-H maps U+2E95 to the CID; field 20: the variation sequence <U+5F50,U+E0101>",
+        "aj17-kanji.txt field 18: UniJIS-UTF32-H maps U+2E95 to the CID; "
+        "field 20: the variation sequence <U+5F50,U+E0101>",
         "code-point",
     )
     found = aj1.rows(["&AJ1-01815;"], kanji)
