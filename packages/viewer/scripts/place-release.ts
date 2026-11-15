@@ -16,10 +16,16 @@ const sha256 = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest(
 
 async function download(name: string): Promise<Uint8Array> {
   for (let attempt = 1; ; attempt++) {
-    const response = await fetch(base + encodeURIComponent(name));
-    if (response.ok) return new Uint8Array(await response.arrayBuffer());
-    if (attempt === 3) throw new Error(`${name}: HTTP ${response.status}`);
-    await Bun.sleep(2000 * attempt);
+    let problem: string;
+    try {
+      const response = await fetch(base + encodeURIComponent(name));
+      if (response.ok) return new Uint8Array(await response.arrayBuffer());
+      problem = `HTTP ${response.status}`;
+    } catch (error) {
+      problem = String(error);
+    }
+    if (attempt === 4) throw new Error(`${name}: ${problem}`);
+    await Bun.sleep(3000 * attempt);
   }
 }
 
