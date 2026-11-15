@@ -12,7 +12,8 @@ what each asks. It is a statement of how the project applies them and no legal a
 |---|---|---|
 | `outlines/<font>/…` | The font's licence, with the font's copyright line in the file. | — |
 | `cuts/<font>/<source>/…` | The font's licence. The file holds contour indices and labels and no outline. | `terms.description`: the description source's terms. `terms.guide`: the guide's, on files with cuts made along a guide. `terms.notices`: the copyright and attribution lines. |
-| `cuts.<source>.tsv.gz`, `skipped.<source>.tsv.gz` | Row by row, as the cut file the row comes from. A table holds the rows of one description source. | `licence_outline`, `licence_description`, `licence_guide` on each row. |
+| `cuts.<source>.tsv.gz` | Row by row, as the cut file the row comes from. A table holds the rows of one description source. | `licence_outline`, `licence_description`, `licence_guide` on each row. |
+| `skipped.<source>.tsv.gz` | As the cut files of its source. It holds no outline and no cut. | `font` and `source` on each row, which name the terms in `fonts.json` and `sources.json`. |
 | `components.<source>.tsv` | The terms of the source the table is named for. The table of the ids-input registry is GPL-2.0-or-later. | `source` on each row. |
 | `fonts.json`, `sources.json` | MIT, as part of this repository. | Every font and source with its pin, licence and attribution. |
 
