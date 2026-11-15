@@ -1,6 +1,6 @@
 /** The one module that fetches a release: files, caching and shard addressing. */
 import type { Counts, CutsFile, FontEntry, FontsFile, FormsFile, Glyph, LibraryFile, Manifest, OutlineFile, SourceEntry, SourcesFile, VerdictRow } from "han-decompose";
-import { blockOf, blockOfRef, componentsTablePath, cutsPath, cutsTablePath, formsPath, libraryPath, outlinePath, skippedTablePath } from "./addressing.ts";
+import { blockOf, blockOfRef, componentsTablePath, cutsPath, cutsTablePath, formsPath, libraryPath, outlinePath, skippedTablePath, urlPath } from "./addressing.ts";
 import { gunzipIfNeeded, streamLines } from "./codec.ts";
 import { BoundedHeap } from "./heap.ts";
 import { Lru } from "./lru.ts";
@@ -10,7 +10,7 @@ import { parseTable, type Table } from "./tsv.ts";
 const BASE = `${import.meta.env.BASE_URL}data/`;
 
 /** The address of a file of the release. */
-export const dataUrl = (path: string): string => BASE + path;
+export const dataUrl = (path: string): string => BASE + urlPath(path);
 
 const decoder = new TextDecoder();
 
@@ -19,7 +19,7 @@ let listing: Promise<Set<string>> | null = null;
 /** The paths the manifest lists: a file it does not list is not asked for. */
 function listed(): Promise<Set<string>> {
   listing ??= (async () => {
-    const response = await fetch(BASE + "manifest.json");
+    const response = await fetch(dataUrl("manifest.json"));
     if (!response.ok) throw new Error("no manifest");
     const manifest = (await response.json()) as Manifest;
     return new Set<string>([...manifest.files.map((f) => f.path), "fonts.json", "sources.json"]);
@@ -44,7 +44,7 @@ async function has(path: string): Promise<boolean> {
 async function open(path: string): Promise<Response | null> {
   try {
     if (!(await has(path))) return null;
-    const response = await fetch(BASE + path);
+    const response = await fetch(dataUrl(path));
     if (!response.ok || (response.headers.get("content-type") ?? "").includes("text/html")) return null;
     return response;
   } catch {
