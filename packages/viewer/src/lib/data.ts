@@ -1,49 +1,77 @@
 /** The one module that fetches a release: files, caching and shard addressing. */
 import type { Counts, CutsFile, FontEntry, FontsFile, FormsFile, Glyph, LibraryFile, Manifest, OutlineFile, SourceEntry, SourcesFile, VerdictRow } from "han-decompose";
 import { blockOf, blockOfRef, componentsTablePath, cutsPath, cutsTablePath, formsPath, libraryPath, outlinePath, skippedTablePath } from "./addressing.ts";
-import { gunzipIfNeeded } from "./codec.ts";
+import { gunzipIfNeeded, streamLines } from "./codec.ts";
+import { BoundedHeap } from "./heap.ts";
+import { Lru } from "./lru.ts";
 import { parseCutId } from "./ids.ts";
 import { parseTable, type Table } from "./tsv.ts";
 
 const BASE = `${import.meta.env.BASE_URL}data/`;
 
-const decoder = new TextDecoder();
-const files = new Map<string, Promise<Uint8Array | null>>();
+/** The address of a file of the release. */
+export const dataUrl = (path: string): string => BASE + path;
 
-/** The bytes of a release file, or null where the release has none. A host that answers a miss with the app is a miss. */
-function bytes(path: string): Promise<Uint8Array | null> {
-  let held = files.get(path);
-  if (!held) {
-    held = (async () => {
-      try {
-        // The manifest lists every file: a file it does not list is not asked for.
-        if (path !== "manifest.json" && !(await listed()).has(path)) return null;
-        const response = await fetch(BASE + path);
-        if (!response.ok) return null;
-        if ((response.headers.get("content-type") ?? "").includes("text/html")) return null;
-        return await gunzipIfNeeded(new Uint8Array(await response.arrayBuffer()));
-      } catch {
-        return null;
-      }
-    })();
-    files.set(path, held);
-  }
-  return held;
-}
+const decoder = new TextDecoder();
 
 let listing: Promise<Set<string>> | null = null;
 
+/** The paths the manifest lists: a file it does not list is not asked for. */
 function listed(): Promise<Set<string>> {
-  listing ??= bytes("manifest.json").then((data) => new Set<string>((data ? (JSON.parse(decoder.decode(data)) as Manifest).files : []).map((f) => f.path)).add("fonts.json").add("sources.json"));
+  listing ??= (async () => {
+    const response = await fetch(BASE + "manifest.json");
+    if (!response.ok) throw new Error("no manifest");
+    const manifest = (await response.json()) as Manifest;
+    return new Set<string>([...manifest.files.map((f) => f.path), "fonts.json", "sources.json"]);
+  })().catch((error: unknown) => {
+    listing = null;
+    throw error;
+  });
   return listing;
 }
 
-const parsed = new Map<string, Promise<unknown>>();
+/** Whether a file is in the release; a missing release says no. */
+async function has(path: string): Promise<boolean> {
+  if (path === "manifest.json") return true;
+  try {
+    return (await listed()).has(path);
+  } catch {
+    return false;
+  }
+}
+
+/** The response for a file of the release, or null where it is not there. A host that answers a miss with the app is a miss. */
+async function open(path: string): Promise<Response | null> {
+  try {
+    if (!(await has(path))) return null;
+    const response = await fetch(BASE + path);
+    if (!response.ok || (response.headers.get("content-type") ?? "").includes("text/html")) return null;
+    return response;
+  } catch {
+    return null;
+  }
+}
+
+/** Parsed files, the most recently used 64 of them. Bytes are not kept; a failure is not kept either. */
+const parsed = new Lru<string, Promise<unknown>>(64);
 
 function cached<T>(path: string, read: (data: Uint8Array) => T): Promise<T | null> {
   let held = parsed.get(path) as Promise<T | null> | undefined;
   if (!held) {
-    held = bytes(path).then((data) => (data ? read(data) : null));
+    held = (async () => {
+      const response = await open(path);
+      if (!response) return null;
+      return read(await gunzipIfNeeded(new Uint8Array(await response.arrayBuffer())));
+    })().then(
+      (value) => {
+        if (value === null) parsed.delete(path);
+        return value;
+      },
+      (error: unknown) => {
+        parsed.delete(path);
+        throw error;
+      },
+    );
     parsed.set(path, held);
   }
   return held;
@@ -66,7 +94,10 @@ export function release(): Promise<Release> {
     const [manifest, fonts, sources] = await Promise.all([json<Manifest>("manifest.json"), json<FontsFile>("fonts.json"), json<SourcesFile>("sources.json")]);
     if (!manifest || !fonts || !sources) throw new Error("no release");
     return { manifest, fonts, sources };
-  })();
+  })().catch((error: unknown) => {
+    releasePromise = null;
+    throw error;
+  });
   return releasePromise;
 }
 
@@ -134,25 +165,17 @@ export interface ResolvedCut {
 }
 
 /** A cut by its identifier, with its reading and the glyph it was cut from. */
-export function resolveCut(id: string): Promise<ResolvedCut | null> {
+export async function resolveCut(id: string): Promise<ResolvedCut | null> {
   const parts = parseCutId(id);
-  if (!parts) return Promise.resolve(null);
-  const key = `resolved:${id}`;
-  let held = parsed.get(key) as Promise<ResolvedCut | null> | undefined;
-  if (!held) {
-    held = (async () => {
-      const block = blockOf(parts.selector);
-      if (!block) return null;
-      const shard = await cutsShard(parts.font, parts.source, block);
-      const glyphId = `${parts.font}/${parts.selector}`;
-      const reading = shard?.readings.find((r) => r.glyph === glyphId && r.description === parts.description && r.cuts.some((c) => c.id === id));
-      const cut = reading?.cuts.find((c) => c.id === id);
-      if (!reading || !cut) return null;
-      return { cut, reading, glyph: await glyph(parts.font, parts.selector), font: parts.font, selector: parts.selector };
-    })();
-    parsed.set(key, held);
-  }
-  return held;
+  if (!parts) return null;
+  const block = blockOf(parts.selector);
+  if (!block) return null;
+  const shard = await cutsShard(parts.font, parts.source, block);
+  const glyphId = `${parts.font}/${parts.selector}`;
+  const reading = shard?.readings.find((r) => r.glyph === glyphId && r.description === parts.description && r.cuts.some((c) => c.id === id));
+  const cut = reading?.cuts.find((c) => c.id === id);
+  if (!reading || !cut) return null;
+  return { cut, reading, glyph: await glyph(parts.font, parts.selector), font: parts.font, selector: parts.selector };
 }
 
 /** Counts of a font under a source, with the missing ones as zero. */
@@ -178,4 +201,64 @@ export async function postVerdict(row: Omit<VerdictRow, "at" | "reviewer">): Pro
   const response = await fetch("/api/verdict", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(row) });
   if (!response.ok) throw new Error(`verdict refused: ${response.status}`);
   return (await response.json()) as VerdictRow;
+}
+
+/** The columns of `cuts.<source>.tsv.gz` the review page uses. */
+export interface QueueRow {
+  cut_id: string;
+  sig: string;
+  font: string;
+  source: string;
+  method: string;
+  status: string;
+  component: string;
+  fit: string;
+}
+
+const KEPT_COLUMNS: (keyof QueueRow)[] = ["cut_id", "sig", "font", "source", "method", "status", "component", "fit"];
+
+/** The cut tables the release has, by source. */
+export const cutTableSources = async (rel: Release): Promise<string[]> => {
+  const paths = await listed().catch(() => new Set<string>());
+  return rel.sources.sources.map((s) => s.id).filter((id) => paths.has(cutsTablePath(id)));
+};
+
+const queues = new Lru<string, Promise<QueueRow[]>>(6);
+
+/**
+ * The `limit` weakest cuts of a source with one of the statuses, weakest first. The table is read
+ * line by line and only these columns of the rows kept are held, so a large release never sits whole in memory.
+ */
+export function weakestCuts(source: string, statuses: readonly string[], limit = 2000): Promise<QueueRow[]> {
+  const key = `${source}|${statuses.join(",")}|${limit}`;
+  let held = queues.get(key);
+  if (!held) {
+    held = (async () => {
+      const response = await open(cutsTablePath(source));
+      if (!response?.body) return [];
+      const heap = new BoundedHeap<QueueRow>(limit, (row) => (row.fit === "" ? Number.POSITIVE_INFINITY : Number(row.fit)));
+      let at: number[] | null = null;
+      for await (const line of streamLines(response.body)) {
+        if (!line) continue;
+        if (at === null) {
+          if (line.startsWith("#")) continue;
+          const names = line.split("\t");
+          at = KEPT_COLUMNS.map((name) => names.indexOf(name));
+          continue;
+        }
+        const cells = line.split("\t");
+        const row = {} as QueueRow;
+        KEPT_COLUMNS.forEach((name, i) => {
+          row[name] = cells[at![i] ?? -1] ?? "";
+        });
+        if (statuses.includes(row.status)) heap.push(row);
+      }
+      return heap.sorted().sort((a, b) => Number(a.fit === "" ? Infinity : a.fit) - Number(b.fit === "" ? Infinity : b.fit) || a.cut_id.localeCompare(b.cut_id));
+    })().catch((error: unknown) => {
+      queues.delete(key);
+      throw error;
+    });
+    queues.set(key, held);
+  }
+  return held;
 }
