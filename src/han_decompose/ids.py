@@ -4,6 +4,10 @@ A description is a prefix expression: an operator followed by its operands, each
 description again. BabelStone writes an unencoded component as `{42}`, CHISE as an entity
 `&CDP-8958;`, zi.tools as a stroke chain `#(丿𠃊)`; each is one component. A character keeps the
 variation selector that follows it.
+
+Some descriptions of the tables do not read and raise ValueError: CHISE writes a variant of an
+operator as an entity (`&U-i001+2FF1;千北`), which leaves its operands without an operator, and
+a few rows of CHISE and zi.tools carry marks outside the notation.
 """
 
 import re
@@ -54,10 +58,12 @@ def tokens(text: str) -> list[str]:
             out.append(text[at:end])
             at = end
         elif _variation(char):
-            if not out or out[-1] in ARITY:
+            if not out or len(out[-1]) != 1 or out[-1] in ARITY:
                 raise ValueError(f"{text!r} has a variation selector at {at} with no character before it.")
             out[-1] += char
             at += 1
+        elif char.isspace():
+            raise ValueError(f"{text!r} holds white space at {at}.")
         else:
             out.append(char)
             at += 1
