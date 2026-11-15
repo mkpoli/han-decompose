@@ -73,6 +73,15 @@ def segments_of(path: Path) -> list[list[tuple[str, tuple[Any, ...]]]]:
             current.append(("L", (points[0],)))
         elif verb == "curveTo":
             current.append(("C", tuple(points)))
+        elif verb == "qCurveTo" and points[-1] is None:
+            # A contour without an on-curve point: one is implied between each pair of its
+            # control points, the first between the last control point and the first.
+            run = list(points[:-1])
+            for index, control in enumerate(run):
+                following = run[(index + 1) % len(run)]
+                on = ((control[0] + following[0]) / 2, (control[1] + following[1]) / 2)
+                current.append(("Q", (control, on)))
+            start = current[-1][1][-1] if current else None
         elif verb == "qCurveTo":
             # A TrueType run of control points implies an on-curve point between each pair.
             run = list(points)

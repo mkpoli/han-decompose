@@ -6,6 +6,7 @@ piece. A cutter hands whole pieces to the components of a description; a piece i
 the indices of the font's own contours that lie in it.
 """
 
+from collections import OrderedDict
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Any
@@ -66,7 +67,7 @@ def members_of(paths: Sequence[G.Path], pieces: Sequence[G.Path]) -> tuple[list[
     out of. A contour no single boundary encloses goes to the piece it shares most ink with. Where
     it shares ink with several, the font draws them as one contour that only meets itself at a
     point, and no set of whole contours tells them apart: they are named together. A contour
-    without ink in any piece goes to the nearest one.
+    without ink in any piece goes with the contour it cuts into, or to the nearest piece.
     """
     outers = [
         max((G.filled(contour) for contour in piece.contours), key=lambda shape: abs(shape.area)) for piece in pieces
@@ -74,7 +75,8 @@ def members_of(paths: Sequence[G.Path], pieces: Sequence[G.Path]) -> tuple[list[
     order = sorted(range(len(pieces)), key=lambda j: abs(outers[j].area))
     out: list[list[int]] = [[] for _ in pieces]
     joined: list[set[int]] = []
-    for index, path in enumerate(paths):
+    homes: list[int | None] = []
+    for path in paths:
         home = None
         if abs(path.area) > 1e-6:
             home = next(
@@ -87,14 +89,25 @@ def members_of(paths: Sequence[G.Path], pieces: Sequence[G.Path]) -> tuple[list[
                     through = {j for j, area in enumerate(shared) if area >= G.EPS_AREA}
                     if len(through) > 1:
                         joined.append(through)
-        if home is None:
-            x, y = (path.bounds[0] + path.bounds[2]) / 2, (path.bounds[1] + path.bounds[3]) / 2
+        homes.append(home)
+    # A contour without ink in any piece cuts into another contour (a notch in a piece's edge):
+    # it goes with the contour it shares most area with, and failing that to the nearest piece.
+    for index, path in enumerate(paths):
+        if homes[index] is not None:
+            continue
+        shared = [_shared(path, other) if homes[k] is not None else 0.0 for k, other in enumerate(paths)]
+        if shared and max(shared) > 0:
+            homes[index] = homes[shared.index(max(shared))]
+            continue
+        x, y = (path.bounds[0] + path.bounds[2]) / 2, (path.bounds[1] + path.bounds[3]) / 2
 
-            def away(j: int, x: float = x, y: float = y) -> float:
-                x0, y0, x1, y1 = pieces[j].bounds
-                return float(max(x0 - x, 0, x - x1) ** 2 + max(y0 - y, 0, y - y1) ** 2)
+        def away(j: int, x: float = x, y: float = y) -> float:
+            x0, y0, x1, y1 = pieces[j].bounds
+            return float(max(x0 - x, 0, x - x1) ** 2 + max(y0 - y, 0, y - y1) ** 2)
 
-            home = min(range(len(pieces)), key=away)
+        homes[index] = min(range(len(pieces)), key=away)
+    for index, home in enumerate(homes):
+        assert home is not None
         out[home].append(index)
     # A piece left without a contour is drawn by a contour that has its home elsewhere.
     for j, piece in enumerate(pieces):
@@ -154,15 +167,31 @@ class Glyph:
     members: list[list[int]]
     advance: float
     _edges: dict[int, G.Array] = field(default_factory=dict, repr=False)
+    _tiles: bool | None = field(default=None, repr=False)
 
     @property
     def tiles(self) -> bool:
-        """Whether the pieces are the glyph: every piece has contours of its own, and together
-        they cover the ink the font draws."""
+        """Whether the pieces are the glyph and their contours draw them: the pieces together
+        cover the ink the font draws, every piece has contours of its own, and those contours
+        drawn alone give the piece's ink."""
+        if self._tiles is None:
+            self._tiles = self._check()
+        return self._tiles
+
+    def _check(self) -> bool:
         if not self.pieces or not all(self.members):
             return False
         drawn, divided = abs(self.outline.area), sum(abs(piece.area) for piece in self.pieces)
-        return bool(abs(drawn - divided) <= 0.002 * max(drawn, 1))
+        if abs(drawn - divided) > 0.002 * max(drawn, 1):
+            return False
+        for piece, indices in zip(self.pieces, self.members, strict=True):
+            alone = pathops.Path()
+            for index in indices:
+                self.paths[index].draw(alone.getPen())
+            alone.simplify()
+            if abs(abs(alone.area) - abs(piece.area)) > max(0.01 * abs(piece.area), G.EPS_AREA):
+                return False
+        return True
 
     def edges(self, piece: int) -> G.Array:
         """A piece flattened to edges, kept once made."""
@@ -176,6 +205,9 @@ class Glyph:
 
     def partition(self) -> list[list[int]]:
         """The pieces as the outline file writes them: each ascending, ordered by first index."""
+        if not self.pieces:
+            # Ink too small to be a piece is still the glyph's one piece in the file.
+            return [list(range(len(self.contours)))] if self.contours else []
         return sorted((piece for piece in self.members if piece), key=lambda piece: piece[0])
 
     def record(self) -> Json:
@@ -194,16 +226,25 @@ class Glyph:
 class Drawing:
     """One font's glyphs as shapes and pieces, each read once."""
 
+    #: How many glyphs are held at once; the least recently asked for goes first.
+    HELD = 2048
+
     def __init__(self, face: Face):
         self.face = face
         self.id = face.id
-        self._glyphs: dict[str, Glyph | None] = {}
+        self._glyphs: OrderedDict[str, Glyph | None] = OrderedDict()
+        #: What a cutter or a gate keeps per font, by a key of its own.
         self.kept: dict[Any, Any] = {}
 
     def glyph(self, selector: str) -> Glyph | None:
-        """The glyph a selector reaches, or None when the font does not map it."""
-        if selector not in self._glyphs:
-            self._glyphs[selector] = self._read(selector)
+        """The glyph a selector reaches, or None when the font does not map it. A glyph whose
+        outlines pathops cannot merge is read without pieces."""
+        if selector in self._glyphs:
+            self._glyphs.move_to_end(selector)
+            return self._glyphs[selector]
+        self._glyphs[selector] = self._read(selector)
+        if len(self._glyphs) > self.HELD:
+            self._glyphs.popitem(last=False)
         return self._glyphs[selector]
 
     def _read(self, selector: str) -> Glyph | None:
@@ -231,9 +272,12 @@ class Drawing:
                 paths.append(draw(current))
                 current = []
         outline = draw(pen.value)
-        outline.simplify()
-        pieces = pieces_of(outline)
         members: list[list[int]] = []
+        try:
+            outline.simplify()
+            pieces = pieces_of(outline)
+        except pathops.PathOpsError:
+            pieces = []
         if pieces:
             members, joined = members_of(paths, pieces)
             if joined:
