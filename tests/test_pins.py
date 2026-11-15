@@ -99,14 +99,23 @@ def test_a_font_comes_from_its_mirror_once_its_address_serves_a_newer_version(tm
     web = Web({"https://fonts.example/Test.ttf": b"version 2", mirror: b"font"})
     path = pins.font_path(font_row(b"font", mirrors=[mirror]), tmp_path, download=web)
     assert path.read_bytes() == b"font" and web.asked == ["https://fonts.example/Test.ttf", mirror]
+    stale = Web({"https://fonts.example/Test.ttf": b"version 2", mirror: b"version 3"})
+    with pytest.raises(pins.PinError) as failure:
+        pins.font_path(font_row(b"font", file="Stale-1.ttf", mirrors=[mirror]), tmp_path, download=stale)
+    assert "https://fonts.example/Test.ttf: SHA-256" in str(failure.value) and f"{mirror}: SHA-256" in str(failure.value)
+    assert not (tmp_path / "fonts" / "Stale-1.ttf").exists() and not list(tmp_path.rglob("*.part"))
+
+
+def test_an_archive_comes_from_its_mirror(tmp_path: Path) -> None:
     packed = io.BytesIO()
     with zipfile.ZipFile(packed, "w") as archive:
         archive.writestr("Test.ttf", b"font")
     data = packed.getvalue()
     web = Web({"https://mirror.example/Test.zip": data})
     row = font_row(b"font", url="https://fonts.example/Test.zip", archive={"sha256": sha(data), "member": "Test.ttf"})
-    row = {**row, "file": "Packed-1.ttf", "mirrors": ["https://mirror.example/Test.zip"]}
+    row = {**row, "mirrors": ["https://mirror.example/Test.zip"]}
     assert pins.font_path(row, tmp_path, download=web).read_bytes() == b"font"
+    assert web.asked == ["https://fonts.example/Test.zip", "https://mirror.example/Test.zip"]
 
 
 def test_a_mirror_serves_what_the_first_address_no_longer_does(tmp_path: Path) -> None:

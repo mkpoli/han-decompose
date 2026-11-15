@@ -153,7 +153,7 @@ properties; a major version changes or removes them.
 | `url` | yes | Where the file is fetched from, or the archive that holds it. |
 | `mirrors` | | Other addresses that serve the same bytes, tried in order after `url`. |
 | `sha256` | yes | Digest of the font file. |
-| `archive` | | `{sha256, member}`: digest of the archive at `url` and the member that is the font. |
+| `archive` | | `{sha256, member}`: digest of the archive that `url` and the mirrors serve, and the member that is the font. |
 | `index` | | The face's index when the file is a collection. |
 | `instance` | | Axis values the outlines are read at: `{"wght": 400}`. |
 | `upem` | yes | The font's units per em. |
