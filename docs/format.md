@@ -16,7 +16,7 @@ source writes it, without Unicode normalisation.
 | font | One pinned font file at one named instance (`wght` 400 for a variable font). |
 | glyph | One glyph of a font, selected by code point, variation sequence or glyph index. |
 | contour | One closed contour of a glyph, in the font's own order. Contours may overlap. |
-| piece | A maximal set of contours whose ink touches or overlaps, with the counters inside it. |
+| piece | A maximal set of contours whose ink overlaps or runs along a shared edge, with the counters inside it. Contours that only meet at a point are apart, unless one contour runs through both. |
 | description | One IDS a source gives for a subject. |
 | component | What a node of a description names. |
 | reading | One labelling of one glyph by one description: which contours go to which nodes. |
