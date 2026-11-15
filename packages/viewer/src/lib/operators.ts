@@ -1,0 +1,21 @@
+/** Each operator drawn on a 12-unit box, after its shape in the Unicode code chart: the lines that divide the box. */
+export const OPERATOR_LINES: Record<string, string> = {
+  "⿰": "M6 1v10",
+  "⿱": "M1 6h10",
+  "⿲": "M4.3 1v10M7.7 1v10",
+  "⿳": "M1 4.3h10M1 7.7h10",
+  "⿴": "M3.5 3.5h5v5h-5z",
+  "⿵": "M3.5 11V3.5h5V11",
+  "⿶": "M3.5 1v7.5h5V1",
+  "⿷": "M11 3.5H3.5v5H11",
+  "⿸": "M11 3.5H3.5V11",
+  "⿹": "M1 3.5h7.5V11",
+  "⿺": "M3.5 1v7.5H11",
+  "⿻": "M1 1h7v7H1zM4 4h7v7H4z",
+  "⿼": "M1 3.5h7.5v5H1",
+  "⿽": "M1 8.5h7.5V1",
+  "⿾": "M6 1v10M4.5 3.5 1.5 6l3 2.5zM7.5 3.5l3 2.5-3 2.5z",
+  "⿿": "M9.5 4.5A4 4 0 1 0 10 7M9.5 1.5v3h-3",
+  "㇯": "M3 3h6v6H3zM4.7 6h2.6",
+  "〾": "M2.5 8c1.8-5.5 4 2.5 7-4",
+};
