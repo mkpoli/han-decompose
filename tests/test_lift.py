@@ -170,7 +170,8 @@ def test_the_forms_ids_input_cut_for_han_compose_reproduce(chain: str) -> None:
     mine = {}
     kinds: dict[str, int] = {}
     for outcome in lift.run(chain):
-        if outcome.form is None:
+        # ids-input cut entities and chains; numbered components have no forms of its to hold against.
+        if outcome.form is None or outcome.kind == "numbered":
             continue
         kinds[outcome.kind] = kinds.get(outcome.kind, 0) + 1
         cut = next(cut for row in outcome.readings for cut in row["cuts"] if cut["id"] == outcome.form["cut"])
