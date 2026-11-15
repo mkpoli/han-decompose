@@ -191,7 +191,7 @@ several fonts; a glyph is taken from the first font of the chain that draws it.
 | Property | Required | Value |
 |---|---|---|
 | `id`, `name` | yes | Source identifier and title. |
-| `role` | yes | `description` (its IDS label the cuts), `guide` (cuts follow its groups), `reference` (cuts are compared with its glyphs) or `identity` (it relates components). |
+| `role` | yes | `description` (its IDS label the cuts), `guide` (cuts follow its groups), `reference` (cuts are compared with its glyphs), `identity` (it relates components) or `cuts` (cuts made elsewhere are imported from it). |
 | `url` | yes | The source's home. |
 | `pin` | yes | A release, a commit or a file date. |
 | `retrieved` | yes | `YYYY-MM-DD`. |
@@ -281,7 +281,7 @@ A cut:
 | `box` | yes | Box of the cut's contours. |
 | `frame` | | Box of the parent node's ink. |
 | `gap`, `area`, `ink` | | Distance to the nearest sibling ink, filled area, and summed length of the contours' polygons. |
-| `evidence` | | Scores of the cut: `fit` or `match`, `margin`, `agree`, `reference`, and `referenceGlyph`, the glyph `reference` was measured against. |
+| `evidence` | | Scores of the cut: `fit` or `match`, `margin`, `agree`, `reference`, and `referenceGlyph`, the glyph `reference` was measured against; `importedFrom`, the source a cut made elsewhere was taken from. |
 | `checks` | | Per check: `value`, `limit`, `pass`, and `against`, the glyph compared with. A dealt cut has `filled`, `skeleton` and `windows`; a lifted component has the one that decided it, `reference`, `agree` or `single`. |
 | `calibrated` | | The component whose reviewed labels set the checks' limits, or `false`. |
 | `status` | yes | `accepted`, `refused` (a check failed), `reviewed-right` or `reviewed-wrong`. |
@@ -325,7 +325,7 @@ reference → the cut chosen as the component's form in that chain:
 | Property | Required | Value |
 |---|---|---|
 | `cut`, `sig` | yes | The cut and its signature (2.6). |
-| `basis` | yes | What the choice rests on: `reference` (a reference glyph), `agree` (other hosts leave the same shape), `single` (one host whose parts lift away unmistakably) or `hand`. |
+| `basis` | yes | What the choice rests on: `reference` (a reference glyph), `agree` (other hosts leave the same shape), `single` (one host whose parts lift away unmistakably), `imported` (the form another project chose, taken over with its cut) or `hand`. |
 | `hosts` | | How many hosts gave a cut of the component. |
 
 `library/<chain>.json.gz`, `format` `han-decompose/library@1.0`: `chain`, and `library`,

@@ -9,6 +9,7 @@ Each command writes a run: a folder of outline and cut files.
 
 ```sh
 uv run han-decompose fetch
+uv run han-decompose import-numbered runs/sans.numbered
 uv run han-decompose lift --chain sans  --out runs/sans.lift
 uv run han-decompose lift --chain serif --out runs/serif.lift
 uv run han-decompose read runs/sans.babelstone  --chain sans  --source babelstone
@@ -19,7 +20,8 @@ uv run han-decompose read runs/sans.chise       --chain sans  --source chise
 uv run han-decompose read runs/serif.chise      --chain serif --source chise
 ```
 
-`lift` cuts the components no code point names (CHISE entities, zi.tools chains, BabelStone's
+`import-numbered` takes over the numbered components han-compose cut for its Sans style, where
+a form is whole contours of a host glyph. `lift` cuts the components no code point names (CHISE entities, zi.tools chains, BabelStone's
 numbered components) out of their hosts. `read` deals every glyph to the components of each
 description a source gives it. `read` writes one block of 256 code points at a time and leaves a
 block alone that is already written, so a run that stopped goes on where it was; `--blocks 04e`
@@ -31,7 +33,7 @@ A whole table is hours of work on four processes. Run it where it does not starv
 
 ```sh
 uv run han-decompose release out/v1.0.0 v1.0.0 \
-  --run runs/sans.lift --run runs/serif.lift \
+  --run runs/sans.numbered --run runs/sans.lift --run runs/serif.lift \
   --run runs/sans.babelstone --run runs/serif.babelstone \
   --run runs/sans.zi-tools --run runs/serif.zi-tools \
   --run runs/sans.chise --run runs/serif.chise \
@@ -39,7 +41,8 @@ uv run han-decompose release out/v1.0.0 v1.0.0 \
 ```
 
 The runs are merged shard by shard. Where two runs read the same glyph under the same
-description, the run given first stands: the lifts go first. Every file is checked against the
+description, the run given first stands: the imported forms go first, then the lifts. A component's form
+is the first run's that has one, with that run's library, less any cut whose reading gave way. Every file is checked against the
 schema and the format's invariants, cut files against their outline files. Problems are listed,
 the command fails, and nothing is packed. The folder then holds the layout of `docs/format.md`: outlines, cuts, the form and library
 indexes, the flat tables per source, the component tables, `fonts.json` and `sources.json`, the

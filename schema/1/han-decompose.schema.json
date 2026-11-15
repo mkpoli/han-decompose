@@ -306,7 +306,8 @@
             "description",
             "guide",
             "reference",
-            "identity"
+            "identity",
+            "cuts"
           ]
         },
         "url": {
@@ -1005,6 +1006,7 @@
                   "reference",
                   "agree",
                   "single",
+                  "imported",
                   "hand"
                 ]
               },
