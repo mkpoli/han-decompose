@@ -7,6 +7,7 @@ import { parseTable, type Table } from "./tsv.ts";
 
 const BASE = `${import.meta.env.BASE_URL}data/`;
 
+const decoder = new TextDecoder();
 const files = new Map<string, Promise<Uint8Array | null>>();
 
 /** The bytes of a release file, or null where the release has none. A host that answers a miss with the app is a miss. */
@@ -15,6 +16,8 @@ function bytes(path: string): Promise<Uint8Array | null> {
   if (!held) {
     held = (async () => {
       try {
+        // The manifest lists every file: a file it does not list is not asked for.
+        if (path !== "manifest.json" && !(await listed()).has(path)) return null;
         const response = await fetch(BASE + path);
         if (!response.ok) return null;
         if ((response.headers.get("content-type") ?? "").includes("text/html")) return null;
@@ -28,6 +31,13 @@ function bytes(path: string): Promise<Uint8Array | null> {
   return held;
 }
 
+let listing: Promise<Set<string>> | null = null;
+
+function listed(): Promise<Set<string>> {
+  listing ??= bytes("manifest.json").then((data) => new Set<string>((data ? (JSON.parse(decoder.decode(data)) as Manifest).files : []).map((f) => f.path)).add("fonts.json").add("sources.json"));
+  return listing;
+}
+
 const parsed = new Map<string, Promise<unknown>>();
 
 function cached<T>(path: string, read: (data: Uint8Array) => T): Promise<T | null> {
@@ -39,7 +49,6 @@ function cached<T>(path: string, read: (data: Uint8Array) => T): Promise<T | nul
   return held;
 }
 
-const decoder = new TextDecoder();
 const json = <T>(path: string): Promise<T | null> => cached(path, (data) => JSON.parse(decoder.decode(data)) as T);
 const table = (path: string): Promise<Table | null> => cached(path, (data) => parseTable(decoder.decode(data)));
 

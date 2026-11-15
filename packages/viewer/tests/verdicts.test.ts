@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { readVerdict, stamp, VERDICT_HEADER, verdictLine } from "../server/verdicts.ts";
 
-const good = { cut_id: "noto-sans-cjk-jp@2.004/U+5019~chise.74d9fdff~1.1", sig: "4991a647", verdict: "right", note: "ok", release: "v0.0.0-trial" };
+const good = { cut_id: "noto-sans-cjk-jp@2.004/U+5019~chise.74d9fdff~1.1", sig: "4991a647", verdict: "right" as const, note: "ok", release: "v0.0.0-trial" };
 
 test("the file starts with its format line and the columns of 5.4", () => {
   expect(VERDICT_HEADER).toBe("# format=han-decompose/verdicts-tsv@1.0\ncut_id\tsig\tverdict\tnote\treviewer\tat\trelease\n");

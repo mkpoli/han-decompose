@@ -62,3 +62,11 @@ export function size(cut: Pick<Cut, "area" | "box">): number {
   if (cut.area !== undefined) return cut.area;
   return Math.max(cut.box[2] - cut.box[0], 0) * Math.max(cut.box[3] - cut.box[1], 0);
 }
+
+/** A set of contours drawn in one colour, or hatched where its cut was refused. */
+export interface Paint {
+  id: string;
+  contours: number[];
+  colour?: string;
+  refused?: boolean;
+}
