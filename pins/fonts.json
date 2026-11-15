@@ -1,0 +1,151 @@
+{
+  "format": "han-decompose/fonts@1.0",
+  "fonts": [
+    {
+      "id": "noto-sans-cjk-jp@2.004",
+      "name": "Noto Sans CJK JP",
+      "version": "2.004",
+      "nameVersion": "Version 2.004;hotconv 1.0.118;makeotfexe 2.5.65603",
+      "file": "NotoSansCJKjp-VF-2.004.ttf",
+      "url": "https://github.com/notofonts/noto-cjk/raw/Sans2.004/Sans/Variable/TTF/NotoSansCJKjp-VF.ttf",
+      "sha256": "240c9b83bf7b386edbae39995ae7e068ed4583f484d92e4a74c34158b5f27b1a",
+      "instance": {
+        "wght": 400
+      },
+      "upem": 1000,
+      "licence": "OFL-1.1",
+      "licenceEvidence": "the font's name table, record 13 (licence description)",
+      "copyright": "© 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'.",
+      "reservedNames": [
+        "Source"
+      ],
+      "style": "sans"
+    },
+    {
+      "id": "plangothic-p1@2.9.5795",
+      "name": "Plangothic P1",
+      "version": "2.9.5795",
+      "nameVersion": "Version 6.400;July 4, 2026;FontCreator 14.0.0.2901 64-bit",
+      "file": "PlangothicP1-Regular-2.9.5795.ttf",
+      "url": "https://github.com/Fitzgerald-Porthmouth-Koenigsegg/Plangothic-Project/releases/download/V2.9.5795/PlangothicP1-Regular.ttf",
+      "sha256": "550b5d0775b15405946b18f4843df439a51e69508d7e6778d94c1f7a53dc5ad6",
+      "upem": 1000,
+      "licence": "OFL-1.1",
+      "licenceEvidence": "the font's name table, record 13 (licence description)",
+      "copyright": "Copyright (c) 2024 by Fitzgerald P. Köeingsegg. All rights reserved.",
+      "style": "sans"
+    },
+    {
+      "id": "plangothic-p2@2.9.5795",
+      "name": "Plangothic P2",
+      "version": "2.9.5795",
+      "nameVersion": "Version 3.179;July 5, 2026;FontCreator 14.0.0.2901 64-bit",
+      "file": "PlangothicP2-Regular-2.9.5795.ttf",
+      "url": "https://github.com/Fitzgerald-Porthmouth-Koenigsegg/Plangothic-Project/releases/download/V2.9.5795/PlangothicP2-Regular.ttf",
+      "sha256": "681933370adfe0fc7253f77735275a82fea09fe4f8adba907bdeb46c110daf8f",
+      "upem": 1000,
+      "licence": "OFL-1.1",
+      "licenceEvidence": "the font's name table, record 13 (licence description)",
+      "copyright": "Copyright (c) 2024 by Fitzgerald P. Köeingsegg. All rights reserved.",
+      "style": "sans"
+    },
+    {
+      "id": "noto-serif-cjk-jp@2.003",
+      "name": "Noto Serif CJK JP",
+      "version": "2.003",
+      "nameVersion": "Version 2.003;hotconv 1.1.1;makeotfexe 2.6.0",
+      "file": "NotoSerifCJKjp-VF-2.003.ttf",
+      "url": "https://github.com/notofonts/noto-cjk/raw/Serif2.003/Serif/Variable/TTF/NotoSerifCJKjp-VF.ttf",
+      "sha256": "c2ff7cffb6ef75193d4406b030eab5aa6503c48004acec6b040327e2fe1e9e51",
+      "instance": {
+        "wght": 400
+      },
+      "upem": 1000,
+      "licence": "OFL-1.1",
+      "licenceEvidence": "the font's name table, record 13 (licence description)",
+      "copyright": "© 2017-2024 Adobe (http://www.adobe.com/).",
+      "style": "serif"
+    },
+    {
+      "id": "jigmo2@20250912",
+      "name": "Jigmo2",
+      "version": "20250912",
+      "nameVersion": "2025-09-12",
+      "file": "Jigmo-20250912-Jigmo2.ttf",
+      "url": "https://kamichikoichi.github.io/jigmo/Jigmo-20250912.zip",
+      "sha256": "5da3582efe77e22073b86b3b86b556d7111148a76b957cfb53318a91da2efff0",
+      "archive": {
+        "sha256": "5744c7386d129475d87607ca66d043c8793c65448adeaedc921b6931890e5d0b",
+        "member": "Jigmo2.ttf"
+      },
+      "upem": 1024,
+      "licence": "CC0-1.0",
+      "licenceEvidence": "LICENSE.txt in the archive",
+      "copyright": "Koichi Kamichi",
+      "style": "serif"
+    },
+    {
+      "id": "jigmo3@20250912",
+      "name": "Jigmo3",
+      "version": "20250912",
+      "nameVersion": "2025-09-12",
+      "file": "Jigmo-20250912-Jigmo3.ttf",
+      "url": "https://kamichikoichi.github.io/jigmo/Jigmo-20250912.zip",
+      "sha256": "815b18c1c670103723fe743090559208fdea47dc587ecb057a5a4721ee8dfeff",
+      "archive": {
+        "sha256": "5744c7386d129475d87607ca66d043c8793c65448adeaedc921b6931890e5d0b",
+        "member": "Jigmo3.ttf"
+      },
+      "upem": 1024,
+      "licence": "CC0-1.0",
+      "licenceEvidence": "LICENSE.txt in the archive",
+      "copyright": "Koichi Kamichi",
+      "style": "serif"
+    },
+    {
+      "id": "jigmo@20250912",
+      "name": "Jigmo",
+      "version": "20250912",
+      "nameVersion": "2025-09-12",
+      "file": "Jigmo-20250912-Jigmo.ttf",
+      "url": "https://kamichikoichi.github.io/jigmo/Jigmo-20250912.zip",
+      "sha256": "c8f295b9bd8f9f117a76b3a454aaaa1bb5b4babc18e254978c6deb88464e40cf",
+      "archive": {
+        "sha256": "5744c7386d129475d87607ca66d043c8793c65448adeaedc921b6931890e5d0b",
+        "member": "Jigmo.ttf"
+      },
+      "upem": 1024,
+      "licence": "CC0-1.0",
+      "licenceEvidence": "LICENSE.txt in the archive",
+      "copyright": "Koichi Kamichi",
+      "style": "serif"
+    },
+    {
+      "id": "babelstone-han-pua@1.472",
+      "name": "BabelStone Han PUA",
+      "version": "1.472",
+      "nameVersion": "Version 1.472",
+      "file": "BabelStoneHanPUA-1.472.ttf",
+      "url": "https://www.babelstone.co.uk/Fonts/Download/BabelStoneHanPUA.ttf",
+      "sha256": "92e7155bd28f5570449f4dc71e9bb6fa919f67ef0120d4f83b58c61bed3ed4dc",
+      "upem": 1024,
+      "licence": "Arphic-1999",
+      "licenceEvidence": "the font's name table, record 13 (licence description)",
+      "copyright": "(c) Copyright 1994-1999, Arphic Technology Co., Ltd.; (c) Copyright 2009-2025, Andrew West.",
+      "style": "serif"
+    }
+  ],
+  "chains": {
+    "sans": [
+      "noto-sans-cjk-jp@2.004",
+      "plangothic-p1@2.9.5795",
+      "plangothic-p2@2.9.5795"
+    ],
+    "serif": [
+      "noto-serif-cjk-jp@2.003",
+      "jigmo2@20250912",
+      "jigmo3@20250912",
+      "jigmo@20250912"
+    ]
+  }
+}

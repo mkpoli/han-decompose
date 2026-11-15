@@ -149,7 +149,7 @@ properties; a major version changes or removes them.
 | `id` | yes | Font identifier. |
 | `name`, `version` | yes | Family name and the version in the identifier. |
 | `nameVersion` | | The font's name-table version string. |
-| `file` | yes | File name in the cache. |
+| `file` | yes | File name in the cache: ASCII letters, digits, `.`, `_` and `-`, starting with a letter or digit. |
 | `url` | yes | Where the file is fetched from, or the archive that holds it. |
 | `sha256` | yes | Digest of the font file. |
 | `archive` | | `{sha256, member}`: digest of the archive at `url` and the member that is the font. |
@@ -157,6 +157,7 @@ properties; a major version changes or removes them.
 | `instance` | | Axis values the outlines are read at: `{"wght": 400}`. |
 | `upem` | yes | The font's units per em. |
 | `licence` | yes | SPDX expression. |
+| `licenceEvidence` | | Where the font states its terms. |
 | `licenceFile` | | The licence text under `LICENSES/`. |
 | `copyright` | yes | The font's copyright line. |
 | `reservedNames` | | Reserved Font Names. |
@@ -176,7 +177,7 @@ several fonts; a glyph is taken from the first font of the chain that draws it.
 | `url` | yes | The source's home. |
 | `pin` | yes | A release, a commit or a file date. |
 | `retrieved` | yes | `YYYY-MM-DD`. |
-| `files` | | Per file: `file`, `url`, `sha256`, and `mirrors` serving the same bytes. |
+| `files` | | Per file: `file` (a name as for a font), `url`, `sha256`, and `mirrors` serving the same bytes. |
 | `licence` | yes | SPDX expression. Terms SPDX does not list are `LicenseRef-<name>`. |
 | `licenceEvidence` | | Where the source states its terms. |
 | `licenceFile` | | The licence text under `LICENSES/`. |

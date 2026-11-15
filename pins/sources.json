@@ -1,0 +1,230 @@
+{
+  "format": "han-decompose/sources@1.0",
+  "sources": [
+    {
+      "id": "babelstone",
+      "name": "BabelStone IDS (Ideographic Description Sequences for CJK Unified Ideographs)",
+      "role": "description",
+      "url": "https://www.babelstone.co.uk/CJK/IDS.TXT",
+      "pin": "File Date 2025-06-27 (Unicode 16.0)",
+      "retrieved": "2026-11-15",
+      "files": [
+        {
+          "file": "IDS.TXT",
+          "url": "https://www.babelstone.co.uk/CJK/IDS.TXT",
+          "mirrors": [
+            "https://web.archive.org/web/20250630223601id_/https://babelstone.co.uk/CJK/IDS.TXT"
+          ],
+          "sha256": "cc2a0a97e6a51ed6ebe59870ef2af66e83f3c3c27387d79b4441bb2d791d78b1"
+        }
+      ],
+      "licence": "LicenseRef-BabelStone-IDS",
+      "licenceEvidence": "IDS.TXT header, note 2: under U.S. copyright law data is not eligible for copyright protection, and IDS descriptions are held to be such data; anyone may use the data for personal or commercial purposes without asking permission or providing attribution; the maintainer waives copyright claims to the file's presentation.",
+      "attribution": "BabelStone IDS by Andrew West (魏安), File Date 2025-06-27, https://www.babelstone.co.uk/CJK/IDS.TXT",
+      "weakness": "The file has no versioned URL; the pin is its File Date and digest. A sequence describes a character's form in the regions it is tagged with, which need not be the form a given font draws. Its header (note 1) says the data draws on Kawabata Taichi's IDS data and on IRG submissions; note 2 rests on U.S. law."
+    },
+    {
+      "id": "chise",
+      "name": "CHISE IDS",
+      "role": "description",
+      "url": "https://gitlab.chise.org/CHISE/ids",
+      "pin": "commit c3057f890b4d7a990628873f19274ec33b58a7aa (2026-11-01) of the mirror https://github.com/chise/ids",
+      "retrieved": "2026-11-15",
+      "files": [
+        {
+          "file": "IDS-UCS-Basic.txt",
+          "url": "https://raw.githubusercontent.com/chise/ids/c3057f890b4d7a990628873f19274ec33b58a7aa/IDS-UCS-Basic.txt",
+          "sha256": "497ab2be984a86233848fe3631046351f3bb0334bfaac1d8f836aff2d3f87ba0"
+        },
+        {
+          "file": "IDS-UCS-Compat-Supplement.txt",
+          "url": "https://raw.githubusercontent.com/chise/ids/c3057f890b4d7a990628873f19274ec33b58a7aa/IDS-UCS-Compat-Supplement.txt",
+          "sha256": "c1d265a791a24a8b4d7d963cb7cf31a6a3b1b234b630477d3f27798c9ccab930"
+        },
+        {
+          "file": "IDS-UCS-Compat.txt",
+          "url": "https://raw.githubusercontent.com/chise/ids/c3057f890b4d7a990628873f19274ec33b58a7aa/IDS-UCS-Compat.txt",
+          "sha256": "7683730c8213ecb3a2b3e85daa6b7b913c43b44a81a9af7900671bca4d091391"
+        },
+        {
+          "file": "IDS-UCS-Ext-A.txt",
+          "url": "https://raw.githubusercontent.com/chise/ids/c3057f890b4d7a990628873f19274ec33b58a7aa/IDS-UCS-Ext-A.txt",
+          "sha256": "d58c5b21054d1ba07fd2621f0892b36c088009d7890b136f42f8c5a5af21f495"
+        },
+        {
+          "file": "IDS-UCS-Ext-B-1.txt",
+          "url": "https://raw.githubusercontent.com/chise/ids/c3057f890b4d7a990628873f19274ec33b58a7aa/IDS-UCS-Ext-B-1.txt",
+          "sha256": "336be9f156b9c78785a79360978241b1a2973fab5c26662489f69e4d94b13ba0"
+        },
+        {
+          "file": "IDS-UCS-Ext-B-2.txt",
+          "url": "https://raw.githubusercontent.com/chise/ids/c3057f890b4d7a990628873f19274ec33b58a7aa/IDS-UCS-Ext-B-2.txt",
+          "sha256": "551150fa2bd8886c17b5af40ad1d7876026d477349e7d636b0fbfc7306d26b81"
+        },
+        {
+          "file": "IDS-UCS-Ext-B-3.txt",
+          "url": "https://raw.githubusercontent.com/chise/ids/c3057f890b4d7a990628873f19274ec33b58a7aa/IDS-UCS-Ext-B-3.txt",
+          "sha256": "33a51a09a18d06fb666e72f13d3854c41a1d06207f0f0c4ac43f3687a0bea6fb"
+        },
+        {
+          "file": "IDS-UCS-Ext-B-4.txt",
+          "url": "https://raw.githubusercontent.com/chise/ids/c3057f890b4d7a990628873f19274ec33b58a7aa/IDS-UCS-Ext-B-4.txt",
+          "sha256": "f6c926482a3600e93b17be958de8cce701c0d91c644316a87e3a821374ad4360"
+        },
+        {
+          "file": "IDS-UCS-Ext-B-5.txt",
+          "url": "https://raw.githubusercontent.com/chise/ids/c3057f890b4d7a990628873f19274ec33b58a7aa/IDS-UCS-Ext-B-5.txt",
+          "sha256": "21cf28e9e4aeb3d98e8c7739899270b13a6d080a2f65f0d4287710d71e72901a"
+        },
+        {
+          "file": "IDS-UCS-Ext-B-6.txt",
+          "url": "https://raw.githubusercontent.com/chise/ids/c3057f890b4d7a990628873f19274ec33b58a7aa/IDS-UCS-Ext-B-6.txt",
+          "sha256": "a732d18a27f418cb4610b7a1e1674487485111734cbd131220caa1baf23b630a"
+        },
+        {
+          "file": "IDS-UCS-Ext-C.txt",
+          "url": "https://raw.githubusercontent.com/chise/ids/c3057f890b4d7a990628873f19274ec33b58a7aa/IDS-UCS-Ext-C.txt",
+          "sha256": "74dcff528d54508225e587384f132cac508b97a866969ebbeea848a030910225"
+        },
+        {
+          "file": "IDS-UCS-Ext-D.txt",
+          "url": "https://raw.githubusercontent.com/chise/ids/c3057f890b4d7a990628873f19274ec33b58a7aa/IDS-UCS-Ext-D.txt",
+          "sha256": "c300f9ace1ffd9526fe3c17a12c94b3823e1a97cd507bd4b85b784bf269a3234"
+        },
+        {
+          "file": "IDS-UCS-Ext-E.txt",
+          "url": "https://raw.githubusercontent.com/chise/ids/c3057f890b4d7a990628873f19274ec33b58a7aa/IDS-UCS-Ext-E.txt",
+          "sha256": "aab22be5a0ba07d3830f37f344b08950c566286171539c08ce6d0d0a5f3a635b"
+        },
+        {
+          "file": "IDS-UCS-Ext-F.txt",
+          "url": "https://raw.githubusercontent.com/chise/ids/c3057f890b4d7a990628873f19274ec33b58a7aa/IDS-UCS-Ext-F.txt",
+          "sha256": "dfede4731416ad43a084d0ecdc86562607e9057735e9ac43114870fa5dbf9f5e"
+        },
+        {
+          "file": "IDS-UCS-Ext-G.txt",
+          "url": "https://raw.githubusercontent.com/chise/ids/c3057f890b4d7a990628873f19274ec33b58a7aa/IDS-UCS-Ext-G.txt",
+          "sha256": "1f8f8cc7d911ccf86c196ce4de43d7e4ca03689ee83d4e3e380120eac336c64d"
+        },
+        {
+          "file": "IDS-UCS-Ext-H.txt",
+          "url": "https://raw.githubusercontent.com/chise/ids/c3057f890b4d7a990628873f19274ec33b58a7aa/IDS-UCS-Ext-H.txt",
+          "sha256": "e239d31373777a953c755ba99ae7a502a33823bddd0fc9af4e61e3cd8f209e0c"
+        },
+        {
+          "file": "IDS-UCS-Ext-I.txt",
+          "url": "https://raw.githubusercontent.com/chise/ids/c3057f890b4d7a990628873f19274ec33b58a7aa/IDS-UCS-Ext-I.txt",
+          "sha256": "a84694c801290033b7e3f79303c71fcdcae595afc3a47481496dc051832369d0"
+        },
+        {
+          "file": "IDS-UCS-Ext-J.txt",
+          "url": "https://raw.githubusercontent.com/chise/ids/c3057f890b4d7a990628873f19274ec33b58a7aa/IDS-UCS-Ext-J.txt",
+          "sha256": "0910def2870d1e4cb38c4064f060de5efc48bb73fee6d5f7447657fa121fa260"
+        }
+      ],
+      "licence": "GPL-2.0-or-later",
+      "licenceEvidence": "https://raw.githubusercontent.com/chise/ids/c3057f890b4d7a990628873f19274ec33b58a7aa/README.md, section License",
+      "attribution": "CHISE IDS, the CHISE project, https://gitlab.chise.org/CHISE/ids",
+      "weakness": "CHISE publishes no releases; the pin is a commit. The repository lacks the COPYING file its README points at."
+    },
+    {
+      "id": "zi-tools",
+      "name": "Yi Bai's IDS data, level 1 (zi.tools notation)",
+      "role": "description",
+      "url": "https://github.com/yi-bai/ids",
+      "pin": "commit da1e9f8a09e2ec8faaf176bac99203f978282041 (2026-10-20)",
+      "retrieved": "2026-11-15",
+      "files": [
+        {
+          "file": "ids_lv1.txt",
+          "url": "https://raw.githubusercontent.com/yi-bai/ids/da1e9f8a09e2ec8faaf176bac99203f978282041/ids_lv1.txt",
+          "sha256": "51f78d7d84f52fd73e5bc155c2239b737c58ce627d446894a809f1a36547ae18"
+        }
+      ],
+      "licence": "MIT",
+      "licenceEvidence": "https://raw.githubusercontent.com/yi-bai/ids/da1e9f8a09e2ec8faaf176bac99203f978282041/LICENSE",
+      "attribution": "Copyright (c) 2021 Yi Bai, https://github.com/yi-bai/ids"
+    },
+    {
+      "id": "kanjivg",
+      "name": "KanjiVG",
+      "role": "guide",
+      "url": "https://kanjivg.tagaini.net/",
+      "pin": "release r20260714",
+      "retrieved": "2026-11-15",
+      "files": [
+        {
+          "file": "kanjivg-20260714.xml.gz",
+          "url": "https://github.com/KanjiVG/kanjivg/releases/download/r20260714/kanjivg-20260714.xml.gz",
+          "sha256": "d4a8e5e11533fe6a5d81a158b2c153964322641d2982c90a919461f3c06dca6b"
+        }
+      ],
+      "licence": "CC-BY-SA-3.0",
+      "licenceEvidence": "https://github.com/KanjiVG/kanjivg/blob/r20260714/COPYING",
+      "attribution": "KanjiVG, Copyright (C) 2009-2013 Ulrich Apel, CC BY-SA 3.0, https://kanjivg.tagaini.net/",
+      "weakness": "Its groups follow Japanese stroke order and component analysis, which can differ from the description a cut is labelled with."
+    },
+    {
+      "id": "glyphwiki",
+      "name": "GlyphWiki",
+      "role": "reference",
+      "url": "https://glyphwiki.org/",
+      "pin": "glyphs fetched 2026-11-13 by ids-input, as its data/custom-outlines.json.gz at commit be70733a179085a16e48f7049b6cfec5e07f4496",
+      "retrieved": "2026-11-15",
+      "files": [
+        {
+          "file": "custom-outlines.json.gz",
+          "url": "https://raw.githubusercontent.com/mkpoli/ids-input/be70733a179085a16e48f7049b6cfec5e07f4496/data/custom-outlines.json.gz",
+          "sha256": "9750f7beacbaef4458e1ff5e8542793007e8d134e8c7c0eaf638c86ce8921ee3"
+        }
+      ],
+      "licence": "LicenseRef-GlyphWiki",
+      "licenceEvidence": "https://glyphwiki.org/wiki/GlyphWiki:データ・記事のライセンス",
+      "attribution": "GlyphWiki, https://glyphwiki.org/",
+      "weakness": "Glyphs are edited by GlyphWiki's users and may differ from the form a description source means. A glyph is used only to check a cut. The terms are given as ids-input's data/README.md summarises them (free use, copying and modification, no attribution required); the licence page did not load for an automated client on 2026-11-15."
+    },
+    {
+      "id": "adobe-japan1",
+      "name": "Adobe-Japan1-7 Kanji Datafile (aj17-kanji.txt)",
+      "role": "identity",
+      "url": "https://github.com/adobe-type-tools/Adobe-Japan1",
+      "pin": "Version 2023-01-24, commit b42b377d7efbc233ae2a4c1833947e04760e68d1",
+      "retrieved": "2026-11-15",
+      "files": [
+        {
+          "file": "aj17-kanji.txt",
+          "url": "https://raw.githubusercontent.com/adobe-type-tools/Adobe-Japan1/b42b377d7efbc233ae2a4c1833947e04760e68d1/aj17-kanji.txt",
+          "sha256": "b277fbe06a6b7566c9dda81ba920d0750bf2d620d6066e57153d36ed0924d77d"
+        }
+      ],
+      "licence": "LicenseRef-Adobe-Japan1",
+      "licenceEvidence": "https://raw.githubusercontent.com/adobe-type-tools/Adobe-Japan1/b42b377d7efbc233ae2a4c1833947e04760e68d1/README.md",
+      "attribution": "Adobe-Japan1-7 Kanji Datafile, Version 2023-01-24, prepared by Ken Lunde and Masataka Hattori; © 1992–2019 Adobe Inc.",
+      "weakness": "The repository's permission notice is written for its README; the data file states no terms of its own. None of the pinned fonts is keyed to Adobe-Japan1, so no outline here shows a CID's glyph."
+    },
+    {
+      "id": "ids-input-components",
+      "name": "ids-input custom component registry",
+      "role": "identity",
+      "url": "https://github.com/mkpoli/ids-input",
+      "pin": "commit be70733a179085a16e48f7049b6cfec5e07f4496",
+      "retrieved": "2026-11-15",
+      "files": [
+        {
+          "file": "custom-components.json.gz",
+          "url": "https://raw.githubusercontent.com/mkpoli/ids-input/be70733a179085a16e48f7049b6cfec5e07f4496/data/custom-components.json.gz",
+          "sha256": "3e88359acb1a5fa7d9202a004f0ce65266adf1fad03140d55ead835e57379261"
+        },
+        {
+          "file": "custom-ids.tsv",
+          "url": "https://raw.githubusercontent.com/mkpoli/ids-input/be70733a179085a16e48f7049b6cfec5e07f4496/data/custom-ids.tsv",
+          "sha256": "b1c394894f726e240a1e574a2226a42dfb1759e06387f64db59d45eb9e577d92"
+        }
+      ],
+      "licence": "GPL-2.0-or-later",
+      "licenceEvidence": "https://raw.githubusercontent.com/mkpoli/ids-input/be70733a179085a16e48f7049b6cfec5e07f4496/data/README.md",
+      "attribution": "ids-input custom component registry, https://github.com/mkpoli/ids-input; derived from BabelStone IDS, CHISE IDS and Yi Bai's IDS data",
+      "weakness": "Every equivalence in it is derived by comparing the three tables' descriptions of shared characters; no source states one."
+    }
+  ]
+}
