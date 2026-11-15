@@ -1,6 +1,7 @@
 <script lang="ts">
   // The library cuts of one component in one chain, by place, sortable by evidence and by size.
-  import { resolveCut } from "../lib/data.ts";
+  import { onMount } from "svelte";
+  import { resolveCut, type ResolvedCut } from "../lib/data.ts";
   import { n, t } from "../lib/i18n.svelte.ts";
   import { score, size } from "../lib/reading.ts";
   import CutTile from "./CutTile.svelte";
@@ -9,26 +10,44 @@
 
   let { chain, byPlace }: { chain: string; byPlace: Record<string, string[]> } = $props();
 
-  const CAP = 500;
   const PAGE = 48;
   const PLACES = ["L", "C", "R", "T", "M", "B"];
 
   type Sort = "order" | "evidence" | "size";
+  interface Item {
+    place: string;
+    id: string;
+    order: number;
+    resolved: ResolvedCut;
+  }
+
   let sort = $state<Sort>("order");
-  let limit = $state(PAGE);
+  let loaded = $state.raw<Item[]>([]);
+  let loading = $state(true);
+  let cursor = $state(0);
 
   const flat = $derived(Object.entries(byPlace).flatMap(([place, ids]) => ids.map((id, order) => ({ place, id, order }))));
-  const items = $derived(
-    Promise.all(
-      flat.slice(0, CAP).map(async (entry) => ({ ...entry, resolved: await resolveCut(entry.id) })),
-    ).then((all) => all.filter((e) => e.resolved !== null) as (typeof all[number] & { resolved: NonNullable<(typeof all)[number]["resolved"]> })[]),
-  );
 
-  function arranged<T extends { order: number; resolved: { cut: Parameters<typeof score>[0] & Parameters<typeof size>[0] } }>(list: T[]): T[] {
+  /** Resolves the next page of cuts, best first, and shows it as it arrives. */
+  async function more(): Promise<void> {
+    loading = true;
+    const slice = flat.slice(cursor, cursor + PAGE);
+    cursor += slice.length;
+    const got = await Promise.all(slice.map(async (entry) => ({ ...entry, resolved: await resolveCut(entry.id) })));
+    loaded = [...loaded, ...got.filter((e): e is Item => e.resolved !== null)];
+    loading = false;
+  }
+
+  onMount(() => void more());
+
+  function arranged(list: Item[]): Item[] {
     if (sort === "evidence") return [...list].sort((a, b) => (score(b.resolved.cut) ?? -1) - (score(a.resolved.cut) ?? -1));
     if (sort === "size") return [...list].sort((a, b) => size(b.resolved.cut) - size(a.resolved.cut));
     return [...list].sort((a, b) => a.order - b.order);
   }
+
+  const shown = $derived(arranged(loaded));
+  const places = $derived([...new Set(shown.map((e) => e.place))].sort((a, b) => placeOrder(a) - placeOrder(b) || a.localeCompare(b)));
 
   const placeOrder = (place: string): number => {
     const i = PLACES.indexOf(place);
@@ -51,31 +70,28 @@
         ]}
         onchange={(v) => {
           sort = v as Sort;
-          limit = PAGE;
         }}
       />
     </div>
   </div>
-  {#await items}
+  {#if loading && !loaded.length}
     <Loading />
-  {:then all}
-    {@const shown = arranged(all).slice(0, limit)}
-    {@const places = [...new Set(shown.map((e) => e.place))].sort((a, b) => placeOrder(a) - placeOrder(b) || a.localeCompare(b))}
-    {#each places as place (place)}
-      <div class="place">
-        <div class="row"><span class="ui-chip mono">{place}</span><span class="muted num">{n(shown.filter((e) => e.place === place).length)}</span></div>
-        <div class="tiles">
-          {#each shown.filter((e) => e.place === place) as entry (entry.id)}
-            <CutTile resolved={entry.resolved} />
-          {/each}
-        </div>
+  {/if}
+  {#each places as place (place)}
+    <div class="place">
+      <div class="row"><span class="ui-chip mono">{place}</span><span class="muted num">{n(shown.filter((e) => e.place === place).length)}</span></div>
+      <div class="tiles">
+        {#each shown.filter((e) => e.place === place) as entry (entry.id)}
+          <CutTile resolved={entry.resolved} />
+        {/each}
       </div>
-    {/each}
-    {#if limit < all.length}
-      <div class="row"><button type="button" class="ui-button" onclick={() => (limit += PAGE)}>{t("library.more", { count: Math.min(PAGE, all.length - limit) })}</button></div>
-    {/if}
-    {#if flat.length > CAP}<p class="muted">{t("library.capped", { count: CAP })}</p>{/if}
-  {/await}
+    </div>
+  {/each}
+  {#if cursor < flat.length}
+    <div class="row">
+      <button type="button" class="ui-button" aria-busy={loading} disabled={loading} onclick={() => void more()}>{t("library.more", { count: Math.min(PAGE, flat.length - cursor) })}</button>
+    </div>
+  {/if}
 </div>
 
 <style>
