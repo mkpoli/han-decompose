@@ -16,6 +16,10 @@ them. [docs/design.md](docs/design.md) gives the data model, the plan and what h
 [docs/reproduction.md](docs/reproduction.md) holds the cutters against the ids-input data they came
 from.
 
+## Releases
+
+[docs/release.md](docs/release.md) says how a data release is cut, built, checked and packed.
+
 ## Licences
 
 Code is under the MIT licence (`LICENSE`).

@@ -144,7 +144,14 @@ same value. A `.gz` file is gzip with its modification time set to 0. No file ho
 Every JSON file names its format: `han-decompose/<kind>@<major>.<minor>`. A minor version adds
 properties; a major version changes or removes them.
 
-`manifest.json` and the `references` files are reserved in this version.
+The `references` files are reserved in this version.
+
+`manifest.json`, `format` `han-decompose/manifest@1.0`, holds the `release` name; the `tool` that
+built it (`name`, `version`, `commit`); the pinned `fonts` and `sources` with their digests;
+`counts` per font and source (`readings`, `skipped`, `cuts` by status, `components` with an
+accepted cut); and `files`, every file but itself and `SHA256SUMS` with its `path`, `bytes` and
+`sha256`. `SHA256SUMS` lists the same digests and the manifest's.
+
 `README.md` names every font and source of the release with its licence and attribution, and
 `LICENSES/` holds the licence texts.
 

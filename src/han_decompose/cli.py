@@ -6,13 +6,15 @@ from typing import Annotated
 
 import typer
 
-from . import __version__, descriptions, numbered, pins
+from . import __version__, aj1, descriptions, numbered, pins, tsv
 from . import identifiers as I
 from .cutters import library as libraries
 from .cutters import lift as lifts
 from .cutters import survey as surveys
 from .importers import composer_export
 from .outline import Chain
+from .release import Release, pack
+from .schema import Json
 from .store import Store
 
 app = typer.Typer(no_args_is_help=True, add_completion=False, help=__doc__)
@@ -219,3 +221,72 @@ def read(
     for code, number in summary["skipped"].items():
         typer.echo(f"skipped: {code}\t{number}")
     typer.echo(f"reference outlines added\t{added}")
+
+
+def component_rows(cache: Path | None) -> list[Json]:
+    """The rows of the component tables: the Adobe-Japan1 glyphs CHISE names, and the numbered
+    components with their code points in BabelStone Han PUA."""
+    return [*aj1.pinned(cache), *numbered.rows(descriptions.table("babelstone", cache))]
+
+
+@app.command()
+def release(
+    out: Annotated[Path, typer.Argument(help="An empty folder to build the release in.")],
+    version: Annotated[str, typer.Argument(help="The release's name, as `v1.0.0`.")],
+    run: Annotated[
+        list[Path], typer.Option(help="A folder of outline and cut files; the first given takes precedence.")
+    ],
+    dist: Annotated[
+        Path | None, typer.Option(help="A folder to pack the release into, one archive per font and source.")
+    ] = None,
+    commit: Annotated[str | None, typer.Option(help="The commit the runs were made from.")] = None,
+    cache: Annotated[Path | None, typer.Option(help="The cache folder the pinned files are in.")] = None,
+) -> None:
+    """Build a data release from cutting runs: their files merged and checked, the flat tables per
+    source, the component tables, the registries, a README with every source and licence, the
+    licence texts, a manifest and checksums. Nothing is published."""
+    try:
+        built = Release(out, version)
+        built.shards(run)
+        built.indexes()
+        built.flat(component_rows(cache))
+        manifest = built.finish(commit)
+    except (pins.PinError, ValueError, KeyError, OSError) as error:
+        typer.echo(str(error.args[0]) if isinstance(error, KeyError) else str(error), err=True)
+        raise typer.Exit(1) from error
+    for problem in built.problems[:50]:
+        typer.echo(problem, err=True)
+    typer.echo(f"files\t{len(manifest['files'])}")
+    for font, sources in manifest["counts"].items():
+        for source, count in sources.items():
+            cuts = " ".join(f"{status} {number}" for status, number in count["cuts"].items())
+            typer.echo(f"{font}\t{source}\treadings {count['readings']}\t{cuts}\tcomponents {count['components']}")
+    if built.problems:
+        typer.echo(f"problems\t{len(built.problems)}", err=True)
+        raise typer.Exit(1)
+    if dist is not None:
+        try:
+            typer.echo(f"assets\t{len(pack(out, dist))}\t{dist}")
+        except ValueError as error:
+            typer.echo(str(error), err=True)
+            raise typer.Exit(1) from error
+
+
+@app.command()
+def components(
+    out: Annotated[Path, typer.Argument(help="A folder to write the component tables into.")],
+    cache: Annotated[Path | None, typer.Option(help="The cache folder the pinned files are in.")] = None,
+) -> None:
+    """Write the component tables, one per source: the Adobe-Japan1 glyphs CHISE's descriptions
+    name, each with the character Adobe's kanji table makes it a glyph of, and BabelStone's numbered
+    components with their code points in BabelStone Han PUA."""
+    try:
+        rows = component_rows(cache)
+    except (pins.PinError, ValueError, KeyError, OSError) as error:
+        typer.echo(str(error.args[0]) if isinstance(error, KeyError) else str(error), err=True)
+        raise typer.Exit(1) from error
+    out.mkdir(parents=True, exist_ok=True)
+    for source in sorted({row["source"] for row in rows}):
+        mine = [row for row in rows if row["source"] == source]
+        (out / f"components.{source}.tsv").write_text(tsv.write_table("components", mine), encoding="utf-8")
+        typer.echo(f"components.{source}.tsv\t{len(mine)}")

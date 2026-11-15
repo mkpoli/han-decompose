@@ -20,6 +20,7 @@
       ],
       "licence": "LicenseRef-BabelStone-IDS",
       "licenceEvidence": "IDS.TXT header, note 2: under U.S. copyright law data is not eligible for copyright protection, and IDS descriptions are held to be such data; anyone may use the data for personal or commercial purposes without asking permission or providing attribution; the maintainer waives copyright claims to the file's presentation.",
+      "licenceFile": "LicenseRef-BabelStone-IDS.txt",
       "attribution": "BabelStone IDS by Andrew West (魏安), File Date 2025-06-27, https://www.babelstone.co.uk/CJK/IDS.TXT",
       "weakness": "The file has no versioned URL; the pin is its File Date and digest. A sequence describes a character's form in the regions it is tagged with, which need not be the form a given font draws. Its header (note 1) says the data draws on Kawabata Taichi's IDS data and on IRG submissions; note 2 rests on U.S. law."
     },
@@ -124,6 +125,7 @@
       ],
       "licence": "GPL-2.0-or-later",
       "licenceEvidence": "https://raw.githubusercontent.com/chise/ids/c3057f890b4d7a990628873f19274ec33b58a7aa/README.md, section License",
+      "licenceFile": "GPL-2.0-or-later.txt",
       "attribution": "CHISE IDS, the CHISE project, https://gitlab.chise.org/CHISE/ids",
       "weakness": "CHISE publishes no releases; the pin is a commit. The repository lacks the COPYING file its README points at."
     },
@@ -143,6 +145,7 @@
       ],
       "licence": "MIT",
       "licenceEvidence": "https://raw.githubusercontent.com/yi-bai/ids/da1e9f8a09e2ec8faaf176bac99203f978282041/LICENSE",
+      "licenceFile": "MIT.txt",
       "attribution": "Copyright (c) 2021 Yi Bai, https://github.com/yi-bai/ids"
     },
     {
@@ -161,6 +164,7 @@
       ],
       "licence": "CC-BY-SA-3.0",
       "licenceEvidence": "https://github.com/KanjiVG/kanjivg/blob/r20260714/COPYING",
+      "licenceFile": "CC-BY-SA-3.0.txt",
       "attribution": "KanjiVG, Copyright (C) 2009-2013 Ulrich Apel, CC BY-SA 3.0, https://kanjivg.tagaini.net/",
       "weakness": "Its groups follow Japanese stroke order and component analysis, which can differ from the description a cut is labelled with."
     },
@@ -180,6 +184,7 @@
       ],
       "licence": "LicenseRef-GlyphWiki",
       "licenceEvidence": "https://glyphwiki.org/wiki/GlyphWiki:データ・記事のライセンス; English translation of its revision 15, archived 2025-11-14: https://web.archive.org/web/20251114152951/https://en.glyphwiki.org/wiki/GlyphWiki:License",
+      "licenceFile": "LicenseRef-GlyphWiki.txt",
       "attribution": "GlyphWiki, https://glyphwiki.org/",
       "weakness": "Glyphs are edited by GlyphWiki's users and may differ from the form a description source means. A glyph is used only to check a cut. The Japanese licence page, which governs, did not load for an automated client on 2026-11-15; the English translation was read from an archive."
     },
@@ -199,6 +204,7 @@
       ],
       "licence": "LicenseRef-Adobe-Japan1",
       "licenceEvidence": "https://raw.githubusercontent.com/adobe-type-tools/Adobe-Japan1/b42b377d7efbc233ae2a4c1833947e04760e68d1/README.md",
+      "licenceFile": "LicenseRef-Adobe-Japan1.txt",
       "attribution": "Adobe-Japan1-7 Kanji Datafile, Version 2023-01-24, prepared by Ken Lunde and Masataka Hattori; © 1992–2019 Adobe Inc.",
       "weakness": "The repository's permission notice is written for its README; the data file states no terms of its own. None of the pinned fonts is keyed to Adobe-Japan1, so no outline here shows a CID's glyph."
     },
@@ -223,6 +229,7 @@
       ],
       "licence": "GPL-2.0-or-later",
       "licenceEvidence": "https://raw.githubusercontent.com/mkpoli/ids-input/be70733a179085a16e48f7049b6cfec5e07f4496/data/README.md",
+      "licenceFile": "GPL-2.0-or-later.txt",
       "attribution": "ids-input custom component registry, https://github.com/mkpoli/ids-input; derived from BabelStone IDS, CHISE IDS and Yi Bai's IDS data",
       "weakness": "Every equivalence in it is derived by comparing the three tables' descriptions of shared characters; no source states one."
     }

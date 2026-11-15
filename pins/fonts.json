@@ -15,6 +15,7 @@
       "upem": 1000,
       "licence": "OFL-1.1",
       "licenceEvidence": "the font's name table, record 13 (licence description)",
+      "licenceFile": "OFL-1.1.txt",
       "copyright": "© 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'.",
       "reservedNames": [
         "Source"
@@ -32,6 +33,7 @@
       "upem": 1000,
       "licence": "OFL-1.1",
       "licenceEvidence": "the font's name table, record 13 (licence description)",
+      "licenceFile": "OFL-1.1.txt",
       "copyright": "Copyright (c) 2024 by Fitzgerald P. Köeingsegg. All rights reserved.",
       "style": "sans"
     },
@@ -46,6 +48,7 @@
       "upem": 1000,
       "licence": "OFL-1.1",
       "licenceEvidence": "the font's name table, record 13 (licence description)",
+      "licenceFile": "OFL-1.1.txt",
       "copyright": "Copyright (c) 2024 by Fitzgerald P. Köeingsegg. All rights reserved.",
       "style": "sans"
     },
@@ -63,6 +66,7 @@
       "upem": 1000,
       "licence": "OFL-1.1",
       "licenceEvidence": "the font's name table, record 13 (licence description)",
+      "licenceFile": "OFL-1.1.txt",
       "copyright": "© 2017-2024 Adobe (http://www.adobe.com/).",
       "style": "serif"
     },
@@ -81,6 +85,7 @@
       "upem": 1024,
       "licence": "CC0-1.0",
       "licenceEvidence": "LICENSE.txt in the archive",
+      "licenceFile": "CC0-1.0.txt",
       "copyright": "Koichi Kamichi",
       "style": "serif"
     },
@@ -99,6 +104,7 @@
       "upem": 1024,
       "licence": "CC0-1.0",
       "licenceEvidence": "LICENSE.txt in the archive",
+      "licenceFile": "CC0-1.0.txt",
       "copyright": "Koichi Kamichi",
       "style": "serif"
     },
@@ -117,6 +123,7 @@
       "upem": 1024,
       "licence": "CC0-1.0",
       "licenceEvidence": "LICENSE.txt in the archive",
+      "licenceFile": "CC0-1.0.txt",
       "copyright": "Koichi Kamichi",
       "style": "serif"
     },
@@ -134,6 +141,7 @@
       "upem": 1024,
       "licence": "Arphic-1999",
       "licenceEvidence": "the font's name table, record 13 (licence description)",
+      "licenceFile": "Arphic-1999.txt",
       "copyright": "(c) Copyright 1994-1999, Arphic Technology Co., Ltd.; (c) Copyright 2009-2025, Andrew West.",
       "style": "serif"
     }
