@@ -21,7 +21,7 @@ from . import __version__, pins, tsv
 from . import identifiers as I
 from .resources import resource
 from .schema import Json, problems
-from .store import FORMS, LIBRARY, dumps, write
+from .store import FORMS, LIBRARY, dumps, terms, write
 
 MANIFEST = "han-decompose/manifest@1.0"
 ACCEPTED = ("accepted", "reviewed-right")
@@ -36,6 +36,8 @@ def _shards(runs: Sequence[Path], top: str) -> dict[str, list[Path]]:
     """Every shard under `top` of every run, by its path in the release, runs in order."""
     out: dict[str, list[Path]] = {}
     for run in runs:
+        if not run.is_dir():
+            raise ValueError(f"{run} is not the folder of a run.")
         for path in sorted((run / top).rglob("*.json.gz")) if (run / top).is_dir() else []:
             out.setdefault(path.relative_to(run).as_posix(), []).append(path)
     return dict(sorted(out.items()))
@@ -73,9 +75,6 @@ def merge_cuts(paths: Sequence[Path]) -> Json:
     skipped = {(row.get("glyph"), row["subject"], row["description"]) for row in merged["skipped"]}
     for path in paths[1:]:
         other = _load(path)
-        if other["terms"].get("guide") and not merged["terms"].get("guide"):
-            merged["terms"]["guide"] = other["terms"]["guide"]
-            merged["terms"]["notices"] = sorted({*merged["terms"]["notices"], *other["terms"]["notices"]})
         for row in other["readings"]:
             if (row["glyph"], row["description"]) not in read:
                 read.add((row["glyph"], row["description"]))
@@ -88,6 +87,11 @@ def merge_cuts(paths: Sequence[Path]) -> Json:
     merged["skipped"] = [row for row in merged["skipped"] if (row.get("glyph"), row["description"]) not in read]
     merged["readings"].sort(key=_key)
     merged["skipped"].sort(key=_key)
+    # The terms are those of the readings that stand: a guide is named only where one is followed.
+    guides = sorted({row["method"]["guide"] for row in merged["readings"] if "guide" in row["method"]})
+    if len(guides) > 1:
+        raise ValueError(f"{paths[0].name}: the cuts of {merged['font']} follow more than one guide.")
+    merged["terms"] = terms(merged["font"], merged["source"], *guides)
     return merged
 
 
@@ -173,6 +177,7 @@ class Release:
                 }
             library.update(self.lifted.get(chain, {}))
             content = {"format": LIBRARY, "chain": chain, "library": dict(sorted(library.items()))}
+            self.problems += [f"library/{chain}: {problem}" for problem in problems("library", content)]
             write(self.out / "library" / f"{chain}.json.gz", dumps(content))
 
     def flat(self, components: Iterable[Json]) -> None:
@@ -283,13 +288,24 @@ def readme(
     if forms:
         lines += ["", "| Chain | Components with a chosen form |", "|---|---|"]
         lines += [f"| `{chain}` | {len(held):,} |" for chain, held in sorted(forms.items())]
+    statuses: dict[str, int] = {}
+    for held in counts.values():
+        for count in held.values():
+            for status, number in count["cuts"].items():
+                statuses[status] = statuses.get(status, 0) + number
+    judged = statuses.get("reviewed-right", 0) + statuses.get("reviewed-wrong", 0)
     lines += [
         "",
-        "A cut says how it was made and checked. `status` is `accepted` or `refused`; a refused cut failed a",
-        "check and is kept so that it can be reviewed. `calibrated` names the component whose reviewed cuts",
-        "set the limits of the checks, or is `false`: the limits were set on 山 in Noto Sans CJK JP and",
-        "Plangothic and are borrowed for every other component and font. No cut in this release has been",
-        "judged by a person.",
+        "By status, over all fonts and sources: " + ", ".join(f"{n:,} {s}" for s, n in sorted(statuses.items())) + "."
+        if statuses
+        else "",
+        "",
+        "A cut says how it was made and checked. A `refused` cut failed a check and is kept so that it can be",
+        "reviewed. `calibrated` names the component whose reviewed cuts set the limits of the checks, or is",
+        "`false`: the limits are then borrowed from another component or font.",
+        f"A person has judged {judged:,} of the cuts in this release (`reviewed-right`, `reviewed-wrong`)."
+        if judged
+        else "No cut in this release has been judged by a person.",
         "",
         "## Licences",
         "",
@@ -313,7 +329,9 @@ def readme(
         if row["role"] == "guide" and row["id"] not in guides:
             continue
         role = "descriptions" if row["id"] in sources else row["role"]
-        lines.append(f"- `{row['id']}` ({role}): {row['attribution']}. {row['licence']}. Pin: {row['pin']}.")
+        lines.append(
+            f"- `{row['id']}` ({role}): {row['attribution'].rstrip('.')}. {row['licence']}. Pin: {row['pin']}."
+        )
     lines += [
         "",
         "Cuts made along a guide name it and its licence, and their files carry its attribution."
@@ -332,6 +350,8 @@ def pack(release: Path, dist: Path) -> list[Path]:
     """The release as the files of a release page: one archive of outlines per font, one of cuts
     per font and source, and the tables, indexes and registries as they are. Archives are written
     with fixed times and owners, so the same release packs to the same bytes."""
+    if dist.exists() and any(dist.iterdir()):
+        raise ValueError(f"{dist} is not empty.")
     dist.mkdir(parents=True, exist_ok=True)
     made = []
     groups: dict[str, list[Path]] = {}

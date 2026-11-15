@@ -76,6 +76,8 @@ def test_a_release_holds_the_runs_files_tables_indexes_and_terms(tmp_path: Path)
     readme = (out / "README.md").read_text(encoding="utf-8")
     assert "Noto Sans CJK JP 2.004, OFL-1.1" in readme and "BabelStone IDS by Andrew West" in readme
     assert "No cut in this release was made along a guide." in readme
+    assert "By status, over all fonts and sources: 3 accepted." in readme
+    assert "No cut in this release has been judged by a person." in readme
     with pytest.raises(ValueError, match="is not empty"):
         release.Release(out, "v0.0.2")
 
@@ -123,6 +125,35 @@ def test_the_first_run_given_stands_and_a_skip_gives_way_to_a_reading(tmp_path: 
     write(outline, dumps(changed))
     with pytest.raises(ValueError, match="differs from an earlier run"):
         release.merge_outlines([first / "outlines" / FONT / "050.json.gz", outline])
+
+
+def test_the_command_builds_and_packs_and_refuses_a_run_that_is_not_there(tmp_path: Path) -> None:
+    from typer.testing import CliRunner
+
+    from han_decompose import pins
+    from han_decompose.cli import app
+
+    try:
+        pins.source_paths(pins.source("adobe-japan1"), fetch=False)
+        pins.source_paths(pins.source("ids-input-components"), fetch=False)
+        pins.source_paths(pins.source("babelstone"), fetch=False)
+    except pins.PinError:
+        pytest.skip("The pinned tables are not in the cache; run `han-decompose fetch`.")
+    run = golden(tmp_path / "run")
+    arguments = ["release", str(tmp_path / "out"), "v0.0.1", "--run", str(run), "--dist", str(tmp_path / "dist")]
+    result = CliRunner().invoke(app, arguments)
+    assert result.exit_code == 0, result.output
+    assert f"{FONT}\tbabelstone\treadings 1\taccepted 3\tcomponents 3" in result.output
+    assert (tmp_path / "dist" / "components.adobe-japan1.tsv").exists() and (
+        tmp_path / "dist" / "SHA256SUMS.assets"
+    ).exists()
+    missing = ["release", str(tmp_path / "other"), "v0.0.1", "--run", str(tmp_path / "nowhere")]
+    result = CliRunner().invoke(app, missing)
+    assert result.exit_code == 1 and "is not the folder of a run" in result.output
+    again = CliRunner().invoke(
+        app, ["release", str(tmp_path / "third"), "v0.0.1", "--run", str(run), "--dist", str(tmp_path / "dist")]
+    )
+    assert again.exit_code == 1 and "is not empty" in again.output
 
 
 def test_a_release_packs_to_one_archive_per_font_and_source(tmp_path: Path) -> None:

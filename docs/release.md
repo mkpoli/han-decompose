@@ -40,8 +40,8 @@ uv run han-decompose release out/v1.0.0 v1.0.0 \
 
 The runs are merged shard by shard. Where two runs read the same glyph under the same
 description, the run given first stands: the lifts go first. Every file is checked against the
-schema and the format's invariants, cut files against their outline files; a problem stops the
-build. The folder then holds the layout of `docs/format.md`: outlines, cuts, the form and library
+schema and the format's invariants, cut files against their outline files. Problems are listed,
+the command fails, and nothing is packed. The folder then holds the layout of `docs/format.md`: outlines, cuts, the form and library
 indexes, the flat tables per source, the component tables, `fonts.json` and `sources.json`, the
 licence texts, a `README.md` that names every font and source with its terms, `manifest.json`
 and `SHA256SUMS`.

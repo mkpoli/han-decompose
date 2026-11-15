@@ -265,7 +265,11 @@ def release(
         typer.echo(f"problems\t{len(built.problems)}", err=True)
         raise typer.Exit(1)
     if dist is not None:
-        typer.echo(f"assets\t{len(pack(out, dist))}\t{dist}")
+        try:
+            typer.echo(f"assets\t{len(pack(out, dist))}\t{dist}")
+        except ValueError as error:
+            typer.echo(str(error), err=True)
+            raise typer.Exit(1) from error
 
 
 @app.command()
