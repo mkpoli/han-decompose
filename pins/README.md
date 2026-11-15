@@ -75,7 +75,7 @@ from them by `han-decompose citations`.
 ### `babelstone-han-pua@1.472`
 
 - Font: BabelStone Han PUA 1.472, name-table version `Version 1.472`, 1024 units per em.
-- File: <https://www.babelstone.co.uk/Fonts/Download/BabelStoneHanPUA.ttf>
+- File: <https://www.babelstone.co.uk/Fonts/Download/BabelStoneHanPUA.ttf>; mirror <https://github.com/mkpoli/han-decompose/releases/download/mirror-babelstone-han-pua-1.472/BabelStoneHanPUA-1.472.ttf>
 - SHA-256: `92e7155bd28f5570449f4dc71e9bb6fa919f67ef0120d4f83b58c61bed3ed4dc`
 - Licence: Arphic-1999, stated in the font's name table, record 13 (licence description).
 - Copyright: (c) Copyright 1994-1999, Arphic Technology Co., Ltd.; (c) Copyright 2009-2025, Andrew West.
