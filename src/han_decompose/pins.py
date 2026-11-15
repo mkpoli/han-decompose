@@ -140,13 +140,14 @@ def _pinned(path: Path, sha256: str, urls: list[str], fetch: bool, download: Dow
 def font_path(row: Json, cache: Path | None = None, fetch: bool = True, download: Download = _download) -> Path:
     """The font file of a registry row under `<cache>/fonts`, its digest checked. A font that is a
     member of an archive is extracted from it; the archive is kept beside it, named by its digest,
-    and checked too."""
+    and checked too. A mirror serves what `url` serves: the font, or the archive."""
     folder = (cache or cache_root()) / "fonts"
     path = _inside(folder, row["file"])
+    addresses = [row["url"], *row.get("mirrors", ())]
     if "archive" in row and not path.exists():
         pinned = row["archive"]["sha256"]
         archive = _inside(folder, f"{pinned[:16]}-{Path(urlsplit(row['url']).path).name}")
-        _pinned(archive, pinned, [row["url"]], fetch, download)
+        _pinned(archive, pinned, addresses, fetch, download)
         try:
             with zipfile.ZipFile(archive) as packed:
                 member = packed.read(row["archive"]["member"])
@@ -155,7 +156,7 @@ def font_path(row: Json, cache: Path | None = None, fetch: bool = True, download
         if _digest(member) != row["sha256"]:
             raise PinError(f"{row['archive']['member']} of {row['url']} does not match its pinned SHA-256.")
         _write(path, member)
-    _pinned(path, row["sha256"], [row["url"]], fetch, download)
+    _pinned(path, row["sha256"], addresses, fetch, download)
     return path
 
 
@@ -233,7 +234,8 @@ def citations(font_registry: Json | None = None, source_registry: Json | None = 
             "",
             f"- Font: {', '.join(about)}.",
             f"- File: <{row['url']}>"
-            + (f", member `{row['archive']['member']}` of the archive" if "archive" in row else ""),
+            + (f", member `{row['archive']['member']}` of the archive" if "archive" in row else "")
+            + "".join(f"; mirror <{url}>" for url in row.get("mirrors", ())),
             f"- SHA-256: `{row['sha256']}`" + (f"; archive `{row['archive']['sha256']}`" if "archive" in row else ""),
             f"- Licence: {row['licence']}"
             + (f", stated in {row['licenceEvidence']}." if "licenceEvidence" in row else ""),
