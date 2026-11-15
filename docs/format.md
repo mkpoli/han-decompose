@@ -120,8 +120,8 @@ outlines/<font>/<block>.json.gz
 cuts/<font>/<source>/<block>.json.gz
 library/<chain>.json.gz  forms/<chain>.json.gz
 references/<source>.json.gz
-cuts.tsv.gz  skipped.tsv.gz  verdicts.tsv
-LICENSES/  NOTICE.md  SHA256SUMS
+cuts.<source>.tsv.gz  skipped.<source>.tsv.gz  verdicts.tsv
+LICENSES/  README.md  SHA256SUMS
 ```
 
 `<block>` is the glyph's code point divided by 256, in lower-case hex of at least three digits:
@@ -304,7 +304,8 @@ Numbers are written as in the JSON files (section 4).
 
 ### 5.1 `cuts`
 
-One row per cut. Each row stands alone.
+One row per cut. Each row stands alone. A release writes one table per description source,
+`cuts.<source>.tsv.gz`.
 
 | Column | Value |
 |---|---|
@@ -330,6 +331,8 @@ One row per cut. Each row stands alone.
 The table holds no outline. A reader joins `font`, `glyph` and `contours` to the outline files.
 
 ### 5.2 `skipped`
+
+One table per description source, `skipped.<source>.tsv.gz`.
 
 `font`, `glyph`, `char`, `source`, `description`, `ids`, `reason_code`, `reason`.
 
