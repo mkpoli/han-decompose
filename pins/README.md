@@ -195,11 +195,11 @@ from them by `han-decompose citations`.
 
 - Source: han-compose numbered component forms (data/numbered-forms.json), <https://github.com/mkpoli/han-compose>
 - Role: cuts
-- Pin: commit 3b2c5103cfdf2e41bf5526c08ec6d4242d6bcd91; retrieved 2026-11-15.
-- Licence: OFL-1.1. https://raw.githubusercontent.com/mkpoli/han-compose/3b2c5103cfdf2e41bf5526c08ec6d4242d6bcd91/data/README.md: the Sans forms are cut from Noto Sans CJK JP and Plangothic glyphs under the SIL OFL. The Serif and Kaisho forms of the file are BabelStone Han PUA glyphs under the Arphic Public License and are not taken from it.
+- Pin: commit 3587faa97f4e7672479133609b3b2d7c0aa3d4d2; retrieved 2026-11-15.
+- Licence: OFL-1.1. The file's own `sources` block names the fonts of the Sans forms (Noto Sans CJK JP 2.004, Plangothic P1 and P2 V2.9.5795) with SIL OFL 1.1, and BabelStone Han PUA 1.472 with the Arphic Public License; https://raw.githubusercontent.com/mkpoli/han-compose/3587faa97f4e7672479133609b3b2d7c0aa3d4d2/data/README.md says the Sans forms are cut from those Noto and Plangothic glyphs and the Serif and Kaisho forms are the PUA glyph itself.
 - Attribution: han-compose, data/numbered-forms.json, https://github.com/mkpoli/han-compose; Sans forms cut with han-compose bf13d98 from Noto Sans CJK JP 2.004 and Plangothic 2.9.5795
-- Limits: The file holds outlines without the host or the contours they were cut from. A form is imported only where its outline is whole contours of a host glyph at the same position; the Serif and Kaisho forms, which are the PUA glyphs themselves, are not taken from it.
+- Limits: The file holds outlines without the host or the contours they were cut from, and does not say how each was cut. A form is imported only where its outline is whole contours of a host glyph at the same position; the Serif and Kaisho forms, which are PUA glyphs under the Arphic Public License, are not taken from it.
 
 | File | SHA-256 | Address |
 |---|---|---|
-| `numbered-forms.json` | `af63ab13f110ade1696c0353b148f18a2683232660609ddba3af0cc619c9ad2b` | <https://raw.githubusercontent.com/mkpoli/han-compose/3b2c5103cfdf2e41bf5526c08ec6d4242d6bcd91/data/numbered-forms.json> |
+| `numbered-forms.json` | `af63ab13f110ade1696c0353b148f18a2683232660609ddba3af0cc619c9ad2b` | <https://raw.githubusercontent.com/mkpoli/han-compose/3587faa97f4e7672479133609b3b2d7c0aa3d4d2/data/numbered-forms.json> |

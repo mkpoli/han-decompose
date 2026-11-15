@@ -277,7 +277,7 @@ A cut:
 | `box` | yes | Box of the cut's contours. |
 | `frame` | | Box of the parent node's ink. |
 | `gap`, `area`, `ink` | | Distance to the nearest sibling ink, filled area, and summed length of the contours' polygons. |
-| `evidence` | | Scores of the cut: `fit` or `match`, `margin`, `agree`, `reference`, and `referenceGlyph`, the glyph `reference` was measured against. |
+| `evidence` | | Scores of the cut: `fit` or `match`, `margin`, `agree`, `reference`, and `referenceGlyph`, the glyph `reference` was measured against; `importedFrom`, the source a cut made elsewhere was taken from. |
 | `checks` | | Per check: `value`, `limit`, `pass`, and `against`, the glyph compared with. A dealt cut has `filled`, `skeleton` and `windows`; a lifted component has the one that decided it, `reference`, `agree` or `single`. |
 | `calibrated` | | The component whose reviewed labels set the checks' limits, or `false`. |
 | `status` | yes | `accepted`, `refused` (a check failed), `reviewed-right` or `reviewed-wrong`. |

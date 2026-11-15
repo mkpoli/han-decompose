@@ -109,16 +109,16 @@ def imports(
             if [leaf.text for leaf in leaves(root)].count(name) != 1:
                 continue
             path, node = next((path, node) for path, node in walk(root) if node.leaf and node.text == name)
-            evidence: Json = {}
+            evidence: Json = {"importedFrom": SOURCE}
             glyph_id, print_ = references.get(name, (None, None))
             if print_ is not None:
                 ink = pathops.Path()
                 for index in contours:
                     glyph.paths[index].draw(ink.getPen())
                 ink.simplify()
-                evidence = {"reference": reading.number(lift.like(lift.print_of(lift.mask(ink)), print_), 4)}
+                evidence["reference"] = reading.number(lift.like(lift.print_of(lift.mask(ink)), print_), 4)
                 evidence["referenceGlyph"] = glyph_id
-            cut = reading.cut(glyph, description, root, path, node, contours, "accepted", evidence=evidence or None)
+            cut = reading.cut(glyph, description, root, path, node, contours, "accepted", evidence=evidence)
             row = reading.reading(glyph, description, root, "axis", "contour", [cut])
             row["method"] = {"name": "axis", "tool": cutter[0], "commit": cutter[-1], "grain": "contour"}
             out = lift.Outcome(I.component_of(name), "numbered", readings=[row])

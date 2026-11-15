@@ -158,17 +158,20 @@ class Release:
                             places = self.library.setdefault(chain, {}).setdefault(cut["component"], {})
                             places.setdefault(cut["place"], []).append((-_score(cut), cut["id"]))
         for run in runs:
+            # A component's form is the first run's that has one, and its library is that run's:
+            # a library lists the cuts that confirm the form it stands beside.
+            mine: set[tuple[str, str]] = set()
             for path in sorted((run / "forms").glob("*.json.gz")) if (run / "forms").is_dir() else []:
                 content = _load(path)
                 for component, form in content["forms"].items():
-                    self.forms.setdefault(content["chain"], {}).setdefault(component, form)
+                    if component not in self.forms.setdefault(content["chain"], {}):
+                        self.forms[content["chain"]][component] = form
+                        mine.add((content["chain"], component))
             for path in sorted((run / "library").glob("*.json.gz")) if (run / "library").is_dir() else []:
                 content = _load(path)
                 for component, listed in content["library"].items():
-                    # A component's libraries are joined place by place, the earlier run's cuts first.
-                    joined = self.lifted.setdefault(content["chain"], {}).setdefault(component, {})
-                    for place, names in listed.items():
-                        joined[place] = [*joined.get(place, []), *(n for n in names if n not in joined.get(place, []))]
+                    if (content["chain"], component) in mine:
+                        self.lifted.setdefault(content["chain"], {})[component] = listed
 
     def indexes(self) -> None:
         """Write the form and library files: a lifted component keeps the library that confirms

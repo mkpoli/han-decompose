@@ -51,6 +51,7 @@ def test_the_forms_that_are_whole_contours_of_a_host_are_taken_over(tmp_path: Pa
         assert outcome.form == {"cut": cut["id"], "sig": cut["sig"], "basis": "imported"}
         assert cut["component"] == outcome.component and outcome.library == {cut["place"]: [cut["id"]]}
         assert cut["evidence"]["referenceGlyph"].startswith("babelstone-han-pua@1.472/U+")
+        assert cut["evidence"]["importedFrom"] == "han-compose-numbered-forms"
         for glyph, record in outcome.glyphs.items():
             store.record(*I.split_glyph_id(glyph), record)
         store.reading(row)
@@ -87,3 +88,8 @@ def test_the_forms_that_are_whole_contours_of_a_host_are_taken_over(tmp_path: Pa
     )
     listed = json.loads(gzip.decompress((out / "library" / "sans.json.gz").read_bytes()))["library"][first.component]
     assert listed == {place: [first.form["cut"]]}
+    # A form whose cut no reading holds stops the build.
+    alone = release.Release(tmp_path / "alone", "v0.0.1")
+    alone.shards([other])
+    alone.indexes()
+    assert alone.problems == [f"forms/sans: the form of {first.component} names a cut no reading holds."]

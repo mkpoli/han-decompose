@@ -41,8 +41,8 @@ uv run han-decompose release out/v1.0.0 v1.0.0 \
 ```
 
 The runs are merged shard by shard. Where two runs read the same glyph under the same
-description, the run given first stands: the imported forms go first, then the lifts. A form is the first
-run's too, and a component's libraries are joined, less the cuts whose reading gave way. Every file is checked against the
+description, the run given first stands: the imported forms go first, then the lifts. A component's form
+is the first run's that has one, with that run's library, less any cut whose reading gave way. Every file is checked against the
 schema and the format's invariants, cut files against their outline files. Problems are listed,
 the command fails, and nothing is packed. The folder then holds the layout of `docs/format.md`: outlines, cuts, the form and library
 indexes, the flat tables per source, the component tables, `fonts.json` and `sources.json`, the
