@@ -13,7 +13,7 @@ what each asks. It is a statement of how the project applies them and no legal a
 | `outlines/<font>/…` | The font's licence, with the font's copyright line in the file. | — |
 | `cuts/<font>/<source>/…` | The font's licence. The file holds contour indices and labels and no outline. | `terms.description`: the description source's terms. `terms.guide`: the guide's, on files with cuts made along a guide. `terms.notices`: the copyright and attribution lines. |
 | `cuts.<source>.tsv.gz`, `skipped.<source>.tsv.gz` | Row by row, as the cut file the row comes from. A table holds the rows of one description source. | `licence_outline`, `licence_description`, `licence_guide` on each row. |
-| `components.tsv` | Row by row, the terms of the source the row names. Rows drawn from the ids-input registry are GPL-2.0-or-later. | `source` on each row. |
+| `components.<source>.tsv` | The terms of the source the table is named for. The table of the ids-input registry is GPL-2.0-or-later. | `source` on each row. |
 | `fonts.json`, `sources.json` | MIT, as part of this repository. | Every font and source with its pin, licence and attribution. |
 
 An outline file holds one font, and a cut file holds one font and one description source. A flat
@@ -28,7 +28,7 @@ copyright line and the place its terms are stated.
 |---|---|---|
 | SIL Open Font License 1.1 (`OFL-1.1`) | Noto Sans CJK JP, Noto Serif CJK JP, Plangothic P1 and P2 | The copyright notice and the licence travel with every copy. Derived font data stays under the OFL and under no other licence. It is not sold by itself. A modified version does not use a Reserved Font Name: Noto Sans CJK JP reserves "Source". The authors' names do not promote a modified version. |
 | CC0 1.0 (`CC0-1.0`) | Jigmo, Jigmo2, Jigmo3 | Nothing. |
-| Arphic Public License (`Arphic-1999`) | BabelStone Han PUA: the reference shape of a numbered component, and its form in the serif and kaisho styles | The licence file travels unaltered with every copy. A modified file carries a prominent notice of how and when it was changed, and modifications are made freely available as a whole under the same licence. |
+| Arphic Public License (`Arphic-1999`) | BabelStone Han PUA: the reference shape of a numbered component | The licence file travels unaltered with every copy (section 1). A modified file carries a prominent notice of how and when it was changed, and modifications are made freely available as a whole under the same licence (section 2). |
 | Header note 2 of IDS.TXT (`LicenseRef-BabelStone-IDS`) | BabelStone IDS | Nothing: the maintainer holds IDS sequences to be facts outside copyright under U.S. law and waives claims to the file's presentation. It is credited all the same. |
 | GNU GPL 2.0 or later (`GPL-2.0-or-later`) | CHISE IDS, the ids-input component registry | Copies and derived works stay under the GPL, with source available. |
 | MIT (`MIT`) | Yi Bai's IDS data | The copyright notice and the permission notice travel with copies. |
@@ -45,13 +45,16 @@ Decided by the project's owner on 2026-11-15.
   published. Each names the guide's licence (`licence.guide`), and the file that holds it carries
   KanjiVG's attribution in `terms.notices` and its licence in `terms.guide`, so the attribution
   and the share-alike terms travel with every guided cut.
-- **Flat tables.** A table holds one description source, as a cut file does, so rows read from a
-  GPL table never sit beside rows read from another.
-- **BabelStone Han PUA.** Its glyph is the reference shape of a numbered component and the form
-  the component takes in the serif and kaisho styles. Outlines taken from it stay under the
-  Arphic Public License, in outline files of their own. The pinned font file is mirrored as an
-  asset of this repository's releases, unaltered and beside the licence text, because its
-  address upstream is replaced by each new version.
+- **Flat tables.** A table of cuts or skipped attempts holds one description source, as a cut
+  file does, and a table of components holds the rows of one source. Rows read from a GPL table
+  never sit beside rows read from another.
+- **BabelStone Han PUA.** Its glyph is the reference shape of a numbered component. The face is
+  in the Song style, and han-compose draws a numbered component with that glyph in its serif and
+  kaisho styles. Outlines taken from it stay under the Arphic Public License, in outline files of
+  their own, each with a notice of how and when the font's data was changed and with the licence
+  text in the release. The pinned font file is mirrored as an asset of this repository's
+  releases, unaltered and beside the licence text, because its address upstream is replaced by
+  each new version.
 - **GlyphWiki.** Free to use. It is cited with its address and stays a check on cuts; its glyphs
   are published only as reference outlines, named with the date they were fetched.
 

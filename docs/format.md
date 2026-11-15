@@ -115,7 +115,7 @@ A release is laid out as:
 ```
 manifest.json
 fonts.json  sources.json
-components.tsv
+components.<source>.tsv
 outlines/<font>/<block>.json.gz
 cuts/<font>/<source>/<block>.json.gz
 library/<chain>.json.gz  forms/<chain>.json.gz
@@ -137,6 +137,8 @@ Every JSON file names its format: `han-decompose/<kind>@<major>.<minor>`. A mino
 properties; a major version changes or removes them.
 
 `manifest.json`, the `library`, `forms` and `references` files are reserved in this version.
+`README.md` names every font and source of the release with its licence and attribution, and
+`LICENSES/` holds the licence texts.
 
 ### 4.1 `fonts.json`
 
@@ -337,6 +339,8 @@ One table per description source, `skipped.<source>.tsv.gz`.
 `font`, `glyph`, `char`, `source`, `description`, `ids`, `reason_code`, `reason`.
 
 ### 5.3 `components`
+
+One table per source, `components.<source>.tsv`.
 
 One row per component, or per relation between two.
 
