@@ -61,7 +61,7 @@
           "pattern": "^zi:#\\(.+\\)$"
         },
         {
-          "pattern": "^ids:[⿰-⿿㇯].+$"
+          "pattern": "^ids:[⿰-⿿㇯〾].+$"
         }
       ]
     },
@@ -139,6 +139,14 @@
           "description": "Where the file, or the archive that holds it, is fetched from.",
           "type": "string",
           "format": "uri"
+        },
+        "mirrors": {
+          "description": "Other places that serve the same bytes, tried in order after url.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uri"
+          }
         },
         "sha256": {
           "$ref": "#/$defs/sha256"
@@ -762,7 +770,10 @@
                 "does-not-tile",
                 "no-reference-glyph",
                 "no-enclosure",
-                "no-face"
+                "no-face",
+                "no-ink",
+                "unlike-whole",
+                "unreadable-description"
               ]
             },
             "text": {
@@ -877,7 +888,7 @@
       }
     },
     "componentRow": {
-      "description": "A row of components.tsv. relation, target, basis and tier are empty on a row that only names a component.",
+      "description": "A row of a components table. relation, target, basis and tier are empty on a row that only names a component.",
       "type": "object",
       "required": [
         "component",

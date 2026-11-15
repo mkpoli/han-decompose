@@ -8,6 +8,8 @@ import hashlib
 import re
 from collections.abc import Iterable, Sequence
 
+from .ids import ARITY
+
 _SLUG = r"[a-z0-9]+(?:-[a-z0-9]+)*"
 _NUMBER = r"(?:0|[1-9][0-9]*)"
 _FONT = rf"{_SLUG}@[0-9A-Za-z]+(?:\.[0-9A-Za-z]+)*"
@@ -25,8 +27,9 @@ GLYPH = re.compile(rf"(?P<font>{_FONT})/(?P<selector>{_SELECTOR})")
 DESCRIPTION = re.compile(rf"(?P<source>{_SLUG})\.(?P<hash>[0-9a-f]{{8}})")
 CUT = re.compile(rf"(?P<glyph>{_FONT}/{_SELECTOR})~(?P<description>{_DESCRIPTION})~(?P<path>{_PATH})")
 
-#: The ideographic description characters: U+2FF0–U+2FFF and U+31EF.
-OPERATORS = frozenset([*map(chr, range(0x2FF0, 0x3000)), "\u31ef"])
+#: What a description starts with: the ideographic description characters U+2FF0–U+2FFF and
+#: U+31EF, and the variation indicator U+303E that BabelStone puts before a variant form.
+OPERATORS = frozenset(ARITY)
 
 _COMPONENT = {
     "u": re.compile(rf"{_POINT}(?:\.{_VARIATION})?"),
@@ -34,7 +37,7 @@ _COMPONENT = {
     "chise": re.compile(r"[^&;\s]+"),
     "aj1": re.compile(_NUMBER),
     "zi": re.compile(r"#\(.+\)"),
-    "ids": re.compile(r"[\u2ff0-\u2fff\u31ef].+"),
+    "ids": re.compile(r"[\u2ff0-\u2fff\u31ef\u303e].+"),
 }
 
 
@@ -104,7 +107,8 @@ def split_glyph_id(glyph: str) -> tuple[str, str]:
 
 
 def description_id(source: str, ids: str) -> str:
-    """`<source>.<h8>`: the source and the hash of the description's text, annotations stripped."""
+    """`<source>.<h8>`: the source and the hash of the description's text, which the caller gives
+    without what the source attaches to it."""
     out = f"{source}.{h8(ids)}"
     if not ids or not DESCRIPTION.fullmatch(out):
         raise ValueError(f"{source!r} is not a source identifier, or the description is empty.")

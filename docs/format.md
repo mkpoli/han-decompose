@@ -16,7 +16,7 @@ source writes it, without Unicode normalisation.
 | font | One pinned font file at one named instance (`wght` 400 for a variable font). |
 | glyph | One glyph of a font, selected by code point, variation sequence or glyph index. |
 | contour | One closed contour of a glyph, in the font's own order. Contours may overlap. |
-| piece | A maximal set of contours whose ink touches or overlaps, with the counters inside it. |
+| piece | A maximal set of contours whose ink overlaps or runs along a shared edge, with the counters inside it. Contours that only meet at a point are apart, unless one contour runs through both. |
 | description | One IDS a source gives for a subject. |
 | component | What a node of a description names. |
 | reading | One labelling of one glyph by one description: which contours go to which nodes. |
@@ -64,6 +64,9 @@ The text is the IDS as the source writes it, without what the source attaches to
 
 `⿰亻崔` gives `9d9dea39`, so BabelStone's description of 催 is `babelstone.9d9dea39`.
 
+A text a source gives twice for one subject is one description; the tags of each occurrence are
+joined by a space.
+
 Eight hex digits do not keep every text of a source apart. A description identifier is used
 together with its subject or its glyph, and the text itself (`ids`) stands beside it wherever it
 appears.
@@ -80,6 +83,9 @@ appears.
 | Adobe-Japan1 glyph | `aj1:1815` | — | The CID. |
 | zi.tools stroke chain | `zi:#(丿𠃊)` | `#(丿𠃊)` | The chain as written. |
 | subtree | `ids:⿱𰀪亻` | `⿱𰀪亻` | The node's own IDS, starting with its operator, for a node no source names. |
+
+An operator is an ideographic description character (U+2FF0–U+2FFF, U+31EF) or the variation
+indicator `〾` (U+303E), which BabelStone writes before a variant form of its one operand.
 
 ### 2.5 Path
 
@@ -115,18 +121,20 @@ A release is laid out as:
 ```
 manifest.json
 fonts.json  sources.json
-components.tsv
+components.<source>.tsv
 outlines/<font>/<block>.json.gz
 cuts/<font>/<source>/<block>.json.gz
 library/<chain>.json.gz  forms/<chain>.json.gz
 references/<source>.json.gz
-cuts.tsv.gz  skipped.tsv.gz  verdicts.tsv
-LICENSES/  NOTICE.md  SHA256SUMS
+cuts.<source>.tsv.gz  skipped.<source>.tsv.gz  verdicts.tsv
+LICENSES/  README.md  SHA256SUMS
 ```
 
 `<block>` is the glyph's code point divided by 256, in lower-case hex of at least three digits:
 `050` holds U+5000–U+50FF and `20b` holds U+20B00–U+20BFF. A variation sequence goes by its base.
-Glyphs selected by index are in `gid`.
+Glyphs selected by index are in `gid`. A skipped attempt without a glyph (no font draws
+the subject, or the glyph has no ink) is filed by the subject's code point, in the files of the
+chain's first font; a subject that is no character, in `gid`.
 
 Every JSON file is UTF-8 on one line, with sorted keys, the separators `,` and `:`, and characters
 outside ASCII written as themselves. A number without a fractional part is written without one
@@ -137,6 +145,8 @@ Every JSON file names its format: `han-decompose/<kind>@<major>.<minor>`. A mino
 properties; a major version changes or removes them.
 
 `manifest.json`, the `library`, `forms` and `references` files are reserved in this version.
+`README.md` names every font and source of the release with its licence and attribution, and
+`LICENSES/` holds the licence texts.
 
 ### 4.1 `fonts.json`
 
@@ -151,8 +161,9 @@ properties; a major version changes or removes them.
 | `nameVersion` | | The font's name-table version string. |
 | `file` | yes | File name in the cache: ASCII letters, digits, `.`, `_` and `-`, starting with a letter or digit. |
 | `url` | yes | Where the file is fetched from, or the archive that holds it. |
+| `mirrors` | | Other addresses that serve the same bytes, tried in order after `url`. |
 | `sha256` | yes | Digest of the font file. |
-| `archive` | | `{sha256, member}`: digest of the archive at `url` and the member that is the font. |
+| `archive` | | `{sha256, member}`: digest of the archive that `url` and the mirrors serve, and the member that is the font. |
 | `index` | | The face's index when the file is a collection. |
 | `instance` | | Axis values the outlines are read at: `{"wght": 400}`. |
 | `upem` | yes | The font's units per em. |
@@ -288,10 +299,13 @@ A skipped attempt holds `subject`, `glyph` when a font draws the subject, `descr
 | `unlike-element` | No division resembles the operands. |
 | `layout-mismatch` | The pieces do not lie as the operator says. |
 | `ambiguous` | Two divisions score alike. |
-| `does-not-tile` | The parts do not cover the glyph. |
+| `does-not-tile` | The pieces do not add up to the glyph. |
 | `no-reference-glyph` | No font draws an operand to compare with. |
 | `no-enclosure` | No enclosing part was found. |
 | `no-face` | No font of the chain draws the subject. |
+| `no-ink` | The glyph draws nothing. |
+| `unlike-whole` | The operands, each drawn where its pieces sit, do not come out as the glyph. |
+| `unreadable-description` | The description does not read as a tree. |
 
 ## 5. Tables
 
@@ -304,7 +318,8 @@ Numbers are written as in the JSON files (section 4).
 
 ### 5.1 `cuts`
 
-One row per cut. Each row stands alone.
+One row per cut. Each row stands alone. A release writes one table per description source,
+`cuts.<source>.tsv.gz`.
 
 | Column | Value |
 |---|---|
@@ -331,9 +346,13 @@ The table holds no outline. A reader joins `font`, `glyph` and `contours` to the
 
 ### 5.2 `skipped`
 
+One table per description source, `skipped.<source>.tsv.gz`.
+
 `font`, `glyph`, `char`, `source`, `description`, `ids`, `reason_code`, `reason`.
 
 ### 5.3 `components`
+
+One table per source, `components.<source>.tsv`.
 
 One row per component, or per relation between two.
 

@@ -11,6 +11,8 @@ dependencies = [
     "fonttools>=4.63",
     "httpx>=0.28",
     "jsonschema>=4.23",
+    "numpy>=2.1",
+    "skia-pathops==0.9.2",
     "typer>=0.16",
 ]
 
@@ -44,13 +46,15 @@ include = ["/src", "/schema", "/pins", "/tests", "/README.md", "/LICENSE"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "-m 'not reproduction'"
+markers = ["reproduction: a whole survey held against ids-input's, minutes long; run with -m reproduction"]
 
 [tool.mypy]
 files = ["src", "tests"]
 strict = true
 
 [[tool.mypy.overrides]]
-module = ["fontTools.*"]
+module = ["fontTools.*", "pathops.*"]
 ignore_missing_imports = true
 
 [tool.ruff]
