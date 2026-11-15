@@ -11,6 +11,7 @@ other font, they are borrowed, and the cuts say so.
 
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from typing import Literal
 
 from .. import geometry as G
 from .. import identifiers as I
@@ -83,7 +84,7 @@ def gate(glyph_of: Callable[[str], str | None], only: str | None = None) -> Gate
     """Both checks as the dealing cutter asks for them: for each leaf that a font of the chain
     draws alone, or for the leaves that are `only`."""
 
-    def run(cutter: Cutter, node: Node, group: Sequence[int]) -> tuple[Json, str | bool] | None:
+    def run(cutter: Cutter, node: Node, group: Sequence[int]) -> tuple[Json, str | Literal[False]] | None:
         char = glyph_of(node.text)
         if char is None or (only is not None and char != only):
             return None
