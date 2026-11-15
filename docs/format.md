@@ -294,10 +294,13 @@ A skipped attempt holds `subject`, `glyph` when a font draws the subject, `descr
 | `unlike-element` | No division resembles the operands. |
 | `layout-mismatch` | The pieces do not lie as the operator says. |
 | `ambiguous` | Two divisions score alike. |
-| `does-not-tile` | The parts do not cover the glyph. |
+| `does-not-tile` | The pieces do not add up to the glyph. |
 | `no-reference-glyph` | No font draws an operand to compare with. |
 | `no-enclosure` | No enclosing part was found. |
 | `no-face` | No font of the chain draws the subject. |
+| `no-ink` | The glyph draws nothing. |
+| `unlike-whole` | The operands, each drawn where its pieces sit, do not come out as the glyph. |
+| `unreadable-description` | The description does not read as a tree. |
 
 ## 5. Tables
 
