@@ -25,8 +25,9 @@ GLYPH = re.compile(rf"(?P<font>{_FONT})/(?P<selector>{_SELECTOR})")
 DESCRIPTION = re.compile(rf"(?P<source>{_SLUG})\.(?P<hash>[0-9a-f]{{8}})")
 CUT = re.compile(rf"(?P<glyph>{_FONT}/{_SELECTOR})~(?P<description>{_DESCRIPTION})~(?P<path>{_PATH})")
 
-#: The ideographic description characters: U+2FF0–U+2FFF and U+31EF.
-OPERATORS = frozenset([*map(chr, range(0x2FF0, 0x3000)), "\u31ef"])
+#: What a description starts with: the ideographic description characters U+2FF0–U+2FFF and
+#: U+31EF, and the variation indicator U+303E that BabelStone puts before a variant form.
+OPERATORS = frozenset([*map(chr, range(0x2FF0, 0x3000)), "\u31ef", "\u303e"])
 
 _COMPONENT = {
     "u": re.compile(rf"{_POINT}(?:\.{_VARIATION})?"),
@@ -34,7 +35,7 @@ _COMPONENT = {
     "chise": re.compile(r"[^&;\s]+"),
     "aj1": re.compile(_NUMBER),
     "zi": re.compile(r"#\(.+\)"),
-    "ids": re.compile(r"[\u2ff0-\u2fff\u31ef].+"),
+    "ids": re.compile(r"[\u2ff0-\u2fff\u31ef\u303e].+"),
 }
 
 

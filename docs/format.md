@@ -81,6 +81,9 @@ appears.
 | zi.tools stroke chain | `zi:#(丿𠃊)` | `#(丿𠃊)` | The chain as written. |
 | subtree | `ids:⿱𰀪亻` | `⿱𰀪亻` | The node's own IDS, starting with its operator, for a node no source names. |
 
+An operator is an ideographic description character (U+2FF0–U+2FFF, U+31EF) or the variation
+indicator `〾` (U+303E), which BabelStone writes before a variant form of its one operand.
+
 ### 2.5 Path
 
 A node's place in the tree of a reading: the operand indices from the root, counted from 0. As
