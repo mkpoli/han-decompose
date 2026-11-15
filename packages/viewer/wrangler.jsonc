@@ -2,12 +2,12 @@
   "name": "han-decompose",
   "compatibility_date": "2026-10-30",
   // Assets only: any path that is no file answers with the app, which routes in the browser.
-  // The release is placed under /data/ in ./dist by the deploy step.
+  // scripts/place-release.ts places the release pinned in release.json under /data/ in ./dist.
   "assets": {
     "directory": "./dist",
     "not_found_handling": "single-page-application"
   },
-  // "routes": [{ "pattern": "decompose.mkpo.li", "custom_domain": true }],
+  "routes": [{ "pattern": "decompose.mkpo.li", "custom_domain": true }],
   "workers_dev": false,
   "observability": { "enabled": true }
 }

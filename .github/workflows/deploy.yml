@@ -1,0 +1,38 @@
+name: Deploy
+on:
+  push:
+    branches: [main]
+    paths:
+      - packages/viewer/**
+      - packages/format/**
+      - bun.lock
+      - .github/workflows/deploy.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      - run: bun scripts/place-release.ts
+        working-directory: packages/viewer
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: '4.158.0'
+          packageManager: bun
+          workingDirectory: packages/viewer
+          command: deploy
