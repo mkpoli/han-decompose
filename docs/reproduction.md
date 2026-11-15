@@ -60,9 +60,35 @@ As committed, 2,126 characters are the same in all of that. The others:
 Skipped here, by reason: 290 `too-few-pieces`, 193 `layout-mismatch`, 186 `unlike-element`,
 49 `ambiguous`, 11 `no-reference-glyph`, 2 `no-enclosure`.
 
+## Survey of 口
+
+ids-input `data/component-instances-口.json.gz` (built 2026-11-09): the same survey for 口, with
+the limits of 山 borrowed. No cut of 口 has been judged by eye, so how many of the refusals are
+wrong is unknown, and every cut says `calibrated: false`.
+
+| | Attempted | Characters with a 口 | Instances | Refused by a gate |
+|---|---|---|---|---|
+| ids-input | 26,446 | 4,731 | 5,033 | 4,626 |
+| han-decompose, patched to ids-input's grain | 26,446 | 4,731 | 5,033 | 4,626 |
+| han-decompose | 26,446 | 4,732 | 5,030 | 4,587 |
+
+As committed, 4,697 characters are the same in tree, depth and scores. The others:
+
+- **29 lost.** 𠮭𠱪𠻘𡀆𡄉𡞺𡬗𢣆𢸊𤜀𤺬𥰪𦳬𧁤𧨈𧰈𧰑𧰛𨿡𨿦𩁛𩟈𪉣𪢢𪯟𭉆𮇰𮟜𱊻. A contour runs through the 口 and a neighbour, or a
+  piece's contours do not draw the piece alone.
+- **30 gained.** 㐯㗢䛗䝂䨐咶嚚龛𠆆𠰯𠳡𠷰𠹃𠼩𡁝𧔁𧚱𨜢𪓪𪕡𪕲𫙻𫜝𫫐𫴜𬶔𭍈𮝣𮟺𲄲. Skipped by ids-input because the union of their
+  pieces lost area.
+- **5 differ.** 𠵘𡀢𡁚𧜉𱄆: a component deeper in the tree no longer opens, so
+  the reading settles one level up, or a joined piece changes the 口's scores.
+
+Skipped here, by reason: 14,364 `too-few-pieces`, 1,816 `layout-mismatch`, 1,480
+`unlike-element`, 532 `ambiguous`, 121 `no-reference-glyph`, 10 `too-many-pieces`,
+7 `no-enclosure`, 6 `does-not-tile`. Most characters with a 口 draw it joined to a neighbour.
+
 ## Sources
 
 - ids-input, branch `feat/donor-parts` at `97724d4db` with its uncommitted survey work:
   `scripts/build_donor_parts.py`, `scripts/build_mountain_instances.py`, `analysis/`,
-  `data/donor-parts.json`, `data/mountain-instances.json.gz`.
+  `data/donor-parts.json`, `data/mountain-instances.json.gz`,
+  `data/component-instances-口.json.gz`.
 - Fonts and tables as pinned in `pins/`.
