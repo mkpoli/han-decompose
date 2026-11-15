@@ -5,7 +5,7 @@ from typing import Annotated
 
 import typer
 
-from . import __version__, pins
+from . import __version__, descriptions, numbered, pins
 from . import identifiers as I
 from .cutters import library as libraries
 from .cutters import lift as lifts
@@ -139,12 +139,20 @@ def lift(
     workers: Annotated[int, typer.Option(help="How many processes cut at once.")] = 4,
     cache: Annotated[Path | None, typer.Option(help="The cache folder the pinned files are in.")] = None,
 ) -> None:
-    """Lift every CHISE entity and zi.tools chain of the component registry out of the characters
-    written with it, and count the forms that stand, by kind, and the cuts in their libraries."""
+    """Lift every CHISE entity, zi.tools chain and numbered component of the component registry
+    out of the characters written with it, and count the forms that stand, by kind, and the cuts
+    in their libraries. The glyphs BabelStone Han PUA draws for the numbered components are
+    written with the outlines, as the shapes their cuts were held against."""
     if out is not None and out.exists() and any(out.iterdir()):
         typer.echo(f"{out} is not empty.", err=True)
         raise typer.Exit(1)
     store = Store()
+    try:
+        for reference in numbered.glyphs(descriptions.table("babelstone", cache), cache).values():
+            store.glyph(reference)
+    except pins.PinError as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(1) from error
     tried: dict[str, int] = {}
     stand: dict[str, int] = {}
     hosts = readings = skipped = 0
