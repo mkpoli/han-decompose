@@ -134,6 +134,9 @@
       "nameVersion": "Version 1.472",
       "file": "BabelStoneHanPUA-1.472.ttf",
       "url": "https://www.babelstone.co.uk/Fonts/Download/BabelStoneHanPUA.ttf",
+      "mirrors": [
+        "https://github.com/mkpoli/han-decompose/releases/download/mirror-babelstone-han-pua-1.472/BabelStoneHanPUA-1.472.ttf"
+      ],
       "sha256": "92e7155bd28f5570449f4dc71e9bb6fa919f67ef0120d4f83b58c61bed3ed4dc",
       "upem": 1024,
       "licence": "Arphic-1999",

@@ -183,10 +183,10 @@
         }
       ],
       "licence": "LicenseRef-GlyphWiki",
-      "licenceEvidence": "https://glyphwiki.org/wiki/GlyphWiki:データ・記事のライセンス",
+      "licenceEvidence": "https://glyphwiki.org/wiki/GlyphWiki:データ・記事のライセンス; English translation of its revision 15, archived 2025-11-14: https://web.archive.org/web/20251114152951/https://en.glyphwiki.org/wiki/GlyphWiki:License",
       "licenceFile": "LicenseRef-GlyphWiki.txt",
       "attribution": "GlyphWiki, https://glyphwiki.org/",
-      "weakness": "Glyphs are edited by GlyphWiki's users and may differ from the form a description source means. A glyph is used only to check a cut. The terms are given as ids-input's data/README.md summarises them (free use, copying and modification, no attribution required); the licence page did not load for an automated client on 2026-11-15."
+      "weakness": "Glyphs are edited by GlyphWiki's users and may differ from the form a description source means. A glyph is used only to check a cut. The Japanese licence page, which governs, did not load for an automated client on 2026-11-15; the English translation was read from an archive."
     },
     {
       "id": "adobe-japan1",

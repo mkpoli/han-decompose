@@ -121,13 +121,13 @@ A release is laid out as:
 ```
 manifest.json
 fonts.json  sources.json
-components.tsv
+components.<source>.tsv
 outlines/<font>/<block>.json.gz
 cuts/<font>/<source>/<block>.json.gz
 library/<chain>.json.gz  forms/<chain>.json.gz
 references/<source>.json.gz
-cuts.tsv.gz  skipped.tsv.gz  verdicts.tsv
-LICENSES/  NOTICE.md  SHA256SUMS
+cuts.<source>.tsv.gz  skipped.<source>.tsv.gz  verdicts.tsv
+LICENSES/  README.md  SHA256SUMS
 ```
 
 `<block>` is the glyph's code point divided by 256, in lower-case hex of at least three digits:
@@ -152,6 +152,9 @@ built it (`name`, `version`, `commit`); the pinned `fonts` and `sources` with th
 accepted cut); and `files`, every file but itself and `SHA256SUMS` with its `path`, `bytes` and
 `sha256`. `SHA256SUMS` lists the same digests and the manifest's.
 
+`README.md` names every font and source of the release with its licence and attribution, and
+`LICENSES/` holds the licence texts.
+
 ### 4.1 `fonts.json`
 
 `format` is `han-decompose/fonts@1.0`.
@@ -165,8 +168,9 @@ accepted cut); and `files`, every file but itself and `SHA256SUMS` with its `pat
 | `nameVersion` | | The font's name-table version string. |
 | `file` | yes | File name in the cache: ASCII letters, digits, `.`, `_` and `-`, starting with a letter or digit. |
 | `url` | yes | Where the file is fetched from, or the archive that holds it. |
+| `mirrors` | | Other addresses that serve the same bytes, tried in order after `url`. |
 | `sha256` | yes | Digest of the font file. |
-| `archive` | | `{sha256, member}`: digest of the archive at `url` and the member that is the font. |
+| `archive` | | `{sha256, member}`: digest of the archive that `url` and the mirrors serve, and the member that is the font. |
 | `index` | | The face's index when the file is a collection. |
 | `instance` | | Axis values the outlines are read at: `{"wght": 400}`. |
 | `upem` | yes | The font's units per em. |
@@ -344,7 +348,8 @@ Numbers are written as in the JSON files (section 4).
 
 ### 5.1 `cuts`
 
-One row per cut. Each row stands alone.
+One row per cut. Each row stands alone. A release writes one table per description source,
+`cuts.<source>.tsv.gz`.
 
 | Column | Value |
 |---|---|
@@ -371,9 +376,13 @@ The table holds no outline. A reader joins `font`, `glyph` and `contours` to the
 
 ### 5.2 `skipped`
 
+One table per description source, `skipped.<source>.tsv.gz`.
+
 `font`, `glyph`, `char`, `source`, `description`, `ids`, `reason_code`, `reason`.
 
 ### 5.3 `components`
+
+One table per source, `components.<source>.tsv`.
 
 One row per component, or per relation between two.
 
