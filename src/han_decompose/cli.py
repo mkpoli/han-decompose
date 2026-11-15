@@ -8,6 +8,7 @@ import typer
 
 from . import __version__, descriptions, numbered, pins
 from . import identifiers as I
+from .cutters import library as libraries
 from .cutters import lift as lifts
 from .cutters import survey as surveys
 from .importers import composer_export
@@ -188,3 +189,33 @@ def lift(
     typer.echo(f"hosts skipped\t{skipped}")
     if out is not None:
         typer.echo(f"files\t{len(store.write(out))}\t{out}")
+
+
+@app.command()
+def read(
+    out: Annotated[Path, typer.Argument(help="A folder to write the outline and cut files into.")],
+    chain: Annotated[str, typer.Option(help="The font chain to read the glyphs in.")] = "sans",
+    source: Annotated[str, typer.Option(help="The description source.")] = "babelstone",
+    workers: Annotated[int, typer.Option(help="How many processes cut at once.")] = 4,
+    blocks: Annotated[list[str] | None, typer.Option(help="Blocks of 256 code points to read, as `04e`.")] = None,
+    cache: Annotated[Path | None, typer.Option(help="The cache folder the pinned files are in.")] = None,
+) -> None:
+    """Read every description of a source in a chain: each glyph dealt to the components of its
+    description, and deeper where they can be told apart. A block already written under the
+    folder is left as it is, so a run that stopped goes on where it was."""
+    total = libraries.Counts()
+    try:
+        for block, counts in libraries.run(chain, source, out, workers, cache, blocks):
+            total.add(counts)
+            typer.echo(f"{block}\t{counts.readings}\t{sum(counts.skipped.values())}", err=True)
+        added = libraries.named(out, chain, cache)
+    except (pins.PinError, KeyError, OSError) as error:
+        typer.echo(str(error.args[0]) if isinstance(error, KeyError) else str(error), err=True)
+        raise typer.Exit(1) from error
+    summary = total.summary()
+    typer.echo(f"readings\t{summary['readings']}")
+    for status, number in summary["cuts"].items():
+        typer.echo(f"cuts {status}\t{number}\tof {summary['components'][status]} components")
+    for code, number in summary["skipped"].items():
+        typer.echo(f"skipped: {code}\t{number}")
+    typer.echo(f"reference outlines added\t{added}")
