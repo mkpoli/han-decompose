@@ -468,6 +468,13 @@ Then:
 13. **Adobe-Japan1.** The `glyph-of` rows are generated from `aj17-kanji.txt` for all 164 entities.
 14. **npm.** The JavaScript reader is not published for now.
 15. **Order.** The data and a large library come first, the viewer after them.
+16. **First release.** v0.1.0 waits for the full tables of all three sources in both chains, and
+    is built from `main`.
+17. **Uncalibrated components.** A component whose checks borrow 山's limits ships with its
+    refusals as they fall, each cut marked `calibrated: false`, until limits are set for it from
+    cuts judged by eye.
+18. **Numbered components.** han-compose's Sans forms that are whole contours of a host glyph
+    (22 of 69) are imported and stand as those components' forms; the lift supplies the rest.
 
 Open: a hosted verdict store and whether the reviewer's handle is recorded; the site's domain and
 whether shards are served as assets or from object storage.
