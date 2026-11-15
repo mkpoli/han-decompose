@@ -770,7 +770,10 @@
                 "does-not-tile",
                 "no-reference-glyph",
                 "no-enclosure",
-                "no-face"
+                "no-face",
+                "no-ink",
+                "unlike-whole",
+                "unreadable-description"
               ]
             },
             "text": {
