@@ -102,7 +102,7 @@
         <section class="section">
           <h2>{t("component.equivalents")}</h2>
           <div class="scroll-x">
-            <table class="data">
+            <table class="data stack-sm">
               <thead>
                 <tr><th>{t("relation.relation")}</th><th>{t("relation.other")}</th><th>{t("relation.basis")}</th><th>{t("relation.tier")}</th><th>{t("count.source")}</th></tr>
               </thead>
@@ -110,11 +110,11 @@
                 {#each data.relations as r (r.source + r.component + r.target)}
                   {@const other = r.component === ref ? r.target : r.component}
                   <tr>
-                    <td>{tx(`relation.${r.relation}`)}</td>
-                    <td><ComponentLabel ref={other} /></td>
-                    <td class="basis">{r.basis}</td>
-                    <td><span class="ui-chip" data-variant={r.tier === "source" ? "accent" : undefined}>{tx(`tier.${r.tier}`)}</span></td>
-                    <td class="mono">{r.source}</td>
+                    <td data-label={t("relation.relation")}>{tx(`relation.${r.relation}`)}</td>
+                    <td data-label={t("relation.other")}><ComponentLabel ref={other} /></td>
+                    <td class="basis" data-label={t("relation.basis")}>{r.basis}</td>
+                    <td data-label={t("relation.tier")}><span class="ui-chip" data-variant={r.tier === "source" ? "accent" : undefined}>{tx(`tier.${r.tier}`)}</span></td>
+                    <td class="mono" data-label={t("count.source")}>{r.source}</td>
                   </tr>
                 {/each}
               </tbody>
@@ -176,5 +176,32 @@
   }
   .basis {
     max-inline-size: 60ch;
+  }
+  @media (max-width: 639px) {
+    .stack-sm :global(thead) {
+      display: none;
+    }
+    .stack-sm :global(tr),
+    .stack-sm :global(td) {
+      display: block;
+    }
+    .stack-sm :global(tr) {
+      padding-block: var(--ui-space-sm);
+      border-block-end: 1px solid var(--ui-color-border);
+    }
+    .stack-sm :global(td) {
+      display: grid;
+      grid-template-columns: 7rem minmax(0, 1fr);
+      gap: var(--ui-space-md);
+      border: 0;
+      padding-block: var(--ui-space-2xs);
+    }
+    .stack-sm :global(td)::before {
+      content: attr(data-label);
+      color: var(--ui-color-ink-muted);
+    }
+    .basis {
+      max-inline-size: none;
+    }
   }
 </style>
