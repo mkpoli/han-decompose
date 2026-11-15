@@ -102,7 +102,7 @@ def test_a_font_comes_from_its_mirror_once_its_address_serves_a_newer_version(tm
     stale = Web({"https://fonts.example/Test.ttf": b"version 2", mirror: b"version 3"})
     with pytest.raises(pins.PinError) as failure:
         pins.font_path(font_row(b"font", file="Stale-1.ttf", mirrors=[mirror]), tmp_path, download=stale)
-    assert "https://fonts.example/Test.ttf: SHA-256" in str(failure.value) and f"{mirror}: SHA-256" in str(failure.value)
+    assert all(f"{url}: SHA-256" in str(failure.value) for url in ("https://fonts.example/Test.ttf", mirror))
     assert not (tmp_path / "fonts" / "Stale-1.ttf").exists() and not list(tmp_path.rglob("*.part"))
 
 
