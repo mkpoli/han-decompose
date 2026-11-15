@@ -23,7 +23,7 @@
 }
 
 html {
-  scrollbar-gutter: stable;
+  background: var(--ui-color-canvas);
 }
 
 body {
