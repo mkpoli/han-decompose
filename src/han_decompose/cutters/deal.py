@@ -55,6 +55,11 @@ STACKS = ("⿱", "⿳")
 ROWS = ("⿰", "⿲")
 
 
+#: What a leaf opens into: the node and the components opened above it give a node with the
+#: component's own operator and operands, or None to leave the leaf whole.
+Opener = Callable[[Node, Sequence[str]], Node | None]
+
+
 class Skipped(Exception):
     """A glyph that cannot be accounted for, with the reason as a code of the format and a
     sentence."""
@@ -281,15 +286,32 @@ class Cutter:
             self.margins.append(total - scored[1][0])
         return option
 
-    def cut(self, node: Node, group: Sequence[int]) -> list[tuple[Node, list[int]]]:
-        """Every leaf of a description with the pieces that belong to it."""
+    def cut(
+        self, node: Node, group: Sequence[int], opener: Opener | None = None, trail: tuple[str, ...] = ()
+    ) -> list[tuple[Node, list[int]]]:
+        """Every leaf of a description with the pieces that belong to it.
+
+        With an `opener`, a leaf of several pieces is opened into its component's own description
+        where those pieces can be dealt to its operands, and its operands are cut in turn; a leaf
+        whose pieces cannot be dealt stays whole. `trail` holds the components opened above."""
         if not group:
             raise Skipped("too-few-pieces", f"no pieces left for {node.text}")
+        parts = None
+        if node.leaf and opener is not None and len(group) > 1:
+            inside = opener(node, trail)
+            if inside is not None:
+                try:
+                    parts = self.best(inside, group)
+                except Skipped:
+                    parts = None
+                else:
+                    node.operator, node.children, node.opened = inside.operator, inside.children, inside.opened
+                    trail = (*trail, self.glyph_of(node.text) or node.text)
         if node.leaf:
             return [(node, list(group))]
         out: list[tuple[Node, list[int]]] = []
-        for child, part in zip(node.children, self.best(node, group), strict=True):
-            out.extend(self.cut(child, part))
+        for child, part in zip(node.children, parts or self.best(node, group), strict=True):
+            out.extend(self.cut(child, part, opener, trail))
         return out
 
 
@@ -362,16 +384,19 @@ def read(
     glyph_of: Callable[[str], str | None],
     whole: bool = True,
     gate: Gate | None = None,
+    opener: Opener | None = None,
 ) -> Json:
     """One glyph read under a tree: every leaf with the contours dealt to it.
 
     With `whole`, the reading is held against the glyph: a leaf may not enclose a window its
-    component never draws, and the reading drawn again has to look like the glyph. `gate` adds
+    component never draws, and the reading drawn again has to look like the glyph. With an `opener`
+    a leaf is opened into its component's own description where its pieces allow. `gate` adds
     checks of single leaves. A cut that fails a check is kept and marked refused.
     """
     cutter = cutter_for(glyph, drawings, root, glyph_of)
     try:
-        hands = cutter.cut(root, list(range(len(glyph.pieces))))
+        subject = glyph_of(description.subject) or description.subject
+        hands = cutter.cut(root, list(range(len(glyph.pieces))), opener, (subject,))
     except pathops.PathOpsError as error:
         raise Skipped("does-not-tile", "the outlines of a group of pieces could not be merged") from error
     evidence: Json = {}
