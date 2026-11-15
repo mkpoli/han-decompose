@@ -36,8 +36,9 @@ file.
    review page by character. Neither names the contour set judged, so a rebuild that changes the
    cut silently inherits the verdict.
 5. **Licences attach at different levels.** Outlines: SIL OFL 1.1 (Noto, Plangothic, GenZui, Kureedo,
-   Zhuque), CC0 1.0 (Jigmo), Arphic Public License (BabelStone Han PUA). Labels: BabelStone IDS,
-   CHISE IDS (GPL-2.0-or-later), Yi Bai's zi.tools table (MIT). KanjiVG (CC BY-SA 3.0)
+   Zhuque), CC0 1.0 (Jigmo), Arphic Public License (BabelStone Han PUA). Labels: BabelStone IDS
+   (facts outside copyright, by its maintainer's note), CHISE IDS (GPL-2.0-or-later), Yi Bai's
+   zi.tools table (MIT). KanjiVG (CC BY-SA 3.0)
    guides some cuts: its stroke groups say which contours go together, and the cut is contours of
    the font. GlyphWiki glyphs, free to use, check a cut.
 6. **Gates are calibrated for one component.** The filled gate (1 − IoU ≥ 0.6081 at 64 px) and the
@@ -83,13 +84,14 @@ is taken from the first font in the chain that draws it. Libraries and chosen fo
 (unencoded glyph). Region-specific drawings are separate fonts (JP, TC), so no locale selector.
 
 **Source** — a short slug in the registry: `babelstone`, `chise`, `zi-tools`, `kanjivg`,
-`glyphwiki`, `adobe-japan1`, `ids-input-components`. Each row holds URL, pin (release, commit or file date),
-SHA-256 per file, retrieval date, licence, licence evidence URL, attribution line, and role
-(`description`, `guide`, `reference`, `identity`).
+`glyphwiki`, `adobe-japan1`, `ids-input-components`. Each row holds name, URL, pin (release, commit or file date),
+SHA-256 per file, retrieval date, licence and where it is stated, attribution line, what limits
+the source, and role (`description`, `guide`, `reference`, `identity`).
 
 **Description** — `<source>.<h8>`, `h8` being the first 8 hex digits of the SHA-256 of the IDS text
-after the source's annotations are stripped by a rule the format states per source (BabelStone's
-trailing region tags, zi.tools' notes). The record keeps the subject and the verbatim text.
+without what the source attaches to it, by a rule the format states per source (BabelStone's
+trailing region tags; CHISE's `@apparent=` field is a description of its own; a zi.tools field
+is split into its alternatives). The record keeps the subject and the verbatim text.
 
 **Component** — a typed reference, written compactly:
 
@@ -102,8 +104,8 @@ trailing region tags, zi.tools' notes). The record keeps the subject and the ver
 | zi.tools chain | `zi:#(丿𠃊)` | `#(丿𠃊)` | Chain text verbatim. |
 | subtree | `ids:⿱𰀪亻` | an inner node | A node no source names; the key han-compose uses for sequence operands. |
 
-Relations between components live in `components.tsv`, one row per relation, each with its basis
-and tier:
+Relations between components live in the component tables, one row per component or relation,
+each relation with its basis and tier:
 
 - `chise:AJ1-01815` `same` `aj1:1815` (basis: the entity's name; tier `source`).
 - `aj1:1815` `glyph-of` `u:5F62` (basis: Adobe-Japan1 CID order, CIDs 1125–7477 follow JIS X 0208
@@ -129,7 +131,7 @@ One record per glyph, in files that hold a single font:
 
 - `contours`: the glyph's contours in font order after composites are decomposed, each
   `[commands, points]`. Commands use han-compose's letters: `M`, `L`, `Q<n>` (a TrueType quadratic
-  run of n points), `Q<n>*` (closing on an implied point), plus `C` for a cubic. Curves stay as the
+  run of n points), `Q<n>*` (a whole contour without an on-curve point), plus `C` for a cubic. Curves stay as the
   font has them.
 - `points`: flat integers, x and y interleaved, in hundredths of a unit on a 1000-unit em, y up.
   Every existing consumer works on that em; the font's own `upem` is in the registry. Trade-off:
@@ -140,7 +142,7 @@ One record per glyph, in files that hold a single font:
   `_units` rule).
 - `box`, `advance`.
 
-Only glyphs that a reading or a reference names are written. Whole-font dumps are a non-goal.
+Only glyphs that a reading, a skipped attempt or a reference names are written. Whole-font dumps are a non-goal.
 
 ### 2.4 Readings and cuts
 
@@ -161,8 +163,9 @@ A reading holds:
 A cut holds:
 
 - `path`: operand indices into `tree` (`[1, 0]`), `place` (han-compose's slot: `L C R`, `T M B`, or
-  operator plus index such as `⿸0`), `depth`, `level` (opened ancestors + 1), `whole` (its parent is
-  the root, so it stands in the em where the designer put it).
+  operator plus index such as `⿸0`). The tables add `level` (opened ancestors + 1) and `whole`
+  (its parent is the root, so it stands in the em where the designer put it), both read off the
+  path.
 - `component` and `text` (the node as written).
 - `contours` (sorted indices), `sig`, `box`, `frame` (box of the parent node's ink), `gap`, `area`,
   `ink` (summed contour polygon length, as han-compose measures it).
@@ -302,13 +305,14 @@ Stays and consumes:
 
 Trade-off: han-decompose reads ids-input's component registry while ids-input reads han-decompose
 releases. Each side pins the other by SHA-256, and han-decompose needs the registry for
-`components.tsv` and for the list of components to lift, never for the cutting itself.
+the component tables and for the list of components to lift.
 
 ### 5.4 Reproducibility
 
 - Fonts and sources are pinned by SHA-256 in `pins/`, fetched into a user cache, verified on every
-  read; a mismatch stops the build. A file whose upstream address is replaced in place (IDS.TXT, BabelStone Han PUA) has a
-  mirror that serves the pinned bytes: an archived copy, or an asset of this repository's releases.
+  read; a mismatch stops the build. A file whose upstream address is replaced in place (IDS.TXT,
+  BabelStone Han PUA) gets a mirror that serves the pinned bytes: an archived copy, or an asset
+  of this repository's releases.
 - Tools are pinned in `uv.lock`.
 - Output is deterministic: integer coordinates, sorted keys, fixed separators, gzip mtime 0,
   results merged in code point order whatever the worker count, no dates in data files.
@@ -369,7 +373,7 @@ same TSV by PR. The TSV in the repository stays the record either way.
 
 ## 7. Phased plan
 
-Each item is one PR. Publishing a release or the site needs its own go-ahead. The data comes
+Each item is one PR or a few. Publishing a release or the site needs its own go-ahead. The data comes
 first: the cutters and a large library, then a release, then the viewer.
 
 **Phase 0 — ground (built)**
@@ -417,8 +421,9 @@ to npm.
    Arphic-licensed PUA outlines and KanjiVG-guided cuts add two more terms. Noto Sans CJK reserves
    the font name "Source".
 2. **Contour order.** Indices hold only for the exact file, instance and decomposition order. The
-   parity test covers the variable Noto faces and Plangothic; collection faces and CFF outlines
-   are untested.
+   parity check covers every font of both chains as far as han-compose's exports hold a glyph.
+   Variation sequences that only a later font of a chain maps (14,953 of the `serif` chain, from
+   Jigmo), collection faces and cubic outlines are untested.
 3. **Uncalibrated gates.** Only 山 has labels. Limits borrowed for other components refuse and
    accept at unknown rates until reviewed.
 4. **Scale.** Dealing tries every division of a glyph's pieces; all descriptions over two chains is
@@ -434,8 +439,6 @@ to npm.
    cut by host, component, face and box, and dropped where that fails.
 9. **pathops across platforms.** Piece membership near the 1 unit² threshold could differ between
    builds of Skia; the check rebuild runs on the release machine only.
-10. **Name.** An existing repository of the same owner differs from this name by one word and
-    holds an unrelated data set of characters in page images.
 
 ## 9. Decided
 
@@ -446,8 +449,8 @@ and the second after phase 0.
 2. Code under MIT; each data file under its source font's licence, with its description sources'
    terms listed.
 3. One repository with a static viewer and versioned data releases.
-4. The first release covers the `sans` and `serif` chains and every source: 山 and 口, numbered
-   components, zi.tools chains, CHISE entities and the Adobe-Japan1 glyph variants.
+4. The first release covers the `sans` and `serif` chains and every kind of component: 山 and 口,
+   numbered components, zi.tools chains, CHISE entities and the Adobe-Japan1 glyph variants.
 5. Refused, reviewed-wrong and skipped rows ship, marked by status.
 6. Verdicts live in the repository as TSV.
 7. Coordinates are hundredths of a unit on a 1000-unit em.
@@ -463,16 +466,16 @@ Then:
     asset of this repository.
 12. **GlyphWiki.** Free to use, cited with its address, kept as a check.
 13. **Adobe-Japan1.** The `glyph-of` rows are generated from `aj17-kanji.txt` for all 164 entities.
-14. **npm.** The JavaScript reader is not published for now. The data and a large library come
-    first, the viewer after them.
+14. **npm.** The JavaScript reader is not published for now.
+15. **Order.** The data and a large library come first, the viewer after them.
 
-Open: hand and editorial forms (migrate the pure selections, leave the compositions); a hosted
-verdict store and whether the reviewer's handle is recorded; the site's domain and whether shards
-are served as assets or from object storage.
+Open: a hosted verdict store and whether the reviewer's handle is recorded; the site's domain and
+whether shards are served as assets or from object storage.
 
 ## Sources read
 
-- ids-input, branch `feat/donor-parts` with its working tree of 2026-11-15:
+- ids-input, branch `feat/donor-parts` at commit `97724d4db` with the uncommitted survey work
+  on top of it (the component survey, its data and `analysis/`), which this project takes over:
   `scripts/build_donor_parts.py`, `build_mountain_instances.py`, `split_mountain_strokes.py`;
   `analysis/gate-tune/README.md`, `analysis/mountain-fit/labels.json`; `data/donor-parts.json`,
   `mountain-instances.json.gz`, `component-instances-口.json.gz`, `component-instances.json`,
@@ -486,9 +489,10 @@ are served as assets or from object storage.
   `custom-forms.json.gz`, `data/README.md`, `data/sources/hfhchan-ids.yaml`;
   `src/han_compose/web_export.py`, `compose.py`, `compose_layout.py`, `kanjivg_cuts.py`;
   `docs/design/part-extraction.md`.
-- The review gallery page of the custom-component cuts and the script that fills it.
+- The review gallery of the custom-component cuts: a page outside the repositories that shows
+  each host's outlines, the lifted and kept ones, the part alone and the GlyphWiki glyph.
 - Contour counts before and after simplification: 1,500 Han glyphs per face, seed 1, run
-  2026-11-15 against the pinned fonts.
+  2026-11-15 against the pinned fonts with a throwaway script (fontTools, skia-pathops).
 - Adobe-Japan1: `aj17-kanji.txt`, version 2023-01-24 (Ken Lunde and Masataka Hattori), at commit
   `b42b377d7efbc233ae2a4c1833947e04760e68d1` of adobe-type-tools/Adobe-Japan1.
 - GlyphWiki's licence page in its English translation, as archived on 2025-11-14:
