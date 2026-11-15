@@ -5,7 +5,7 @@ from typing import Annotated
 
 import typer
 
-from . import __version__, pins
+from . import __version__, aj1, pins, tsv
 from .importers import composer_export
 from .outline import Chain
 
@@ -74,3 +74,22 @@ def parity(
     typer.echo(f"from another font\t{len(result.other_face)}\t{' '.join(result.other_face[:20])}")
     if not result.exact:
         raise typer.Exit(1)
+
+
+@app.command()
+def components(
+    out: Annotated[Path, typer.Argument(help="A folder to write the component tables into.")],
+    cache: Annotated[Path | None, typer.Option(help="The cache folder the pinned files are in.")] = None,
+) -> None:
+    """Write the component tables, one per source: the Adobe-Japan1 glyphs CHISE's descriptions
+    name, each with the character Adobe's kanji table makes it a glyph of."""
+    try:
+        rows = aj1.pinned(cache)
+    except (pins.PinError, ValueError, OSError) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(1) from error
+    out.mkdir(parents=True, exist_ok=True)
+    for source in sorted({row["source"] for row in rows}):
+        mine = [row for row in rows if row["source"] == source]
+        (out / f"components.{source}.tsv").write_text(tsv.write_table("components", mine), encoding="utf-8")
+        typer.echo(f"components.{source}.tsv\t{len(mine)}")
