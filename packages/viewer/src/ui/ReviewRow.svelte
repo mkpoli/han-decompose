@@ -156,13 +156,4 @@
     place-items: center;
     min-block-size: 120px;
   }
-  @media (min-width: 900px) {
-    .review {
-      grid-template-columns: minmax(0, auto) minmax(0, 1fr);
-      align-items: center;
-    }
-    .panels {
-      grid-template-columns: repeat(4, 120px);
-    }
-  }
 </style>

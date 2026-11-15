@@ -144,8 +144,9 @@
 
 <style>
   .queue {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 560px), 1fr));
+    align-items: start;
     gap: var(--ui-space-lg);
   }
   .count {
