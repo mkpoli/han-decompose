@@ -6,7 +6,7 @@ import { dirname, extname, join, normalize, resolve, sep } from "node:path";
 import type { Plugin } from "vite";
 import type { VerdictRow } from "han-decompose";
 import { parseTable } from "../src/lib/tsv.ts";
-import { readVerdict, stamp, VERDICT_HEADER, verdictLine } from "./verdicts.ts";
+import { allowedRequest, readVerdict, stamp, VERDICT_HEADER, verdictLine } from "./verdicts.ts";
 
 const TYPES: Record<string, string> = {
   ".gz": "application/gzip",
@@ -78,6 +78,9 @@ function verdictApi(file: string) {
       return send(response, 200, rows);
     }
     if (url === "/api/verdict" && request.method === "POST") {
+      if (!allowedRequest({ "content-type": request.headers["content-type"], origin: request.headers.origin, host: request.headers.host })) {
+        return send(response, 403, { error: "a verdict is JSON from a page of this server" });
+      }
       try {
         const read = readVerdict(JSON.parse(await body(request)));
         if (!read.ok) return send(response, 400, { error: read.error });
