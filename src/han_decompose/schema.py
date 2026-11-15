@@ -22,6 +22,8 @@ KINDS = {
     "sources": "sourcesFile",
     "outlines": "outlineFile",
     "cuts": "cutFile",
+    "forms": "formsFile",
+    "library": "libraryFile",
     "verdict": "verdictRow",
     "component": "componentRow",
 }

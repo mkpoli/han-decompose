@@ -15,6 +15,8 @@ from .tsv import number
 
 OUTLINES = "han-decompose/outlines@1.0"
 CUTS = "han-decompose/cuts@1.0"
+FORMS = "han-decompose/forms@1.0"
+LIBRARY = "han-decompose/library@1.0"
 
 
 def _encode(value: Any) -> str:
@@ -88,6 +90,9 @@ class Store:
         self.glyphs: dict[str, dict[str, Json]] = {}
         self.readings: dict[tuple[str, str], list[Json]] = {}
         self.skipped: dict[tuple[str, str], list[Json]] = {}
+        self._read: set[tuple[str, str]] = set()
+        self.forms: dict[str, dict[str, Json]] = {}
+        self.library: dict[str, dict[str, dict[str, list[str]]]] = {}
 
     def glyph(self, glyph: Glyph) -> None:
         """Keep a glyph's outline, once."""
@@ -100,13 +105,25 @@ class Store:
         self.glyphs.setdefault(font, {}).setdefault(selector, record)
 
     def reading(self, row: Json) -> None:
+        """Keep a reading. A glyph has one reading under a description: the first given stands.
+        Two components the registry records the same subtraction for (`㇯𠁾丶`) are read on the
+        same host under the same description, and share that reading."""
         font, _ = I.split_glyph_id(row["glyph"])
-        self.readings.setdefault((font, row["description"].rpartition(".")[0]), []).append(row)
+        key = (row["glyph"], row["description"])
+        if key not in self._read:
+            self._read.add(key)
+            self.readings.setdefault((font, row["description"].rpartition(".")[0]), []).append(row)
 
     def skip(self, row: Json, font: str) -> None:
         """Keep a skipped attempt in the files of `font`: the font of its glyph, or the first of
         the chain where no font draws the subject."""
         self.skipped.setdefault((font, row["description"].rpartition(".")[0]), []).append(row)
+
+    def form(self, chain: str, component: str, form: Json, library: dict[str, list[str]]) -> None:
+        """Keep the cut chosen as a component's form in a chain, and the cuts that confirm it."""
+        self.forms.setdefault(chain, {})[component] = form
+        if library:
+            self.library.setdefault(chain, {})[component] = library
 
     def files(self) -> Iterable[tuple[str, Json]]:
         """Every file as its path in a release and its content, in the order of the paths."""
@@ -136,6 +153,10 @@ class Store:
                         {**head, "readings": [], "skipped": []},
                     )
                     file[kind].append(row)
+        for chain, forms in self.forms.items():
+            out[f"forms/{chain}.json.gz"] = {"format": FORMS, "chain": chain, "forms": forms}
+        for chain, library in self.library.items():
+            out[f"library/{chain}.json.gz"] = {"format": LIBRARY, "chain": chain, "library": library}
         return sorted(out.items())
 
     def write(self, folder: Path) -> list[Path]:

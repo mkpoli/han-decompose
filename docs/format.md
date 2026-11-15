@@ -144,7 +144,7 @@ same value. A `.gz` file is gzip with its modification time set to 0. No file ho
 Every JSON file names its format: `han-decompose/<kind>@<major>.<minor>`. A minor version adds
 properties; a major version changes or removes them.
 
-`manifest.json`, the `library`, `forms` and `references` files are reserved in this version.
+`manifest.json` and the `references` files are reserved in this version.
 `README.md` names every font and source of the release with its licence and attribution, and
 `LICENSES/` holds the licence texts.
 
@@ -273,8 +273,8 @@ A cut:
 | `box` | yes | Box of the cut's contours. |
 | `frame` | | Box of the parent node's ink. |
 | `gap`, `area`, `ink` | | Distance to the nearest sibling ink, filled area, and summed length of the contours' polygons. |
-| `evidence` | | Scores of the cut: `fit` or `match`, `margin`, `agree`, `reference`. |
-| `checks` | | Per check (`filled`, `skeleton`, `windows`): `value`, `limit`, `pass`, and `against`, the glyph compared with. |
+| `evidence` | | Scores of the cut: `fit` or `match`, `margin`, `agree`, `reference`, and `referenceGlyph`, the glyph `reference` was measured against. |
+| `checks` | | Per check: `value`, `limit`, `pass`, and `against`, the glyph compared with. A dealt cut has `filled`, `skeleton` and `windows`; a lifted component has the one that decided it, `reference`, `agree` or `single`. |
 | `calibrated` | | The component whose reviewed labels set the checks' limits, or `false`. |
 | `status` | yes | `accepted`, `refused` (a check failed), `reviewed-right` or `reviewed-wrong`. |
 | `licence` | yes | `outline` and `description` as in the file's `terms`; `guide`, as in the terms, exactly when the reading's method names a guide. |
@@ -306,6 +306,28 @@ A skipped attempt holds `subject`, `glyph` when a font draws the subject, `descr
 | `no-ink` | The glyph draws nothing. |
 | `unlike-whole` | The operands, each drawn where its pieces sit, do not come out as the glyph. |
 | `unreadable-description` | The description does not read as a tree. |
+
+### 4.5 Form and library files
+
+Both are indexes over cuts and hold no geometry. One file covers one chain.
+
+`forms/<chain>.json.gz`, `format` `han-decompose/forms@1.0`: `chain`, and `forms`, component
+reference → the cut chosen as the component's form in that chain:
+
+| Property | Required | Value |
+|---|---|---|
+| `cut`, `sig` | yes | The cut and its signature (2.6). |
+| `basis` | yes | What the choice rests on: `reference` (a reference glyph), `agree` (other hosts leave the same shape), `single` (one host whose parts lift away unmistakably) or `hand`. |
+| `hosts` | | How many hosts gave a cut of the component. |
+
+`library/<chain>.json.gz`, `format` `han-decompose/library@1.0`: `chain`, and `library`,
+component reference → place (4.4) → cut identifiers, best first. A cut is listed when it
+confirms the component's form.
+
+A component that has no character can be read on a host glyph under a description of its own:
+`㇯冐⺜`, 冐 without ⺜, is read on the glyph of 冐. The reading's one cut is the root, which
+holds what is left of the host, and its `component` is the description as a subtree. A
+subtraction that several components share is read once, under the first of them.
 
 ## 5. Tables
 

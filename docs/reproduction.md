@@ -88,6 +88,36 @@ Skipped here, by reason: 14,364 `too-few-pieces` (the glyph has fewer pieces tha
 leaves), 1,816 `layout-mismatch`, 1,480 `unlike-element`, 532 `ambiguous`, 121
 `no-reference-glyph`, 10 `too-many-pieces`, 7 `no-enclosure`, 6 `does-not-tile`.
 
+## Lifted components
+
+han-compose `data/custom-forms.json.gz` (format 2), written by ids-input's
+`scripts/build_custom_cuts.py`: the form of each CHISE entity and zi.tools chain that stands, and
+its library of host cuts, in the `sans` chain (Noto Sans CJK JP, Plangothic P1 and P2) and the
+`serif` chain (Noto Serif CJK JP, Jigmo2, Jigmo3, Jigmo). `tests/fixtures/lift/` holds it without
+its outlines.
+
+| | Sans: entities | chains | library cuts | Serif: entities | chains | library cuts |
+|---|---|---|---|---|---|---|
+| ids-input | 446 | 7 | 353 | 296 | 1 | 189 |
+| han-decompose, patched to ids-input's grain | 446 | 7 | 353 | 296 | 1 | 189 |
+| han-decompose | 444 | 7 | 352 | 296 | 1 | 188 |
+
+At ids-input's grain every form comes from the same host with the same match, margin, agreement
+and reference likeness, and every library has the same number of cuts in each place.
+
+As committed, in the `sans` chain 444 of 453 forms are the same in all of that:
+
+- **2 lost.** `&CDP-86AA;`, `&CDP-88D7;`: the host's component shares a contour with a
+  part, or a piece's contours do not draw it alone.
+- **7 differ.** `&AJ1-01445;`, `&AJ1-04449;`, `&CDP-8552;`, `&CDP-85D4;`, `&CDP-8DEB;`, `&MJ018170;`, `&U-i003+5915;`: the same host and match, with another margin
+  or one host fewer agreeing, because a neighbouring group of pieces is now one piece.
+
+In the `serif` chain all 297 forms stand and 296 are the same; `&CDP-8CEC;` has one host
+fewer in its library.
+
+Hosts read: 1,117 in `sans` and 620 in `serif`; hosts that gave nothing, each kept as a skipped
+attempt with its reason: 2,726 and 3,223.
+
 ## Sources
 
 - ids-input, branch `feat/donor-parts` at `97724d4db` with its uncommitted survey work as it
@@ -96,4 +126,5 @@ leaves), 1,816 `layout-mismatch`, 1,480 `unlike-element`, 532 `ambiguous`, 121
   `scripts/build_donor_parts.py`, `scripts/build_mountain_instances.py`, `analysis/`,
   `data/donor-parts.json`, `data/mountain-instances.json.gz`,
   `data/component-instances-口.json.gz`.
+- ids-input `main`: `scripts/build_custom_cuts.py`; han-compose `main`: `data/custom-forms.json.gz`.
 - Fonts and tables as pinned in `pins/`.

@@ -1,0 +1,35 @@
+{
+  "sans": {
+    "lost": [
+      "chise:CDP-86AA",
+      "chise:CDP-88D7"
+    ],
+    "gained": [],
+    "differ": [
+      "chise:AJ1-01445",
+      "chise:AJ1-04449",
+      "chise:CDP-8552",
+      "chise:CDP-85D4",
+      "chise:CDP-8DEB",
+      "chise:MJ018170",
+      "chise:U-i003+5915"
+    ],
+    "forms": {
+      "entity": 444,
+      "chain": 7
+    },
+    "library": 352
+  },
+  "serif": {
+    "lost": [],
+    "gained": [],
+    "differ": [
+      "chise:CDP-8CEC"
+    ],
+    "forms": {
+      "entity": 296,
+      "chain": 1
+    },
+    "library": 188
+  }
+}
