@@ -129,7 +129,7 @@ def reference(target: str) -> dict[str, tuple[str, int, list[tuple[int, float, f
 
 
 @pytest.mark.reproduction
-@pytest.mark.parametrize("target", ["山"])
+@pytest.mark.parametrize("target", ["山", "口"])
 def test_the_survey_of_ids_input_reproduces(target: str) -> None:
     """Every character of ids-input's survey has the same reading here: the same tree, the same
     depth and, for each instance, the same three scores. `expected.json` names the characters
