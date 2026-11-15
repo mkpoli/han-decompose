@@ -7,7 +7,7 @@ cutter produced them.
 |---|---|
 | `outlines/noto-sans-cjk-jp@2.004/050.json` | 催: 11 contours in 3 pieces. 偹 (U+5079), the skipped attempt's glyph: 11 contours in 2 pieces. |
 | `cuts/noto-sans-cjk-jp@2.004/babelstone/050.json` | One reading of 催 as `⿰亻崔`, with 崔 opened into `⿱山隹`, and one skipped attempt, 偹. |
-| `cuts.tsv`, `skipped.tsv` | The flat tables of that cut file. |
+| `cuts.babelstone.tsv`, `skipped.babelstone.tsv` | The flat tables of that cut file. |
 
 The JSON files are laid out for reading; a release writes the same values on one line with sorted
 keys and compresses them.

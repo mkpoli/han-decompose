@@ -72,18 +72,21 @@ wrong is unknown, and every cut says `calibrated: false`.
 | han-decompose, patched to ids-input's grain | 26,446 | 4,731 | 5,033 | 4,626 |
 | han-decompose | 26,446 | 4,732 | 5,030 | 4,587 |
 
-As committed, 4,697 characters are the same in tree, depth and scores. The others:
+At ids-input's grain every character has the same tree, depth and scores.
+
+As committed, 4,697 characters are the same in all of that. The others:
 
 - **29 lost.** 𠮭𠱪𠻘𡀆𡄉𡞺𡬗𢣆𢸊𤜀𤺬𥰪𦳬𧁤𧨈𧰈𧰑𧰛𨿡𨿦𩁛𩟈𪉣𪢢𪯟𭉆𮇰𮟜𱊻. A contour runs through the 口 and a neighbour, or a
   piece's contours do not draw the piece alone.
-- **30 gained.** 㐯㗢䛗䝂䨐咶嚚龛𠆆𠰯𠳡𠷰𠹃𠼩𡁝𧔁𧚱𨜢𪓪𪕡𪕲𫙻𫜝𫫐𫴜𬶔𭍈𮝣𮟺𲄲. Skipped by ids-input because the union of their
-  pieces lost area.
-- **5 differ.** 𠵘𡀢𡁚𧜉𱄆: a component deeper in the tree no longer opens, so
-  the reading settles one level up, or a joined piece changes the 口's scores.
+- **30 gained.** 㐯㗢䛗䝂䨐咶嚚龛𠆆𠰯𠳡𠷰𠹃𠼩𡁝𧔁𧚱𨜢𪓪𪕡𪕲𫙻𫜝𫫐𬶔𭍈𮟺, which ids-input skipped because the union of their
+  pieces lost area; 𫴜 and 𮝣, where it found two readings fitting equally well; and 𲄲, which it
+  refused at the skeleton gate. In those three a joined piece changes the reading.
+- **5 differ.** 𠵘𡀢𡁚𧜉𱄆: a component deeper in the tree no longer opens, so the reading settles one
+  level up, or a joined piece changes the 口's scores.
 
-Skipped here, by reason: 14,364 `too-few-pieces`, 1,816 `layout-mismatch`, 1,480
-`unlike-element`, 532 `ambiguous`, 121 `no-reference-glyph`, 10 `too-many-pieces`,
-7 `no-enclosure`, 6 `does-not-tile`. Most characters with a 口 draw it joined to a neighbour.
+Skipped here, by reason: 14,364 `too-few-pieces` (the glyph has fewer pieces than the tree has
+leaves), 1,816 `layout-mismatch`, 1,480 `unlike-element`, 532 `ambiguous`, 121
+`no-reference-glyph`, 10 `too-many-pieces`, 7 `no-enclosure`, 6 `does-not-tile`.
 
 ## Lifted components
 
@@ -117,7 +120,9 @@ attempt with its reason: 2,726 and 3,223.
 
 ## Sources
 
-- ids-input, branch `feat/donor-parts` at `97724d4db` with its uncommitted survey work:
+- ids-input, branch `feat/donor-parts` at `97724d4db` with its uncommitted survey work as it
+  stood on 2026-11-15 (the survey script was last changed on 2026-11-09, after the 口 file was
+  written; the patched run gives both files as they are):
   `scripts/build_donor_parts.py`, `scripts/build_mountain_instances.py`, `analysis/`,
   `data/donor-parts.json`, `data/mountain-instances.json.gz`,
   `data/component-instances-口.json.gz`.
