@@ -156,9 +156,9 @@ from them by `han-decompose citations`.
 - Source: GlyphWiki, <https://glyphwiki.org/>
 - Role: reference
 - Pin: glyphs fetched 2026-11-13 by ids-input, as its data/custom-outlines.json.gz at commit be70733a179085a16e48f7049b6cfec5e07f4496; retrieved 2026-11-15.
-- Licence: LicenseRef-GlyphWiki. https://glyphwiki.org/wiki/GlyphWiki:データ・記事のライセンス
+- Licence: LicenseRef-GlyphWiki. https://glyphwiki.org/wiki/GlyphWiki:データ・記事のライセンス; English translation of its revision 15, archived 2025-11-14: https://web.archive.org/web/20251114152951/https://en.glyphwiki.org/wiki/GlyphWiki:License
 - Attribution: GlyphWiki, https://glyphwiki.org/
-- Limits: Glyphs are edited by GlyphWiki's users and may differ from the form a description source means. A glyph is used only to check a cut. The terms are given as ids-input's data/README.md summarises them (free use, copying and modification, no attribution required); the licence page did not load for an automated client on 2026-11-15.
+- Limits: Glyphs are edited by GlyphWiki's users and may differ from the form a description source means. A glyph is used only to check a cut. The Japanese licence page, which governs, did not load for an automated client on 2026-11-15; the English translation was read from an archive.
 
 | File | SHA-256 | Address |
 |---|---|---|

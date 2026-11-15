@@ -31,7 +31,8 @@ checks each digest.
 ## Development
 
 The builder is a Python package managed with [uv](https://docs.astral.sh/uv/); the reader for
-JavaScript is the npm package in `packages/format`, managed with [bun](https://bun.sh/).
+JavaScript is the package in `packages/format`, managed with [bun](https://bun.sh/) and not
+published to npm.
 
 ```sh
 uv sync

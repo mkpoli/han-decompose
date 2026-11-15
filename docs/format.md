@@ -115,13 +115,13 @@ A release is laid out as:
 ```
 manifest.json
 fonts.json  sources.json
-components.tsv
+components.<source>.tsv
 outlines/<font>/<block>.json.gz
 cuts/<font>/<source>/<block>.json.gz
 library/<chain>.json.gz  forms/<chain>.json.gz
 references/<source>.json.gz
-cuts.tsv.gz  skipped.tsv.gz  verdicts.tsv
-LICENSES/  NOTICE.md  SHA256SUMS
+cuts.<source>.tsv.gz  skipped.<source>.tsv.gz  verdicts.tsv
+LICENSES/  README.md  SHA256SUMS
 ```
 
 `<block>` is the glyph's code point divided by 256, in lower-case hex of at least three digits:
@@ -137,6 +137,8 @@ Every JSON file names its format: `han-decompose/<kind>@<major>.<minor>`. A mino
 properties; a major version changes or removes them.
 
 `manifest.json`, the `library`, `forms` and `references` files are reserved in this version.
+`README.md` names every font and source of the release with its licence and attribution, and
+`LICENSES/` holds the licence texts.
 
 ### 4.1 `fonts.json`
 
@@ -304,7 +306,8 @@ Numbers are written as in the JSON files (section 4).
 
 ### 5.1 `cuts`
 
-One row per cut. Each row stands alone.
+One row per cut. Each row stands alone. A release writes one table per description source,
+`cuts.<source>.tsv.gz`.
 
 | Column | Value |
 |---|---|
@@ -331,9 +334,13 @@ The table holds no outline. A reader joins `font`, `glyph` and `contours` to the
 
 ### 5.2 `skipped`
 
+One table per description source, `skipped.<source>.tsv.gz`.
+
 `font`, `glyph`, `char`, `source`, `description`, `ids`, `reason_code`, `reason`.
 
 ### 5.3 `components`
+
+One table per source, `components.<source>.tsv`.
 
 One row per component, or per relation between two.
 
