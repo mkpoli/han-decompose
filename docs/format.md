@@ -25,7 +25,7 @@ normalised.
 | layer | A contour set with its component: a glyph, or a cut opened into its parts. |
 | reading | One structure applied to one layer: which contours go to which nodes. |
 | cut | One node of a reading: a class, the member drawn, its path and its contour set. |
-| drawn IDS | A glyph's accepted structure written with each node's style. |
+| drawn IDS | One accepted structure of a glyph written with each node's style; a glyph has one per structure it fits. |
 | verdict | A reviewer's right or wrong on one cut with one exact contour set, or a style named for it. |
 
 ## 2. Identifiers and notation
@@ -232,7 +232,7 @@ holds indices and labels and no outline. `format` is `han-decompose/cuts@2.0`.
 |---|---|
 | `font` | Font identifier. |
 | `design` | Its design. |
-| `drawn` | Glyph selector → drawn IDS. |
+| `drawn` | Glyph selector → its drawn IDS, one per structure with a chosen accepted root reading, the first one marked `first`. |
 | `readings` | Readings. |
 | `skipped` | Attempts that closed no reading. |
 
@@ -244,6 +244,7 @@ A drawn IDS:
 | `structure` | yes | Structure identifier and `text`. |
 | `readings` | yes | The readings it is written from, as their layer steps. |
 | `tier` | yes | `machine`, or `reviewed` when every style in it is. |
+| `first` | yes | Whether the viewer shows it first for the glyph: the reviewer's pick, else the best evidence. |
 
 A reading:
 
@@ -376,8 +377,8 @@ The table holds no outline. A reader joins `font`, `glyph` and `contours` to the
 
 ### 5.2 `drawn` and `structures`
 
-`drawn.tsv.gz`, one row per glyph with a drawn IDS: `font`, `design`, `glyph`, `char`, `ids`,
-`structure`, `text`, `tier`.
+`drawn.tsv.gz`, one row per glyph and structure: `font`, `design`, `glyph`, `char`, `ids`,
+`structure`, `text`, `tier`, `first` (`1` or `0`).
 
 `structures.tsv.gz`, one row per character and structure that fits at least one font: `char`,
 `structure`, `text`, `fonts` (font identifiers separated by spaces), `designs`, and `drawn`, the

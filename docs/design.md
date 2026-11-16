@@ -96,7 +96,7 @@ of their own. [`licensing.md`](licensing.md) says which file is under which term
 | reading | One alternative applied to one layer: which of its contours go to which operands. |
 | cut | One node of a reading: a component, its path, its contour set, its evidence, checks and style. |
 | stroke | One stroke of a leaf cut, with its type: whole contours, or an outline cut at seams (2.10). |
-| drawn IDS | Per glyph: the accepted structure written with each node's style. 社 in Noto Sans CJK JP is `⿰礻土`. |
+| drawn IDS | Per glyph and structure: the accepted reading written with each node's style. 社 in Noto Sans CJK JP is `⿰礻土`. |
 | form | A cut seen as a drawing of its component. One per class, style and design is marked as chosen. |
 | library | For a class and a design, its cuts grouped by style and place. |
 | verdict | A reviewer's Right or Wrong on one cut with one exact contour set, or on one cut's style. |
@@ -344,12 +344,13 @@ with a reason code (`too-few-pieces`, `unlike-element`, `layout-mismatch`, `ambi
 
 ### 2.7 Drawn IDS
 
-Each glyph gets one drawn IDS: the accepted root reading with the best evidence, every cut written
-as its style, opened layers written in place. 社 in Noto Sans CJK JP → `⿰礻土`; in a font that
+Each glyph gets a drawn IDS for every structure it fits: the chosen accepted root reading of that
+structure, every cut written as its style, opened layers written in place. One of them is marked
+first, the reviewer's pick or else the best evidence. 社 in Noto Sans CJK JP → `⿰礻土`; in a font that
 draws the full 示 → `⿰示土`; 𥘦 → `⿰𱍐攵`. It records the structure and readings it came from and
 is tier `machine`, or `reviewed` once a reviewer has judged every style in it. Candidates that
-share the structure collapse into the one drawn IDS. The viewer shows it first for each font, with
-the character's other structures beside it.
+share a structure collapse into its one drawn IDS. The viewer shows the first for each font, with
+the glyph's other drawn IDS beside it.
 
 A character's published descriptions are its structures that fit at least one pinned font, each
 with the fonts and designs it fits and the drawn IDS it takes in each.
