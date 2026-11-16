@@ -24,7 +24,7 @@ normalised.
 | style | The class member a cut is drawn as. |
 | layer | A contour set with its component: a glyph, or a cut opened into its parts. |
 | reading | One structure applied to one layer: which contours go to which nodes. |
-| cut | One node of a reading: a component, its path and its contour set. |
+| cut | One node of a reading: a class, the member drawn, its path and its contour set. |
 | drawn IDS | A glyph's accepted structure written with each node's style. |
 | verdict | A reviewer's right or wrong on one cut with one exact contour set, or a style named for it. |
 
@@ -97,10 +97,10 @@ A cut is `<glyph>~<step>…`, one step per layer from the glyph down, each `<h8>
 `h8` of the structure that layer was read as: `noto-sans-cjk-jp@2.004/U+793E~0a1c0fdb:0` is the
 left part of 社 read as `⿰示土`.
 
-Its signature `sig` is the first eight hex digits of the SHA-256 of its component reference and
+Its signature `sig` is the first eight hex digits of the SHA-256 of its class reference and
 its contour indices, ascending, in decimal, all joined by single spaces. 山 at contours `[0, 2]`
 hashes the text `u:5C71 0 2` and gives `785ad39d`. A verdict binds to the identifier and the
-signature together, so it stops applying when the component or the contour set changes.
+signature together, so it stops applying when the class or the contour set changes.
 
 ## 3. Coordinates and numbers
 
@@ -253,7 +253,7 @@ A reading:
 | `structure` | yes | Structure identifier. |
 | `text` | yes | The structure's text. |
 | `tree` | yes | The structure spelled out as far as the cut went: 催 `⿰亻崔` becomes `⿰亻⿱山隹`. |
-| `opened` | | The nodes of `tree` read as layers below: `path`, `component`, `structure` and its `text`. |
+| `opened` | | The nodes of `tree` read as layers below: `path`, `member` (whose structures the layer was read with), `structure` and its `text`. |
 | `method` | yes | `name`: `deal`, `lift`, `kage`, `axis`, `kanjivg` or `hand`. `tool`, with `version` and `commit`. `grain`: `piece` when whole pieces were assigned, `contour` when single contours were. |
 | `complete` | yes | Whether every contour of the layer is in a cut and every leaf of `tree` has one. |
 | `evidence` | | Scores of the reading as a whole. |
@@ -268,9 +268,8 @@ A cut:
 | `id`, `sig` | yes | 2.7. |
 | `path` | yes | Operand indices into the reading's structure. |
 | `place` | yes | Where the node stands in its parent: `L`, `C`, `R` under `⿰` and `⿲`; `T`, `M`, `B` under `⿱` and `⿳`; otherwise the operator and the operand index, as `⿸0`. Empty for the root. |
-| `component` | yes | Component reference, as the structure writes it (the canonical member). |
-| `class` | | The class's canonical member, when the component is in a class. |
-| `style` | | `member` (a component reference), `basis` (`kage`, `match`, `cluster` or `hand`), `likeness`, `tier` (`source`, `machine` or `reviewed`). |
+| `class` | yes | Component reference of the node as the structure writes it: a class's canonical member, or a component in no class. |
+| `style` | | `member` (the component reference of the class member the drawing matched; the component itself when it is in no class), `basis` (`kage`, `match`, `cluster` or `hand`), `likeness`, `tier` (`source`, `machine` or `reviewed`). A layer opened from the cut is read with the member's structures. |
 | `contours` | yes | Contour indices, ascending. |
 | `box` | yes | Box of the cut's contours. |
 | `frame` | | Box of the parent node's ink. |
@@ -290,7 +289,7 @@ Within a reading:
 - a cut's contours are a subset of the contours of every cut above it on its path, and of the
   layer;
 - cuts on different branches share no contour;
-- a cut's `component` is the reference of its node in `text` (2.5);
+- a cut's `class` is the reference of its node in `text` (2.5);
 - a `style.member` is in the cut's class.
 
 A skipped attempt holds `subject`, `glyph` when a font draws the subject, `layer`, `structure`,
@@ -330,7 +329,7 @@ style → the cut chosen as that style's form in that design:
 
 A component that has no character can be read on a host glyph under a structure of its own:
 `㇯冐⺜`, 冐 without ⺜, is read on the glyph of 冐. The reading's one cut is the root, which
-holds what is left of the host, and its `component` is the structure as a subtree. A
+holds what is left of the host, and its `class` is the structure as a subtree. A
 subtraction that several components share is read once, under the first of them.
 
 ## 5. Tables
@@ -356,8 +355,8 @@ One row per cut, `cuts.tsv.gz`. Each row stands alone.
 | `place` | As in the cut. |
 | `depth` | 1 for a node of the glyph's own reading, one more for each layer above it. |
 | `whole` | `1` when the node's parent is the root, else `0`. |
-| `component`, `class` | As in the cut. |
-| `style`, `style_basis`, `style_tier` | From the cut's style. |
+| `class` | As in the cut. |
+| `member`, `style_basis`, `style_tier` | From the cut's style. |
 | `contours` | Indices separated by spaces. |
 | `grain` | From the reading's method. |
 | `box`, `frame` | Four numbers separated by spaces. |

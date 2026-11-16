@@ -166,7 +166,7 @@ table is pinned by commit and digest like the fonts.
 `<structure h8>:<path>`. 山 in 催, read as `⿰亻崔` and then 崔 as `⿱山隹`:
 `noto-sans-cjk-jp@2.004/U+50AC~9d9dea39:1~a674f7d6:0`. A path inside one step is the
 operand indices of that alternative joined by dots; a reading's root is `-`. A cut also carries
-`sig`, the first 8 hex digits of the SHA-256 of its component reference and its sorted contour
+`sig`, the first 8 hex digits of the SHA-256 of its class reference and its sorted contour
 indices; `id` + `sig` is what a verdict binds to.
 
 ### 2.3 Outlines
@@ -285,8 +285,14 @@ A cut holds:
   The tables add `depth` (the number of layers above it; 1 for a node of the glyph's own
   alternative) and `whole` (its parent is the root, so it stands in the em where the designer
   put it).
-- `component`, `text` (the node as the structure writes it) and `class`.
-- `style`: `member`, `basis` (`kage`, `match`, `cluster`, `hand`), `likeness` and `tier`.
+- `class`: the node as the structure writes it, a class's canonical member or a component in no
+  class.
+- `style`: `member` (the member of the class the drawing matched; the component itself when it is
+  in no class), `basis` (`kage`, `match`, `cluster`, `hand`), `likeness` and `tier`.
+
+A cut opened into a layer is read with its member's own structures: 社's left cut, member 礻, opens
+with 礻's structures, and a cut drawn as 王 in class 玉 opens with 王's. Until a cut has a style,
+the structures of every member of its class are tried, and the one that fits sets the member.
 - `contours` (sorted indices), `sig`, `box`, `frame` (box of the parent node's ink), `gap`, `area`,
   `ink` (summed contour polygon length, as han-compose measures it).
 - `evidence`: `fit` or `match`, `margin`, `agree` (other hosts leaving the same shape), `reference`
@@ -547,7 +553,7 @@ Stays and consumes:
   `donor-parts.json`, the instance files and their pages, and reads forms, drawn IDS and variants
   from a pinned han-decompose release.
 - IDS parsing: han-decompose has one Python parser that reads the candidates' notations and writes
-  the one of 2.2. The JavaScript reader ships no parser; every cut row carries its resolved `component`, `text` and `path`.
+  the one of 2.2. The JavaScript reader ships no parser; every cut row carries its `class`, `member` and `path`.
 
 Trade-off: han-decompose reads ids-input's corpus at a fixed commit while ids-input reads
 han-decompose releases. Each side pins the other by SHA-256.
