@@ -11,7 +11,7 @@ def test_fonts_and_glyphs() -> None:
     assert I.selector("葛\U000e0100") == "U+845B.E0100"
     assert I.selector("𠬶") == "U+20B36"
     assert I.gid_selector(1234) == "gid.1234"
-    assert I.glyph_id("jigmo2@20250912", "U+20B36") == "jigmo2@20250912/U+20B36"
+    assert I.glyph_id("plangothic-p2@2.9.5795", "U+20B36") == "plangothic-p2@2.9.5795/U+20B36"
     assert I.split_glyph_id("babelstone-han-pua@1.472/gid.7") == ("babelstone-han-pua@1.472", "gid.7")
     assert I.selected("U+845B.E0100") == "葛\U000e0100"
     assert I.selected("gid.7") is None

@@ -113,8 +113,8 @@ def test_the_golden_outline_is_what_the_pinned_font_gives() -> None:
 def test_an_island_inside_a_counter_is_a_piece_of_its_own() -> None:
     glyph = Drawing(pinned_face(FONT)).glyph("U+56DE")
     assert glyph is not None and glyph.partition() == [[0, 1], [2, 3]]
-    scaled = Drawing(pinned_face("jigmo@20250912")).glyph("U+56DE")
-    assert scaled is not None and scaled.partition() == [[0, 1], [2, 3]] and scaled.tiles
+    serif = Drawing(pinned_face("noto-serif-cjk-jp@2.003")).glyph("U+56DE")
+    assert serif is not None and serif.partition() == [[0, 4, 5], [1, 2, 3]] and serif.tiles
 
 
 def test_the_contours_of_a_piece_draw_the_piece() -> None:

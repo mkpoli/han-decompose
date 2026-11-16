@@ -11,5 +11,5 @@ reads the same glyphs from the pinned fonts and requires the same contours.
 
 The records are outlines of the fonts they name and stay under those fonts' terms, which
 [`pins/README.md`](../../../pins/README.md) gives with each copyright line: SIL OFL 1.1 for Noto
-Sans CJK JP, Noto Serif CJK JP and Plangothic, CC0 1.0 for Jigmo. han-compose, which wrote the
+Sans CJK JP, Noto Serif CJK JP and Plangothic. han-compose, which wrote the
 exports, is MIT, <https://github.com/mkpoli/han-compose>.

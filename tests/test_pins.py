@@ -218,8 +218,8 @@ def test_the_licensing_page_names_every_licence_of_an_outline() -> None:
     text = (ROOT / "docs" / "licensing.md").read_text(encoding="utf-8")
     named = set(re.findall(r"^\| [^|]*\(`([^`]+)`\) \|", text, re.MULTILINE))
     used = {row["licence"] for row in pins.fonts()["fonts"]}
-    # GlyphWiki's licence is named for the font the dump becomes (phase 8); Jigmo goes with phase 7.2.
-    assert named - used == {"LicenseRef-GlyphWiki"} and used - named == {"CC0-1.0"}
+    # GlyphWiki's licence is named for the font the dump becomes (phase 8).
+    assert named - used == {"LicenseRef-GlyphWiki"} and used == named - {"LicenseRef-GlyphWiki"}
 
 
 def test_the_registries_follow_the_format() -> None:
@@ -231,8 +231,11 @@ def test_the_registries_follow_the_format() -> None:
     assert len(set(designs)) == len(designs)
     for design in fonts["designs"]:
         assert set(design["chain"]) <= set(identifiers), design["id"]
-        assert {pins.font(member)["design"] for member in design["chain"]} == {design["id"]}, design["id"]
-        assert len({pins.font(member)["style"] for member in design["chain"]}) == 1, design["id"]
+        assert {pins.font(member)["design"] for member in design["chain"]} <= {design["id"]}, design["id"]
+        assert {pins.font(member)["style"] for member in design["chain"]} <= {design["style"]}, design["id"]
+        assert design["members"] and all(member["evidence"] for member in design["members"]), design["id"]
+        assert set(design["chain"]) <= {member["font"] for member in design["members"]}, design["id"]
+    assert {design["id"] for design in fonts["designs"] if not design["chain"]} == {"glyphwiki", "ipamj"}
     assert sorted(identifiers) == sorted(member for design in fonts["designs"] for member in design["chain"])
     assert [row["id"] for row in pins.chain("plangothic")] == pins.design("plangothic")["chain"]
     assert len({row["id"] for row in sources["sources"]}) == len(sources["sources"])
@@ -250,13 +253,13 @@ def test_unknown_names() -> None:
     with pytest.raises(KeyError):
         pins.font("noto-sans-cjk-jp@9")
     with pytest.raises(KeyError):
-        pins.source("unihan")
+        pins.source("babelstone")
     with pytest.raises(KeyError):
         pins.chain("kaisho")
     with pytest.raises(KeyError):
         pins.design("sans")
     with pytest.raises(KeyError):
-        list(pins.fetch_all({"unihan"}))
+        list(pins.fetch_all({"jigmo2@20250912"}))
 
 
 def test_the_readme_cites_every_pin() -> None:
@@ -280,5 +283,5 @@ def test_the_cache_follows_the_environment(monkeypatch: pytest.MonkeyPatch, tmp_
 
 
 def test_fetch_reports_a_name_that_is_not_pinned(tmp_path: Path) -> None:
-    result = CliRunner().invoke(app, ["fetch", "unihan", "--cache", str(tmp_path)])
-    assert result.exit_code == 1 and "Not pinned: unihan." in result.output
+    result = CliRunner().invoke(app, ["fetch", "jigmo2@20250912", "--cache", str(tmp_path)])
+    assert result.exit_code == 1 and "Not pinned: jigmo2@20250912." in result.output

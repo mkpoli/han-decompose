@@ -184,7 +184,7 @@ def test_the_parity_command_fails_on_a_difference(
 
 
 #: The designs each export was written from, in the order of its chain.
-DESIGNS = {"sans": ["source-han-sans", "plangothic"], "serif": ["source-han-serif", "jigmo"]}
+DESIGNS = {"sans": ["source-han-sans", "plangothic"], "serif": ["source-han-serif"]}
 
 
 @pytest.mark.parametrize("name", ["sans", "serif"])

@@ -45,33 +45,6 @@ from them by `han-decompose citations`.
 - Copyright: © 2017-2024 Adobe (http://www.adobe.com/).
 - Design: `source-han-serif`, grain contour; chain `source-han-serif` (1 of 1).
 
-### `jigmo2@20250912`
-
-- Font: Jigmo2 20250912, name-table version `2025-09-12`, 1024 units per em.
-- File: <https://kamichikoichi.github.io/jigmo/Jigmo-20250912.zip>, member `Jigmo2.ttf` of the archive
-- SHA-256: `5da3582efe77e22073b86b3b86b556d7111148a76b957cfb53318a91da2efff0`; archive `5744c7386d129475d87607ca66d043c8793c65448adeaedc921b6931890e5d0b`
-- Licence: CC0-1.0, stated in LICENSE.txt in the archive.
-- Copyright: Koichi Kamichi
-- Design: `jigmo`, grain piece; chain `jigmo` (1 of 3).
-
-### `jigmo3@20250912`
-
-- Font: Jigmo3 20250912, name-table version `2025-09-12`, 1024 units per em.
-- File: <https://kamichikoichi.github.io/jigmo/Jigmo-20250912.zip>, member `Jigmo3.ttf` of the archive
-- SHA-256: `815b18c1c670103723fe743090559208fdea47dc587ecb057a5a4721ee8dfeff`; archive `5744c7386d129475d87607ca66d043c8793c65448adeaedc921b6931890e5d0b`
-- Licence: CC0-1.0, stated in LICENSE.txt in the archive.
-- Copyright: Koichi Kamichi
-- Design: `jigmo`, grain piece; chain `jigmo` (2 of 3).
-
-### `jigmo@20250912`
-
-- Font: Jigmo 20250912, name-table version `2025-09-12`, 1024 units per em.
-- File: <https://kamichikoichi.github.io/jigmo/Jigmo-20250912.zip>, member `Jigmo.ttf` of the archive
-- SHA-256: `c8f295b9bd8f9f117a76b3a454aaaa1bb5b4babc18e254978c6deb88464e40cf`; archive `5744c7386d129475d87607ca66d043c8793c65448adeaedc921b6931890e5d0b`
-- Licence: CC0-1.0, stated in LICENSE.txt in the archive.
-- Copyright: Koichi Kamichi
-- Design: `jigmo`, grain piece; chain `jigmo` (3 of 3).
-
 ### `babelstone-han-pua@1.472`
 
 - Font: BabelStone Han PUA 1.472, name-table version `Version 1.472`, 1024 units per em.
