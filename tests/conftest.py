@@ -17,5 +17,5 @@ def outlines() -> Json:
 
 @pytest.fixture
 def cuts() -> Json:
-    value: Json = json.loads((GOLDEN / "cuts" / FONT / "babelstone" / "050.json").read_text(encoding="utf-8"))
+    value: Json = json.loads((GOLDEN / "cuts" / FONT / "050.json").read_text(encoding="utf-8"))
     return value

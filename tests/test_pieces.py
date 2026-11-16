@@ -92,7 +92,7 @@ def test_the_pieces_of_a_glyph_are_read_from_the_font(tmp_path: Path) -> None:
 
 def outline_file(font: str, glyphs: dict[str, object]) -> dict[str, object]:
     return {
-        "format": "han-decompose/outlines@1.0",
+        "format": "han-decompose/outlines@2.0",
         "font": font,
         "licence": "OFL-1.1",
         "copyright": "A font for tests.",

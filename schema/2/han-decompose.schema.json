@@ -1,0 +1,1535 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/mkpoli/han-decompose/main/schema/2/han-decompose.schema.json",
+  "title": "han-decompose data format 2",
+  "description": "Definitions for every file of a han-decompose release. docs/format.md is the normative text.",
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "fileName": {
+      "description": "A plain file name, without a folder.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "spdx": {
+      "description": "An SPDX licence expression. Terms SPDX does not list are written LicenseRef-<name> and defined in the registry row that uses them.",
+      "type": "string",
+      "minLength": 1
+    },
+    "fontId": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*@[0-9A-Za-z]+(\\.[0-9A-Za-z]+)*$"
+    },
+    "designId": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "selector": {
+      "type": "string",
+      "pattern": "^(U\\+((?!D[89A-F])[0-9A-F]{4}|[1-9A-F][0-9A-F]{4}|10[0-9A-F]{4})(\\.(FE0[0-9A-F]|E01[0-9A-E][0-9A-F]))?|gid\\.(0|[1-9][0-9]*)|name\\.[0-9a-z_-]+(@[0-9]+)?)$"
+    },
+    "glyphId": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*@[0-9A-Za-z]+(\\.[0-9A-Za-z]+)*/(U\\+((?!D[89A-F])[0-9A-F]{4}|[1-9A-F][0-9A-F]{4}|10[0-9A-F]{4})(\\.(FE0[0-9A-F]|E01[0-9A-E][0-9A-F]))?|gid\\.(0|[1-9][0-9]*)|name\\.[0-9a-z_-]+(@[0-9]+)?)$"
+    },
+    "structureId": {
+      "type": "string",
+      "pattern": "^s\\.[0-9a-f]{8}$"
+    },
+    "componentRef": {
+      "type": "string",
+      "anyOf": [
+        {
+          "pattern": "^u:((?!D[89A-F])[0-9A-F]{4}|[1-9A-F][0-9A-F]{4}|10[0-9A-F]{4})(\\.(FE0[0-9A-F]|E01[0-9A-E][0-9A-F]))?$"
+        },
+        {
+          "pattern": "^ids:[⿰-⿿㇯].+$"
+        },
+        {
+          "pattern": "^x:X-[0-9]{5}$"
+        },
+        {
+          "pattern": "^ucv:[0-9a-f]+\\.[1-9][0-9]*$"
+        },
+        {
+          "pattern": "^aj1:(0|[1-9][0-9]*)$"
+        }
+      ]
+    },
+    "path": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "step": {
+      "description": "<structure h8>-<method>:<path>, one layer of a cut identifier.",
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[a-z]+:(-|(0|[1-9][0-9]*)(\\.(0|[1-9][0-9]*))*)$"
+    },
+    "layer": {
+      "description": "The steps from the glyph to the cut a reading divides; empty for the glyph.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/step"
+      }
+    },
+    "cutId": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*@[0-9A-Za-z]+(\\.[0-9A-Za-z]+)*/(U\\+((?!D[89A-F])[0-9A-F]{4}|[1-9A-F][0-9A-F]{4}|10[0-9A-F]{4})(\\.(FE0[0-9A-F]|E01[0-9A-E][0-9A-F]))?|gid\\.(0|[1-9][0-9]*)|name\\.[0-9a-z_-]+(@[0-9]+)?)(~[0-9a-f]{8}-[a-z]+:(-|(0|[1-9][0-9]*)(\\.(0|[1-9][0-9]*))*))+$"
+    },
+    "sig": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}$",
+      "description": "The first 8 hex digits of the SHA-256 of the cut's class reference and contour indices."
+    },
+    "box": {
+      "description": "x0, y0, x1, y1 in units of a 1000-unit em, y up.",
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "minItems": 4,
+      "maxItems": 4
+    },
+    "contourSet": {
+      "description": "Indices into the glyph's contours, ascending.",
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "tier": {
+      "enum": [
+        "source",
+        "machine",
+        "reviewed"
+      ]
+    },
+    "font": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "version",
+        "file",
+        "url",
+        "sha256",
+        "upem",
+        "licence",
+        "copyright",
+        "style",
+        "design",
+        "grain"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/fontId"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "nameVersion": {
+          "description": "The font's name-table version string.",
+          "type": "string"
+        },
+        "file": {
+          "description": "The file name in the cache.",
+          "$ref": "#/$defs/fileName"
+        },
+        "url": {
+          "description": "Where the file, or the archive that holds it, is fetched from.",
+          "type": "string",
+          "format": "uri"
+        },
+        "mirrors": {
+          "description": "Other places that serve the same bytes, tried in order after url.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "archive": {
+          "type": "object",
+          "required": [
+            "sha256",
+            "member"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "sha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "member": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "index": {
+          "description": "The face's index when the file is a collection.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "instance": {
+          "description": "Axis values the outlines are read at, for a variable font.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "upem": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "licence": {
+          "$ref": "#/$defs/spdx"
+        },
+        "licenceEvidence": {
+          "description": "Where the font states its terms.",
+          "type": "string"
+        },
+        "licenceFile": {
+          "description": "The licence text under LICENSES/.",
+          "type": "string"
+        },
+        "copyright": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reservedNames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "style": {
+          "enum": [
+            "sans",
+            "serif",
+            "kaisho",
+            "fangsong",
+            "other"
+          ]
+        },
+        "design": {
+          "$ref": "#/$defs/designId"
+        },
+        "grain": {
+          "description": "contour where the cutters assign single contours, piece where they assign pieces.",
+          "enum": [
+            "contour",
+            "piece"
+          ]
+        },
+        "renderer": {
+          "type": "object",
+          "required": [
+            "engine",
+            "commit",
+            "style",
+            "route"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "engine": {
+              "type": "string",
+              "minLength": 1
+            },
+            "commit": {
+              "type": "string",
+              "minLength": 1
+            },
+            "style": {
+              "type": "string",
+              "minLength": 1
+            },
+            "route": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "description": "GlyphWiki's row: the KAGE engine that draws the dump's glyphs."
+        }
+      }
+    },
+    "design": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "style",
+        "chain",
+        "members"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/designId"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "style": {
+          "enum": [
+            "sans",
+            "serif",
+            "kaisho",
+            "fangsong",
+            "other"
+          ]
+        },
+        "chain": {
+          "description": "Font identifiers in coverage order: a glyph is taken from the first that draws it.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/fontId"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "members": {
+          "description": "Each font that is or was considered for the design, and the evidence that places it.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "font",
+              "evidence"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "font": {
+                "type": "string",
+                "minLength": 1
+              },
+              "evidence": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "fontsFile": {
+      "type": "object",
+      "required": [
+        "format",
+        "fonts",
+        "designs"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "const": "han-decompose/fonts@2.0"
+        },
+        "fonts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/font"
+          }
+        },
+        "designs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/design"
+          }
+        }
+      }
+    },
+    "sourceFile": {
+      "type": "object",
+      "required": [
+        "file",
+        "url",
+        "sha256"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "file": {
+          "$ref": "#/$defs/fileName"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "mirrors": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "date": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "role",
+        "url",
+        "pin",
+        "licence",
+        "attribution",
+        "retrieved"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/designId"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "role": {
+          "enum": [
+            "description",
+            "guide",
+            "reference",
+            "identity",
+            "cuts",
+            "candidates",
+            "classes"
+          ]
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "pin": {
+          "type": "string",
+          "minLength": 1
+        },
+        "retrieved": {
+          "$ref": "#/$defs/date"
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sourceFile"
+          }
+        },
+        "licence": {
+          "$ref": "#/$defs/spdx"
+        },
+        "licenceEvidence": {
+          "type": "string"
+        },
+        "licenceFile": {
+          "type": "string"
+        },
+        "attribution": {
+          "type": "string",
+          "minLength": 1
+        },
+        "weakness": {
+          "type": "string"
+        }
+      }
+    },
+    "sourcesFile": {
+      "type": "object",
+      "required": [
+        "format",
+        "sources"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "const": "han-decompose/sources@2.0"
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/source"
+          }
+        }
+      }
+    },
+    "contour": {
+      "description": "Pen commands, then points: x and y interleaved, in hundredths of a unit.",
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "string",
+          "pattern": "^(M(L|C|Q[1-9][0-9]*)*|Q[1-9][0-9]*\\*)$"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          },
+          "minItems": 2
+        }
+      ],
+      "items": false,
+      "minItems": 2
+    },
+    "glyph": {
+      "type": "object",
+      "required": [
+        "contours",
+        "pieces",
+        "box",
+        "advance"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "contours": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/contour"
+          },
+          "minItems": 1
+        },
+        "pieces": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/contourSet"
+          },
+          "minItems": 1
+        },
+        "box": {
+          "$ref": "#/$defs/box"
+        },
+        "advance": {
+          "type": "number"
+        },
+        "strokes": {
+          "description": "GlyphWiki glyphs only: per stroke in KAGE order, its type and the contours it drew.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "type",
+              "contours"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 7
+              },
+              "contours": {
+                "$ref": "#/$defs/contourSet"
+              }
+            }
+          }
+        }
+      }
+    },
+    "outlineFile": {
+      "type": "object",
+      "required": [
+        "format",
+        "font",
+        "licence",
+        "copyright",
+        "em",
+        "q",
+        "glyphs"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "const": "han-decompose/outlines@2.0"
+        },
+        "font": {
+          "$ref": "#/$defs/fontId"
+        },
+        "licence": {
+          "$ref": "#/$defs/spdx"
+        },
+        "copyright": {
+          "type": "string",
+          "minLength": 1
+        },
+        "notice": {
+          "description": "How the font's data was changed, where the font's licence asks for that to be said.",
+          "type": "string",
+          "minLength": 1
+        },
+        "em": {
+          "const": 1000
+        },
+        "q": {
+          "description": "Point coordinates per unit.",
+          "const": 100
+        },
+        "glyphs": {
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/selector"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/glyph"
+          }
+        }
+      }
+    },
+    "strokeFile": {
+      "type": "object",
+      "required": [
+        "format",
+        "font",
+        "licence",
+        "copyright",
+        "glyphs"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "const": "han-decompose/strokes@2.0"
+        },
+        "font": {
+          "$ref": "#/$defs/fontId"
+        },
+        "licence": {
+          "$ref": "#/$defs/spdx"
+        },
+        "copyright": {
+          "type": "string",
+          "minLength": 1
+        },
+        "notice": {
+          "type": "string",
+          "minLength": 1
+        },
+        "glyphs": {
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/selector"
+          },
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "cut",
+                "strokes"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "cut": {
+                  "$ref": "#/$defs/cutId"
+                },
+                "strokes": {
+                  "description": "In writing order.",
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "type",
+                      "method",
+                      "contours",
+                      "tier"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "method": {
+                        "enum": [
+                          "kage",
+                          "lift",
+                          "neck",
+                          "graft"
+                        ]
+                      },
+                      "contours": {
+                        "$ref": "#/$defs/contourSet"
+                      },
+                      "tier": {
+                        "$ref": "#/$defs/tier"
+                      }
+                    }
+                  }
+                },
+                "outline": {
+                  "description": "Per stroke cut at a seam, by its index in strokes: its own contours.",
+                  "type": "object",
+                  "propertyNames": {
+                    "pattern": "^(0|[1-9][0-9]*)$"
+                  },
+                  "additionalProperties": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/$defs/contour"
+                    },
+                    "minItems": 1
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "check": {
+      "type": "object",
+      "required": [
+        "value",
+        "limit",
+        "pass"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "type": "number"
+        },
+        "limit": {
+          "type": "number"
+        },
+        "against": {
+          "description": "The glyph the cut was compared with.",
+          "type": "string"
+        },
+        "pass": {
+          "type": "boolean"
+        }
+      }
+    },
+    "cut": {
+      "type": "object",
+      "required": [
+        "id",
+        "sig",
+        "path",
+        "place",
+        "class",
+        "contours",
+        "box",
+        "division",
+        "status"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/cutId"
+        },
+        "sig": {
+          "$ref": "#/$defs/sig"
+        },
+        "path": {
+          "$ref": "#/$defs/path"
+        },
+        "place": {
+          "type": "string"
+        },
+        "class": {
+          "$ref": "#/$defs/componentRef"
+        },
+        "style": {
+          "type": "object",
+          "required": [
+            "member",
+            "basis",
+            "tier"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "member": {
+              "$ref": "#/$defs/componentRef"
+            },
+            "basis": {
+              "enum": [
+                "kage",
+                "match",
+                "cluster",
+                "hand"
+              ]
+            },
+            "likeness": {
+              "type": "number"
+            },
+            "tier": {
+              "$ref": "#/$defs/tier"
+            }
+          }
+        },
+        "contours": {
+          "$ref": "#/$defs/contourSet"
+        },
+        "box": {
+          "$ref": "#/$defs/box"
+        },
+        "frame": {
+          "$ref": "#/$defs/box"
+        },
+        "gap": {
+          "type": "number"
+        },
+        "area": {
+          "type": "number"
+        },
+        "ink": {
+          "type": "number"
+        },
+        "evidence": {
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "number",
+              "string"
+            ]
+          }
+        },
+        "checks": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/check"
+          }
+        },
+        "calibrated": {
+          "description": "The component whose reviewed labels set the limits of the checks, or false.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/componentRef"
+            },
+            {
+              "const": false
+            }
+          ]
+        },
+        "division": {
+          "enum": [
+            "source",
+            "machine",
+            "reviewed",
+            "hand"
+          ]
+        },
+        "status": {
+          "enum": [
+            "accepted",
+            "refused",
+            "reviewed-right",
+            "reviewed-wrong"
+          ]
+        }
+      }
+    },
+    "method": {
+      "type": "object",
+      "required": [
+        "name",
+        "tool",
+        "grain"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "enum": [
+            "deal",
+            "lift",
+            "kage",
+            "axis",
+            "kanjivg",
+            "hand"
+          ]
+        },
+        "tool": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string"
+        },
+        "commit": {
+          "type": "string"
+        },
+        "grain": {
+          "enum": [
+            "piece",
+            "contour"
+          ]
+        }
+      }
+    },
+    "reading": {
+      "type": "object",
+      "required": [
+        "glyph",
+        "subject",
+        "layer",
+        "structure",
+        "text",
+        "tree",
+        "method",
+        "complete",
+        "chosen",
+        "cuts"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "glyph": {
+          "$ref": "#/$defs/glyphId"
+        },
+        "subject": {
+          "$ref": "#/$defs/componentRef"
+        },
+        "layer": {
+          "$ref": "#/$defs/layer"
+        },
+        "structure": {
+          "$ref": "#/$defs/structureId"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tree": {
+          "type": "string",
+          "minLength": 1
+        },
+        "opened": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "path",
+              "member",
+              "structure",
+              "text"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "path": {
+                "allOf": [
+                  {
+                    "$ref": "#/$defs/path"
+                  },
+                  {
+                    "minItems": 1
+                  }
+                ]
+              },
+              "member": {
+                "$ref": "#/$defs/componentRef"
+              },
+              "structure": {
+                "$ref": "#/$defs/structureId"
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "method": {
+          "$ref": "#/$defs/method"
+        },
+        "complete": {
+          "type": "boolean"
+        },
+        "chosen": {
+          "type": "boolean"
+        },
+        "evidence": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "cuts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/cut"
+          }
+        }
+      }
+    },
+    "skipped": {
+      "type": "object",
+      "required": [
+        "subject",
+        "layer",
+        "structure",
+        "text",
+        "reason"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "subject": {
+          "$ref": "#/$defs/componentRef"
+        },
+        "glyph": {
+          "$ref": "#/$defs/glyphId"
+        },
+        "layer": {
+          "$ref": "#/$defs/layer"
+        },
+        "structure": {
+          "$ref": "#/$defs/structureId"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "type": "object",
+          "required": [
+            "code",
+            "text"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "enum": [
+                "too-few-pieces",
+                "too-many-pieces",
+                "unlike-element",
+                "layout-mismatch",
+                "ambiguous",
+                "does-not-tile",
+                "no-reference-glyph",
+                "no-enclosure",
+                "no-face",
+                "no-ink",
+                "unlike-whole",
+                "unreadable-description",
+                "unlike-division"
+              ]
+            },
+            "text": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "drawn": {
+      "type": "object",
+      "required": [
+        "structure",
+        "text",
+        "form",
+        "readings",
+        "tier",
+        "first"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "structure": {
+          "$ref": "#/$defs/structureId"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "form": {
+          "type": "string",
+          "minLength": 1
+        },
+        "stroke": {
+          "type": "string",
+          "minLength": 1
+        },
+        "strokeTier": {
+          "enum": [
+            "machine",
+            "reviewed"
+          ]
+        },
+        "readings": {
+          "description": "The layers of the readings it is written from, the glyph's own first.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/layer"
+          },
+          "minItems": 1
+        },
+        "tier": {
+          "enum": [
+            "machine",
+            "reviewed"
+          ]
+        },
+        "first": {
+          "type": "boolean"
+        }
+      }
+    },
+    "cutFile": {
+      "type": "object",
+      "required": [
+        "format",
+        "font",
+        "design",
+        "drawn",
+        "readings",
+        "skipped"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "const": "han-decompose/cuts@2.0"
+        },
+        "font": {
+          "$ref": "#/$defs/fontId"
+        },
+        "design": {
+          "$ref": "#/$defs/designId"
+        },
+        "drawn": {
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/selector"
+          },
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/drawn"
+            },
+            "minItems": 1
+          }
+        },
+        "readings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/reading"
+          }
+        },
+        "skipped": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/skipped"
+          }
+        }
+      }
+    },
+    "formsFile": {
+      "type": "object",
+      "required": [
+        "format",
+        "design",
+        "forms"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "const": "han-decompose/forms@2.0"
+        },
+        "design": {
+          "$ref": "#/$defs/designId"
+        },
+        "forms": {
+          "description": "class, then style: the cut chosen as that style's form in the design.",
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/componentRef"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "propertyNames": {
+              "$ref": "#/$defs/componentRef"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "required": [
+                "cut",
+                "sig",
+                "basis"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "cut": {
+                  "$ref": "#/$defs/cutId"
+                },
+                "sig": {
+                  "$ref": "#/$defs/sig"
+                },
+                "basis": {
+                  "enum": [
+                    "reference",
+                    "agree",
+                    "single",
+                    "kage",
+                    "imported",
+                    "hand"
+                  ]
+                },
+                "hosts": {
+                  "description": "How many hosts gave a cut of the style.",
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "libraryFile": {
+      "type": "object",
+      "required": [
+        "format",
+        "design",
+        "library"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "const": "han-decompose/library@2.0"
+        },
+        "design": {
+          "$ref": "#/$defs/designId"
+        },
+        "library": {
+          "description": "class, style, place: cut identifiers, best first.",
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/componentRef"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "propertyNames": {
+              "$ref": "#/$defs/componentRef"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "$ref": "#/$defs/cutId"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "manifestFile": {
+      "type": "object",
+      "required": [
+        "format",
+        "release",
+        "tool",
+        "fonts",
+        "counts",
+        "files"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "const": "han-decompose/manifest@2.0"
+        },
+        "release": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tool": {
+          "type": "object",
+          "required": [
+            "name",
+            "version"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "version": {
+              "type": "string",
+              "minLength": 1
+            },
+            "commit": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "fonts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "sha256"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/fontId"
+              },
+              "sha256": {
+                "$ref": "#/$defs/sha256"
+              }
+            }
+          }
+        },
+        "counts": {
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/fontId"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "required": [
+              "readings",
+              "skipped",
+              "cuts",
+              "structures",
+              "classes"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "readings": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "skipped": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "cuts": {
+                "type": "object",
+                "propertyNames": {
+                  "enum": [
+                    "accepted",
+                    "refused",
+                    "reviewed-right",
+                    "reviewed-wrong"
+                  ]
+                },
+                "additionalProperties": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "structures": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "classes": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "path",
+              "bytes",
+              "sha256"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "bytes": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "sha256": {
+                "$ref": "#/$defs/sha256"
+              }
+            }
+          }
+        }
+      }
+    },
+    "verdictRow": {
+      "type": "object",
+      "required": [
+        "cut_id",
+        "sig",
+        "verdict",
+        "style",
+        "note",
+        "reviewer",
+        "at",
+        "release"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "cut_id": {
+          "$ref": "#/$defs/cutId"
+        },
+        "sig": {
+          "$ref": "#/$defs/sig"
+        },
+        "verdict": {
+          "enum": [
+            "",
+            "right",
+            "wrong"
+          ]
+        },
+        "style": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/componentRef"
+            },
+            {
+              "const": ""
+            }
+          ]
+        },
+        "note": {
+          "type": "string"
+        },
+        "reviewer": {
+          "type": "string"
+        },
+        "at": {
+          "description": "When the verdict was given, UTC.",
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+        },
+        "release": {
+          "type": "string"
+        }
+      },
+      "description": "A row of verdicts.tsv."
+    },
+    "componentRow": {
+      "type": "object",
+      "required": [
+        "component",
+        "kind",
+        "text",
+        "relation",
+        "target",
+        "basis",
+        "tier"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "component": {
+          "$ref": "#/$defs/componentRef"
+        },
+        "kind": {
+          "enum": [
+            "character",
+            "subtree",
+            "ledger",
+            "adobe-japan1"
+          ]
+        },
+        "text": {
+          "type": "string"
+        },
+        "relation": {
+          "enum": [
+            "",
+            "glyph-of",
+            "equivalent"
+          ]
+        },
+        "target": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/componentRef"
+            },
+            {
+              "const": ""
+            }
+          ]
+        },
+        "basis": {
+          "type": "string"
+        },
+        "tier": {
+          "enum": [
+            "",
+            "source",
+            "derived"
+          ]
+        }
+      },
+      "description": "A row of components.tsv. relation, target and tier are filled together or all empty."
+    },
+    "classRow": {
+      "type": "object",
+      "required": [
+        "member",
+        "target",
+        "canonical",
+        "place",
+        "basis",
+        "tier",
+        "note"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "member": {
+          "$ref": "#/$defs/componentRef"
+        },
+        "target": {
+          "$ref": "#/$defs/componentRef"
+        },
+        "canonical": {
+          "$ref": "#/$defs/componentRef"
+        },
+        "place": {
+          "type": "string",
+          "pattern": "^(|[LCRTMB]|[⿰-⿿㇯][0-9]+)$"
+        },
+        "basis": {
+          "enum": [
+            "radical-form",
+            "positional-form",
+            "unifiable-variant",
+            "radical-index",
+            "alignment",
+            "editorial"
+          ]
+        },
+        "tier": {
+          "enum": [
+            "source",
+            "derived",
+            "editorial"
+          ]
+        },
+        "note": {
+          "type": "string"
+        }
+      },
+      "description": "A row of classes.tsv."
+    }
+  }
+}

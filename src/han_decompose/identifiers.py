@@ -1,6 +1,6 @@
-"""The identifiers of the data format: fonts, glyphs, descriptions, components and cuts.
+"""The identifiers of the data format: fonts, designs, glyphs, structures, components and cuts.
 
-`docs/format.md` states each form. Every identifier is a string that stays the same across
+`docs/format.md` (2) states each form. Every identifier is a string that stays the same across
 rebuilds while the inputs it names are unchanged.
 """
 
@@ -17,27 +17,33 @@ _FONT = rf"{_SLUG}@[0-9A-Za-z]+(?:\.[0-9A-Za-z]+)*"
 _POINT = r"(?:(?!D[89A-F])[0-9A-F]{4}|[1-9A-F][0-9A-F]{4}|10[0-9A-F]{4})"
 #: A variation selector: U+FE00–U+FE0F or U+E0100–U+E01EF.
 _VARIATION = r"(?:FE0[0-9A-F]|E01[0-9A-E][0-9A-F])"
-_SELECTOR = rf"(?:U\+{_POINT}(?:\.{_VARIATION})?|gid\.{_NUMBER})"
-_DESCRIPTION = rf"{_SLUG}\.[0-9a-f]{{8}}"
+#: A GlyphWiki glyph name, with the revision suffix its versions carry.
+_NAME = r"[0-9a-z_-]+(?:@[0-9]+)?"
+_SELECTOR = rf"(?:U\+{_POINT}(?:\.{_VARIATION})?|gid\.{_NUMBER}|name\.{_NAME})"
 _PATH = rf"(?:-|{_NUMBER}(?:\.{_NUMBER})*)"
+_STEP = rf"[0-9a-f]{{8}}-[a-z]+:{_PATH}"
+_IDC = "[⿰-⿿㇯]"
+#: A variation selector as a character, which may follow a component.
+_VARIATION_CHARS = "[\ufe00-\ufe0f\U000e0100-\U000e01ef]?"
 
 FONT = re.compile(rf"(?P<slug>{_SLUG})@(?P<version>[0-9A-Za-z]+(?:\.[0-9A-Za-z]+)*)")
-SELECTOR = re.compile(rf"U\+(?P<base>{_POINT})(?:\.(?P<selector>{_VARIATION}))?|gid\.(?P<gid>{_NUMBER})")
+SELECTOR = re.compile(
+    rf"U\+(?P<base>{_POINT})(?:\.(?P<selector>{_VARIATION}))?|gid\.(?P<gid>{_NUMBER})|name\.(?P<name>{_NAME})"
+)
 GLYPH = re.compile(rf"(?P<font>{_FONT})/(?P<selector>{_SELECTOR})")
-DESCRIPTION = re.compile(rf"(?P<source>{_SLUG})\.(?P<hash>[0-9a-f]{{8}})")
-CUT = re.compile(rf"(?P<glyph>{_FONT}/{_SELECTOR})~(?P<description>{_DESCRIPTION})~(?P<path>{_PATH})")
+STEP = re.compile(rf"(?P<structure>[0-9a-f]{{8}})-(?P<method>[a-z]+):(?P<path>{_PATH})")
+CUT = re.compile(rf"(?P<glyph>{_FONT}/{_SELECTOR})(?P<steps>(?:~{_STEP})+)")
+STRUCTURE = re.compile(r"s\.[0-9a-f]{8}")
 
-#: What a description starts with: the ideographic description characters U+2FF0–U+2FFF and
-#: U+31EF, and the variation indicator U+303E that BabelStone puts before a variant form.
+#: What a subtree starts with: the ideographic description characters U+2FF0–U+2FFF and U+31EF.
 OPERATORS = frozenset(ARITY)
 
 _COMPONENT = {
     "u": re.compile(rf"{_POINT}(?:\.{_VARIATION})?"),
-    "bs": re.compile(_NUMBER),
-    "chise": re.compile(r"[^&;\s]+"),
+    "ids": re.compile(rf"{_IDC}.+"),
+    "x": re.compile(r"X-[0-9]{5}"),
+    "ucv": re.compile(r"[0-9a-f]+\.[1-9][0-9]*"),
     "aj1": re.compile(_NUMBER),
-    "zi": re.compile(r"#\(.+\)"),
-    "ids": re.compile(r"[\u2ff0-\u2fff\u31ef\u303e].+"),
 }
 
 
@@ -69,25 +75,49 @@ def gid_selector(gid: int) -> str:
     return f"gid.{gid}"
 
 
+def name_selector(name: str) -> str:
+    """The selector of a GlyphWiki glyph by its name: `name.u793e-j`."""
+    out = f"name.{name}"
+    if not SELECTOR.fullmatch(out):
+        raise ValueError(f"{name!r} is not a glyph name.")
+    return out
+
+
 def selected(selector: str) -> str | None:
-    """The character or variation sequence a selector names; None for a glyph index."""
+    """The character or variation sequence a selector names; None for a glyph index or a name."""
     match = SELECTOR.fullmatch(selector)
     if match is None:
         raise ValueError(f"{selector!r} is not a glyph selector.")
-    if match["gid"] is not None:
+    if match["base"] is None:
         return None
     return chr(int(match["base"], 16)) + (chr(int(match["selector"], 16)) if match["selector"] else "")
 
 
 def shard(selector: str) -> str:
     """The shard that holds a glyph: its code point's block of 256 in hex, at least three digits
-    (`050` for U+50AC, `20b` for U+20B36); `gid` for a glyph no code point reaches."""
+    (`050` for U+50AC, `20b` for U+20B36); `gid` for a glyph no code point reaches and `name` for a
+    glyph selected by name."""
     match = SELECTOR.fullmatch(selector)
     if match is None:
         raise ValueError(f"{selector!r} is not a glyph selector.")
     if match["gid"] is not None:
         return "gid"
+    if match["name"] is not None:
+        return "name"
     return f"{int(match['base'], 16) >> 8:03x}"
+
+
+def order(selector: str) -> tuple[int, int, int, str]:
+    """The order glyphs of one font are written in: by code point and variation selector, then by
+    index, then by name."""
+    match = SELECTOR.fullmatch(selector)
+    if match is None:
+        raise ValueError(f"{selector!r} is not a glyph selector.")
+    if match["gid"] is not None:
+        return (1, int(match["gid"]), 0, "")
+    if match["name"] is not None:
+        return (2, 0, 0, match["name"])
+    return (0, int(match["base"], 16), int(match["selector"], 16) if match["selector"] else 0, "")
 
 
 def glyph_id(font: str, selector: str) -> str:
@@ -106,13 +136,11 @@ def split_glyph_id(glyph: str) -> tuple[str, str]:
     return match["font"], match["selector"]
 
 
-def description_id(source: str, ids: str) -> str:
-    """`<source>.<h8>`: the source and the hash of the description's text, which the caller gives
-    without what the source attaches to it."""
-    out = f"{source}.{h8(ids)}"
-    if not ids or not DESCRIPTION.fullmatch(out):
-        raise ValueError(f"{source!r} is not a source identifier, or the description is empty.")
-    return out
+def structure_id(text: str) -> str:
+    """`s.<h8>`: the structure whose text is `text`, the canonical tree."""
+    if not text or text[0] not in OPERATORS:
+        raise ValueError(f"{text!r} is not a structure: it starts with an operator.")
+    return f"s.{h8(text)}"
 
 
 def component(kind: str, value: str) -> str:
@@ -129,33 +157,37 @@ def split_component(reference: str) -> tuple[str, str]:
     return kind, value
 
 
+class UnknownComponent(ValueError):
+    """A component the notation of the format has no reference for: an entity or a numbered
+    component that no ledger identifier names."""
+
+
 def component_of(text: str) -> str:
-    """The reference of a component as a description writes it: a character with or without a
-    variation selector, BabelStone's `{42}`, CHISE's `&CDP-8958;`, a zi.tools chain `#(丿𠃊)`, or a
-    subtree that starts with a description character."""
+    """The reference of a component as a structure writes it: a character with or without a
+    variation selector, an IDS that starts with an operator, or a token `&…;` that holds a ledger
+    identifier (`&X-00777;`) or an IDS (`&⿸⿹丅丿丨;`)."""
     if text[:1] in OPERATORS:
         return component("ids", text)
-    if text.startswith("#("):
-        return component("zi", text)
-    if match := re.fullmatch(r"\{(.+)\}", text):
-        return component("bs", match[1])
-    if match := re.fullmatch(r"&(.+);", text):
-        return component("chise", match[1])
+    if match := re.fullmatch(r"&(X-[0-9]{5});", text):
+        return component("x", match[1])
+    if match := re.fullmatch(rf"&({_IDC}.+);", text):
+        return component("ids", match[1])
+    if len(text) > 1 and not re.fullmatch(rf"[^\x00-\x7f]{_VARIATION_CHARS}", text):
+        raise UnknownComponent(f"{text!r} has no reference in the format.")
     return component("u", selector(text)[2:])
 
 
 def written(reference: str) -> str | None:
-    """A component as descriptions write it; None for an Adobe-Japan1 CID, which none writes."""
+    """A component as structures write it; None for an Adobe-Japan1 CID, which none writes, and
+    for a UCV form, which is written after a component and has no text of its own."""
     kind, value = split_component(reference)
     if kind == "u":
         return "".join(chr(int(point, 16)) for point in value.split("."))
-    if kind == "bs":
-        return f"{{{value}}}"
-    if kind == "chise":
+    if kind == "x":
         return f"&{value};"
-    if kind == "aj1":
-        return None
-    return value
+    if kind == "ids":
+        return f"&{value};"
+    return None
 
 
 def path_text(path: Sequence[int]) -> str:
@@ -172,24 +204,33 @@ def parse_path(text: str) -> tuple[int, ...]:
     return () if text == "-" else tuple(int(index) for index in text.split("."))
 
 
-def cut_id(glyph: str, description: str, path: Sequence[int]) -> str:
-    """`<glyph>~<description>~<path>`."""
-    out = f"{glyph}~{description}~{path_text(path)}"
+def step(structure: str, method: str, path: Sequence[int]) -> str:
+    """`<h8>-<method>:<path>`: one layer of a cut, the structure's hash, the reading's method and
+    the node's path in that layer."""
+    out = f"{h8(structure)}-{method}:{path_text(path)}"
+    if not structure or not re.fullmatch(_STEP, out):
+        raise ValueError(f"{out!r} is not a step of a cut identifier.")
+    return out
+
+
+def cut_id(glyph: str, steps: Iterable[str]) -> str:
+    """`<glyph>~<step>~<step>…`."""
+    out = "~".join([glyph, *steps])
     if not CUT.fullmatch(out):
         raise ValueError(f"{out!r} is not a cut identifier.")
     return out
 
 
-def split_cut_id(cut: str) -> tuple[str, str, tuple[int, ...]]:
-    """A cut identifier's glyph, description and path."""
+def split_cut_id(cut: str) -> tuple[str, list[str]]:
+    """A cut identifier's glyph and its steps."""
     match = CUT.fullmatch(cut)
     if match is None:
         raise ValueError(f"{cut!r} is not a cut identifier.")
-    return match["glyph"], match["description"], parse_path(match["path"])
+    return match["glyph"], match["steps"][1:].split("~")
 
 
 def sig(component: str, contours: Iterable[int]) -> str:
-    """The signature of a cut: the hash of its component reference and its contour indices,
+    """The signature of a cut: the hash of its class reference and its contour indices,
     ascending, in decimal, all joined by single spaces. A verdict binds to a cut identifier and this
     signature together."""
     split_component(component)

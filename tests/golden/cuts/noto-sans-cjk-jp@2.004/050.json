@@ -1,0 +1,203 @@
+{
+  "format": "han-decompose/cuts@2.0",
+  "font": "noto-sans-cjk-jp@2.004",
+  "design": "source-han-sans",
+  "drawn": {
+    "U+50AC": [
+      {
+        "structure": "s.9d9dea39",
+        "text": "⿰亻崔",
+        "form": "⿰亻⿱山隹",
+        "readings": [
+          [],
+          [
+            "9d9dea39-hand:1"
+          ]
+        ],
+        "tier": "machine",
+        "first": true
+      }
+    ]
+  },
+  "readings": [
+    {
+      "glyph": "noto-sans-cjk-jp@2.004/U+50AC",
+      "subject": "u:50AC",
+      "layer": [],
+      "structure": "s.9d9dea39",
+      "text": "⿰亻崔",
+      "tree": "⿰亻⿱山隹",
+      "opened": [
+        {
+          "path": [
+            1
+          ],
+          "member": "u:5D14",
+          "structure": "s.a674f7d6",
+          "text": "⿱山隹"
+        }
+      ],
+      "method": {
+        "name": "hand",
+        "tool": "hand",
+        "grain": "contour"
+      },
+      "complete": true,
+      "chosen": true,
+      "cuts": [
+        {
+          "id": "noto-sans-cjk-jp@2.004/U+50AC~9d9dea39-hand:0",
+          "sig": "933d670e",
+          "path": [
+            0
+          ],
+          "place": "L",
+          "class": "u:4EBB",
+          "contours": [
+            9,
+            10
+          ],
+          "box": [
+            15.98,
+            -78.14,
+            335.21,
+            836.36
+          ],
+          "frame": [
+            15.98,
+            -78.14,
+            954.09,
+            836.36
+          ],
+          "division": "hand",
+          "status": "accepted"
+        },
+        {
+          "id": "noto-sans-cjk-jp@2.004/U+50AC~9d9dea39-hand:1",
+          "sig": "59d3504d",
+          "path": [
+            1
+          ],
+          "place": "R",
+          "class": "u:5D14",
+          "contours": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8
+          ],
+          "box": [
+            248.78,
+            -77.14,
+            954.09,
+            831.92
+          ],
+          "frame": [
+            15.98,
+            -78.14,
+            954.09,
+            836.36
+          ],
+          "division": "hand",
+          "status": "accepted"
+        }
+      ]
+    },
+    {
+      "glyph": "noto-sans-cjk-jp@2.004/U+50AC",
+      "subject": "u:5D14",
+      "layer": [
+        "9d9dea39-hand:1"
+      ],
+      "structure": "s.a674f7d6",
+      "text": "⿱山隹",
+      "tree": "⿱山隹",
+      "method": {
+        "name": "hand",
+        "tool": "hand",
+        "grain": "contour"
+      },
+      "complete": true,
+      "chosen": true,
+      "cuts": [
+        {
+          "id": "noto-sans-cjk-jp@2.004/U+50AC~9d9dea39-hand:1~a674f7d6-hand:0",
+          "sig": "785ad39d",
+          "path": [
+            0
+          ],
+          "place": "T",
+          "class": "u:5C71",
+          "contours": [
+            0,
+            2
+          ],
+          "box": [
+            366,
+            595.22,
+            924.5,
+            831.92
+          ],
+          "frame": [
+            248.78,
+            -77.14,
+            954.09,
+            831.92
+          ],
+          "division": "hand",
+          "status": "accepted"
+        },
+        {
+          "id": "noto-sans-cjk-jp@2.004/U+50AC~9d9dea39-hand:1~a674f7d6-hand:1",
+          "sig": "fd7108ea",
+          "path": [
+            1
+          ],
+          "place": "B",
+          "class": "u:96B9",
+          "contours": [
+            1,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8
+          ],
+          "box": [
+            248.78,
+            -77.14,
+            954.09,
+            591.31
+          ],
+          "frame": [
+            248.78,
+            -77.14,
+            954.09,
+            831.92
+          ],
+          "division": "hand",
+          "status": "accepted"
+        }
+      ]
+    }
+  ],
+  "skipped": [
+    {
+      "subject": "u:5079",
+      "glyph": "noto-sans-cjk-jp@2.004/U+5079",
+      "layer": [],
+      "structure": "s.9b8d4d2b",
+      "text": "⿲亻丨备",
+      "reason": {
+        "code": "too-few-pieces",
+        "text": "2 pieces for 3 operands: contour 8, the 丨, overlaps contour 4 of 备."
+      }
+    }
+  ]
+}
