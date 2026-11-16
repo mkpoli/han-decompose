@@ -652,51 +652,57 @@ chains; the viewer and its deployment.
   conflict report; `review/classes.tsv` in han-decompose with its first editorial row.
 - 6.4 A corpus commit that han-decompose reads at a fixed digest.
 
-**Phase 7 — GlyphWiki as a glyph source**
-- 7.1 Fetch the latest dump, record its date and digest; draw every glyph with the KAGE engine,
-  pinned by commit, one contour per stroke; outline files of the `glyphwiki` design.
-- 7.2 The `kage` cutter: type-99 divisions matched to the candidate structures, styles from the
-  placed glyphs' names.
-- 7.3 Jigmo, Jigmo2 and Jigmo3 removed from the font registry and the tests.
+**Phase 7 — format 2 and its registries**
+- 7.1 `docs/format.md` as schema 2, golden files, the TypeScript types; schema 1 deleted.
+- 7.2 `fonts.json` with `designs` and their evidence; Jigmo, Jigmo2 and Jigmo3 removed from the
+  registry and the tests; `pins/sources.json` reduced to the inputs of 2.2.
+- 7.3 Outline files in format 2 for every pinned font.
 
-**Phase 8 — format 2 and one cutting run**
-- 8.1 `docs/format.md` as schema 2, golden files, the TypeScript types; schema 1 deleted;
-  `pins/sources.json` reduced to the inputs of 2.2.
-- 8.2 Structures and classes from the candidates; layers and alternatives; class-aware
-  likeness, so `unlike-element` means unlike every member.
-- 8.3 The cutters rerun over every structure on every pinned font; cut files and tables per font.
-- 8.4 Drawn IDS with machine styles where a member's own glyph decides.
-- 8.5 Release v2.0.0.
+**Phase 8 — GlyphWiki as a glyph source**
+- 8.1 Fetch the latest dump, mirror it as a release asset with its digest, and draw every glyph
+  with the KAGE engine, pinned by commit, polygons grouped per stroke; outline files of the
+  `glyphwiki` design.
+- 8.2 The `kage` cutter: type-99 divisions matched to structures, styles from the placed glyphs'
+  names.
 
-**Phase 9 — styles**
-- 9.1 Style references from `kage` cuts and member glyphs; matching per class and design.
-- 9.2 Clustering of unmatched cuts and the style picker in the review queue.
-- 9.3 Drawn IDS rebuilt from reviewed styles; the 193 `⿰示…` characters as the first fixture.
+**Phase 9 — one cutting run**
+- 9.1 Structures and classes from the candidates and the class rows; layers opened with each
+  member's structures; class-aware likeness, so `unlike-element` means unlike every member.
+- 9.2 The cutters rerun over every structure on every pinned font, `kage` included; cut files per
+  font and the flat tables.
+- 9.3 Styles where a `kage` placement or a member's own glyph in the same design decides; drawn
+  IDS from them; libraries and forms per design.
+- 9.4 Release v2.0.0.
 
-**Phase 10 — design families**
-- 10.1 `designs` in `fonts.json` with evidence; libraries and forms per design.
-- 10.2 Candidates pinned where a consumer needs them (GenZui, IPAmj Mincho, Sukima Gothic), each
+**Phase 10 — styles**
+- 10.1 Style references from `kage` cuts and member glyphs; matching per class and design for the
+  cuts 9.3 left without a style.
+- 10.2 Clustering of unmatched cuts and the style picker in the review queue.
+- 10.3 Drawn IDS rebuilt from reviewed styles; the 193 `⿰示…` characters as the first fixture.
+
+**Phase 11 — more fonts per design**
+- 11.1 Candidates pinned where a consumer needs them (GenZui, IPAmj Mincho, Sukima Gothic), each
   with the outline comparison that places it.
 
-**Phase 11 — viewer**
-- 11.1 Character page per design: drawn IDS, structures with the fonts they fit, tinted tokens and contours
-  linked both ways, scope lines, layers one level down.
-- 11.2 Component page by class and style; design page; style review.
+**Phase 12 — viewer**
+- 12.1 Character page per design: drawn IDS, structures with the fonts they fit, tinted tokens
+  and contours linked both ways, scope lines, layers one level down.
+- 12.2 Component page by class and style; design page; style review.
 
-**Phase 12 — consumers**
-- 12.1 han-compose reads forms per design. Its importer branch `feat/decompose-import`, written
+**Phase 13 — consumers**
+- 13.1 han-compose reads forms per design. Its importer branch `feat/decompose-import`, written
   against v0.1.0 and not yet pushed, is rebased onto format 2.
-- 12.2 ids-input: cutters, their data and pages removed; drawn IDS and forms read from a pinned
+- 13.2 ids-input: cutters, their data and pages removed; drawn IDS and forms read from a pinned
   release.
-- 12.3 Composer export importer (`axis`, `kanjivg`).
+- 13.3 Composer export importer (`axis`, `kanjivg`).
 
-**Phase 13 — strokes**
-- 13.1 GlyphWiki strokes: each KAGE line drawn alone, assigned to its placed component.
-- 13.2 Contour ownership along KanjiVG centrelines (`Cutter.owners`, `groups`); whole-contour
+**Phase 14 — strokes**
+- 14.1 GlyphWiki strokes from the KAGE drawing of 8.1, assigned to their placed components.
+- 14.2 Contour ownership along KanjiVG centrelines (`Cutter.owners`, `groups`); whole-contour
   strokes lifted.
-- 13.3 The neck cut and the scanline graft moved from `feat/stroke-lab` for shared contours;
+- 14.3 The neck cut and the scanline graft moved from `feat/stroke-lab` for shared contours;
   stroke files in the format.
-- 13.4 Stroke cuts scored against GlyphWiki strokes; stroke review in the viewer.
+- 14.4 Stroke cuts scored against GlyphWiki strokes; stroke review in the viewer.
 
 **Later** — dealing at contour grain inside fused pieces of the variable faces; hand forms;
 hosted verdicts; more designs (kaisho, fangsong); publishing the JavaScript
@@ -717,7 +723,7 @@ reader to npm.
    accept at unknown rates until reviewed.
 4. **Scale.** Every alternative of every opened layer is tried. Structures cut once where sources
    repeated a text, but layers multiply readings. All structures over all pinned fonts is a full
-   rerun of every cutter; release size and asset count need measuring at phase 8.
+   rerun of every cutter; release size and asset count need measuring at phase 9.
 5. **Wrong styles.** A style assigned by likeness can be wrong where members differ by one stroke
    (示 and 𱍐). A machine style is marked so, and the drawn IDS carries the lowest tier of its
    styles.
