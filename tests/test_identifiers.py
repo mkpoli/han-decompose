@@ -27,6 +27,8 @@ def test_fonts_and_glyphs() -> None:
         ("name.u793e-j", "079"),
         ("name.u20b36-01", "20b"),
         ("name.cdp-8bf9", "name"),
+        ("name.u5927_x", "name"),
+        ("name.ud800-x", "name"),
     ],
 )
 def test_shards(selector: str, shard: str) -> None:

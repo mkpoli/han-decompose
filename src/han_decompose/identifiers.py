@@ -35,7 +35,7 @@ STEP = re.compile(rf"(?P<structure>[0-9a-f]{{8}})-(?P<method>[a-z]+):(?P<path>{_
 CUT = re.compile(rf"(?P<glyph>{_FONT}/{_SELECTOR})(?P<steps>(?:~{_STEP})+)")
 STRUCTURE = re.compile(r"s\.[0-9a-f]{8}")
 #: The code point a GlyphWiki name starts with: `u793e-j`, `u20b36`.
-_NAMED_POINT = re.compile(rf"u({_POINT.lower()})(?![0-9a-f])")
+_NAMED_POINT = re.compile(r"u([0-9a-f]{4,6})(?:-.*)?\Z")
 
 #: What a subtree starts with: the ideographic description characters U+2FF0–U+2FFF and U+31EF.
 OPERATORS = frozenset(ARITY)
@@ -109,7 +109,9 @@ def shard(selector: str) -> str:
         return "gid"
     if match["name"] is not None:
         named = _NAMED_POINT.match(match["name"])
-        return f"{int(named[1], 16) >> 8:03x}" if named else "name"
+        point = int(named[1], 16) if named else None
+        valid = point is not None and point <= 0x10FFFF and not 0xD800 <= point <= 0xDFFF
+        return f"{point >> 8:03x}" if valid and point is not None else "name"
     return f"{int(match['base'], 16) >> 8:03x}"
 
 
