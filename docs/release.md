@@ -9,6 +9,7 @@ Each command writes a run: a folder of outline and cut files.
 
 ```sh
 uv run han-decompose fetch
+uv run han-decompose outlines runs/outlines
 uv run han-decompose import-numbered runs/numbered
 uv run han-decompose lift --out runs/lift
 uv run han-decompose read runs/babelstone --source babelstone
@@ -16,6 +17,8 @@ uv run han-decompose read runs/chise      --source chise
 uv run han-decompose read runs/zi-tools   --source zi-tools
 ```
 
+`outlines` writes the outline files of every glyph each pinned font maps, at the font's pinned
+instance, a block of 256 code points at a time, and leaves a block alone that is already written.
 `import-numbered` takes over the numbered components han-compose cut for its Sans style, where a form is
 whole contours of a host glyph. `lift` cuts the components no code point names (CHISE entities and
 BabelStone's numbered components, as the ids-corpus identifies them) out of their hosts. `read` deals every glyph to the components of each description a source gives it, in the fonts of
@@ -31,7 +34,7 @@ A whole table is hours of work on four processes. Run it where it does not starv
 
 ```sh
 uv run han-decompose release out/v2.0.0 v2.0.0 \
-  --run runs/numbered --run runs/lift --run runs/babelstone --run runs/chise --run runs/zi-tools \
+  --run runs/outlines --run runs/numbered --run runs/lift --run runs/babelstone --run runs/chise --run runs/zi-tools \
   --commit "$(git rev-parse --short HEAD)" --dist dist/v2.0.0
 ```
 

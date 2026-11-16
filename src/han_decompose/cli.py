@@ -8,6 +8,7 @@ import typer
 
 from . import __version__, aj1, descriptions, numbered, pins, tsv
 from . import identifiers as I
+from . import outlines as outline_files
 from .cutters import library as libraries
 from .cutters import lift as lifts
 from .cutters import survey as surveys
@@ -256,6 +257,37 @@ def component_rows(cache: Path | None) -> list[Json]:
     if left:
         typer.echo(f"no identifier in the corpus, left out: {' '.join(left)}", err=True)
     return [*aj1.pinned(cache), *numbered.rows(table, names)]
+
+
+@app.command()
+def outlines(
+    out: Annotated[Path, typer.Argument(help="A folder to write the outline files into.")],
+    font: Annotated[list[str] | None, typer.Option(help="A pinned font; every pinned font when none is given.")] = None,
+    workers: Annotated[int, typer.Option(help="How many processes read at once.")] = 4,
+    blocks: Annotated[list[str] | None, typer.Option(help="Blocks of 256 code points to write, as `04e`.")] = None,
+    cache: Annotated[Path | None, typer.Option(help="The cache folder the pinned fonts are in.")] = None,
+) -> None:
+    """Write the outline files of every glyph the pinned fonts map: contours as the font draws them
+    at its pinned instance, and the pieces they divide into. A block already written is left as it
+    is, so a run that stopped goes on where it was."""
+    names = font or [row["id"] for row in pins.fonts()["fonts"]]
+    failures: list[str] = []
+    try:
+        for name in names:
+            written = empty = kept = 0
+            for block in outline_files.run(name, out, workers, cache, blocks):
+                written, empty, kept = written + block.written, empty + block.empty, kept + block.kept
+                failures += [f"{name}/{selector}: {error}" for selector, error in block.failed]
+                typer.echo(f"{name}\t{block.block}\t{block.written}", err=True)
+            typer.echo(f"{name}\tglyphs {written}\twithout ink {empty}\tblocks kept {kept}")
+    except (pins.PinError, KeyError, ValueError, OSError) as error:
+        typer.echo(str(error.args[0]) if isinstance(error, KeyError) else str(error), err=True)
+        raise typer.Exit(1) from error
+    for failure in failures[:50]:
+        typer.echo(failure, err=True)
+    if failures:
+        typer.echo(f"unreadable glyphs\t{len(failures)}", err=True)
+        raise typer.Exit(1)
 
 
 @app.command()
