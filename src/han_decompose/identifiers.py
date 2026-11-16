@@ -34,6 +34,8 @@ GLYPH = re.compile(rf"(?P<font>{_FONT})/(?P<selector>{_SELECTOR})")
 STEP = re.compile(rf"(?P<structure>[0-9a-f]{{8}})-(?P<method>[a-z]+):(?P<path>{_PATH})")
 CUT = re.compile(rf"(?P<glyph>{_FONT}/{_SELECTOR})(?P<steps>(?:~{_STEP})+)")
 STRUCTURE = re.compile(r"s\.[0-9a-f]{8}")
+#: The code point a GlyphWiki name starts with: `u793e-j`, `u20b36`.
+_NAMED_POINT = re.compile(rf"u({_POINT.lower()})(?![0-9a-f])")
 
 #: What a subtree starts with: the ideographic description characters U+2FF0–U+2FFF and U+31EF.
 OPERATORS = frozenset(ARITY)
@@ -97,15 +99,17 @@ def selected(selector: str) -> str | None:
 
 def shard(selector: str) -> str:
     """The shard that holds a glyph: its code point's block of 256 in hex, at least three digits
-    (`050` for U+50AC, `20b` for U+20B36); `gid` for a glyph no code point reaches and `name` for a
-    glyph selected by name."""
+    (`050` for U+50AC, `20b` for U+20B36); `gid` for a glyph no code point reaches. A glyph
+    selected by name goes by the code point its name starts with (`079` for `name.u793e-j`), and
+    in `name` where its name holds none (`name.cdp-8bf9`)."""
     match = SELECTOR.fullmatch(selector)
     if match is None:
         raise ValueError(f"{selector!r} is not a glyph selector.")
     if match["gid"] is not None:
         return "gid"
     if match["name"] is not None:
-        return "name"
+        named = _NAMED_POINT.match(match["name"])
+        return f"{int(named[1], 16) >> 8:03x}" if named else "name"
     return f"{int(match['base'], 16) >> 8:03x}"
 
 

@@ -19,7 +19,15 @@ def test_fonts_and_glyphs() -> None:
 
 @pytest.mark.parametrize(
     "selector, shard",
-    [("U+50AC", "050"), ("U+20B36", "20b"), ("U+845B.E0100", "084"), ("gid.9", "gid"), ("name.u793e-j", "name")],
+    [
+        ("U+50AC", "050"),
+        ("U+20B36", "20b"),
+        ("U+845B.E0100", "084"),
+        ("gid.9", "gid"),
+        ("name.u793e-j", "079"),
+        ("name.u20b36-01", "20b"),
+        ("name.cdp-8bf9", "name"),
+    ],
 )
 def test_shards(selector: str, shard: str) -> None:
     assert I.shard(selector) == shard
@@ -72,7 +80,7 @@ def test_cuts() -> None:
 def test_glyphs_are_selected_by_name() -> None:
     assert I.name_selector("u793e-j") == "name.u793e-j"
     assert I.glyph_id("glyphwiki@20261115", "name.u793e-j@3") == "glyphwiki@20261115/name.u793e-j@3"
-    assert I.shard("name.u793e-j") == "name" and I.selected("name.u793e-j") is None
+    assert I.shard("name.u793e-j") == "079" and I.selected("name.u793e-j") is None
     assert I.order("U+50AC") < I.order("gid.0") < I.order("name.a")
 
 

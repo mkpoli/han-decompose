@@ -151,7 +151,7 @@ LICENSES/  README.md  SHA256SUMS
 
 `<block>` is the glyph's code point divided by 256, in lower-case hex of at least three digits:
 `050` holds U+5000–U+50FF and `20b` holds U+20B00–U+20BFF. A variation sequence goes by its base.
-Glyphs selected by index are in `gid`, glyphs selected by name in `name`. A skipped attempt without a glyph (no font draws
+Glyphs selected by index are in `gid`. A glyph selected by name goes by the code point its name starts with (`name.u793e-j` in `079`) and is in `name` where its name holds none. A skipped attempt without a glyph (no font draws
 the subject, or the glyph has no ink) is filed by the subject's code point, in the files of the
 design's first font; a subject that is no character, in `gid`.
 
