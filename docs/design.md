@@ -62,8 +62,8 @@ of their own. [`licensing.md`](licensing.md) says which file is under which term
    than once (社 `⿰示土` once from BabelStone's K and P line and once from CHISE). Cutting per
    source cuts each of those again.
 9. **One drawing ships under several names.** Noto Sans CJK and Source Han Sans are one design;
-   GenZui takes its ideographs point for point from Noto; Plangothic and Sukima Gothic are built on
-   Source Han Sans. The `sans` and `serif` chains of format 1 mix designs (Noto Serif CJK JP then
+   GenZui takes its ideographs point for point from Noto; Sukima Gothic is built on Source Han
+   Sans; Plangothic supplements Source Han Sans with glyphs of its own. The `sans` and `serif` chains of format 1 mix designs (Noto Serif CJK JP then
    Jigmo), so a library could hold a Noto cut and a Jigmo cut of one component as if one font drew
    both. Section 2.8 gives the evidence.
 10. **GlyphWiki keeps its divisions.** A GlyphWiki glyph is often a list of component glyphs placed
@@ -113,7 +113,8 @@ instance, units per em, licence, copyright line, reserved font names, style (`sa
 `kaisho`, `fangsong`) and design. GlyphWiki's row holds the dump's address, date and digest and the
 KAGE engine's commit instead of a font file.
 
-**Design** — a slug: `source-han-sans`, `source-han-serif`, `glyphwiki`, `ipamj`, `babelstone-han`.
+**Design** — a slug: `source-han-sans`, `plangothic`, `source-han-serif`, `glyphwiki`, `ipamj`,
+`babelstone-han`.
 Its registry row holds the fonts in coverage order (the chain) and the evidence for each font's
 membership.
 
@@ -344,7 +345,8 @@ explicitly, and every cut names its font and design.
 
 | Design | Fonts | Evidence |
 |---|---|---|
-| `source-han-sans` | Noto Sans CJK JP 2.004 (pinned); Source Han Sans; GenZui Sans; Plangothic P1 and P2 2.9.5795 (pinned); Sukima Gothic 11.41 | Google: "Adobe will release it as Source Han Sans" [G14]. GenZui Sans 0.105 has the same contours and points as Noto Sans CJK JP at `wght` 400 in all 8 glyphs compared [M1]; its README says "Japanese sans-serif on Noto Sans JP" [GZ]. Plangothic's README: based on Source Han Sans with Mainland forms [PG]; its outlines are re-encoded (other point counts) and match Noto Sans CJK SC at a box-normalised IoU of 0.66–0.91 [M3]. Sukima Gothic is built on Genshin Gothic Regular [SK], which is Source Han Sans 1.002 converted to TrueType with M+ glyphs for what it lacks [GS]. |
+| `source-han-sans` | Noto Sans CJK JP 2.004 (pinned); Source Han Sans; GenZui Sans; Sukima Gothic 11.41 | Google: "Adobe will release it as Source Han Sans" [G14]. GenZui Sans 0.105 has the same contours and points as Noto Sans CJK JP at `wght` 400 in all 8 glyphs compared [M1]; its README says "Japanese sans-serif on Noto Sans JP" [GZ]. Sukima Gothic is built on Genshin Gothic Regular [SK], which is Source Han Sans 1.002 converted to TrueType with M+ glyphs for what it lacks [GS]. |
+| `plangothic` | Plangothic P1 and P2 2.9.5795 (pinned) | Its README calls it a supplement to Source Han Sans in Mainland forms and leaves the characters both cover to Source Han Sans: "如需显示基本区和扩展 A 区的表意文字，直接使用思源黑体即可。本项目中所包含的零星的基本区和扩展 A 区的表意文字均为在 Unicode 内有字形改动或者不符合本项目宗旨的表意文字" (for the URO and Extension A use Source Han Sans; the few such ideographs here are ones whose glyph was changed), and says some glyphs are joined from components by hand ("部分汉字的部件拼接会很生硬") [PG]. Where both draw a character, the outlines differ (other point counts, box-normalised IoU 0.66–0.91 against Noto Sans CJK SC) [M3]. Its own drawing in Source Han Sans's style: a separate design. |
 | `source-han-serif` | Noto Serif CJK JP 2.003 (pinned); Source Han Serif; GenZui Serif | Ken Lunde: "all further references to Source Han Serif or Source Han Sans will apply to Noto Serif CJK" [L17]. GenZui Serif has the same contours and points as Noto Serif CJK JP at `wght` 400 in all 8 glyphs compared [M1]; its README says "Japanese serif on Noto Serif JP" [GZ]. |
 | `glyphwiki` | GlyphWiki's glyphs drawn by the KAGE engine, Mincho style, from the dump read at build time | GlyphWiki's data and the KAGE engine [GW]. Jigmo is a font of the same drawing, built from GlyphWiki by KAGE [JG]; it is not read, since the dump is newer and keeps strokes and divisions. |
 | `ipamj` | IPAmj Mincho 006.01 | IPA's MJ glyph set, IPA Font License [MJ]. Compared with GlyphWiki's drawing (as Jigmo 20250912 renders it), it has other contours (社 64 against 86 points) and a box-normalised IoU of 0.38–0.65, no closer than that drawing against Noto Serif CJK JP (0.41–0.58) [M2]: a separate design. |
