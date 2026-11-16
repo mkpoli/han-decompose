@@ -1,31 +1,36 @@
-"""The flat tables of a release: one row per cut, per skipped attempt, per component relation and
-per verdict, as tab-separated text.
+"""The flat tables of a release: one row per cut, per drawn IDS, per structure of a character, per
+skipped attempt, per class member, per component relation and per verdict, as tab-separated text.
 
-A table starts with a line `# format=han-decompose/<name>-tsv@1.0`, with ` release=<version>` after
+A table starts with a line `# format=han-decompose/<name>-tsv@2.0`, with ` release=<version>` after
 it in a release, then a line of column names. No field holds a tab or a line break; an absent value
 is the empty string.
 """
 
 import math
 import re
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Iterable, Mapping
 from decimal import Decimal
 
 from . import identifiers as I
 from .schema import Json
 
-VERSION = "1.0"
+VERSION = "2.0"
 
 COLUMNS = {
     "cuts": (
-        "cut_id", "sig", "font", "glyph", "char", "source", "description", "ids", "tree", "path", "place",
-        "level", "whole", "component", "text", "contours", "grain", "box", "frame", "method", "tool",
-        "fit", "margin", "agree", "reference", "filled", "skeleton", "calibrated", "status",
-        "licence_outline", "licence_description", "licence_guide",
+        "cut_id", "sig", "font", "design", "glyph", "char", "layer", "structure", "text", "tree", "path", "place",
+        "depth", "whole", "class", "member", "style_basis", "style_tier", "contours", "grain", "box", "frame",
+        "method", "tool", "fit", "margin", "agree", "reference", "filled", "skeleton", "calibrated", "division",
+        "status",
     ),
-    "skipped": ("font", "glyph", "char", "source", "description", "ids", "reason_code", "reason"),
-    "components": ("component", "kind", "text", "relation", "target", "basis", "tier", "source"),
-    "verdicts": ("cut_id", "sig", "verdict", "note", "reviewer", "at", "release"),
+    "drawn": (
+        "font", "design", "glyph", "char", "structure", "text", "form", "tier", "stroke", "stroke_tier", "first",
+    ),
+    "structures": ("char", "structure", "text", "fonts", "designs", "forms"),
+    "skipped": ("font", "glyph", "char", "layer", "structure", "text", "reason_code", "reason"),
+    "classes": ("member", "target", "canonical", "place", "basis", "tier", "note"),
+    "components": ("component", "kind", "text", "relation", "target", "basis", "tier"),
+    "verdicts": ("cut_id", "sig", "verdict", "style", "note", "reviewer", "at", "release"),
 }  # fmt: skip
 
 Row = dict[str, str]
@@ -64,37 +69,38 @@ def _char(subject: str) -> str:
     return (I.written(subject) or "") if subject.startswith("u:") else ""
 
 
-def level(path: Sequence[int], opened: Iterable[Sequence[int]]) -> int:
-    """How many descriptions deep a node sits: 1 in the subject's own description, one more for
-    each node above it that was opened into its component's description."""
-    return 1 + sum(1 for node in opened if len(node) < len(path) and tuple(path[: len(node)]) == tuple(node))
+def _layer(steps: Iterable[str]) -> str:
+    return "~".join(steps)
 
 
 def cut_rows(cuts: Json) -> list[Row]:
     """A cut file's cuts as rows of the `cuts` table, in the file's order."""
     rows = []
     for reading in cuts["readings"]:
-        font, glyph = I.split_glyph_id(reading["glyph"])
-        opened = [node["path"] for node in reading.get("opened", ())]
+        _, selector = I.split_glyph_id(reading["glyph"])
+        layer = reading["layer"]
         for cut in reading["cuts"]:
-            evidence, checks = cut.get("evidence", {}), cut.get("checks", {})
+            evidence, checks, style = cut.get("evidence", {}), cut.get("checks", {}), cut.get("style", {})
             calibrated = cut.get("calibrated")
             rows.append({
                 "cut_id": cut["id"],
                 "sig": cut["sig"],
-                "font": font,
-                "glyph": glyph,
+                "font": cuts["font"],
+                "design": cuts["design"],
+                "glyph": selector,
                 "char": _char(reading["subject"]),
-                "source": cuts["source"],
-                "description": reading["description"],
-                "ids": reading["ids"],
+                "layer": _layer(layer),
+                "structure": reading["structure"],
+                "text": reading["text"],
                 "tree": reading["tree"],
                 "path": I.path_text(cut["path"]),
                 "place": cut["place"],
-                "level": str(level(cut["path"], opened)),
-                "whole": "1" if len(cut["path"]) == 1 else "0",
-                "component": cut["component"],
-                "text": cut["text"],
+                "depth": str(len(layer) + 1),
+                "whole": "1" if not layer and len(cut["path"]) == 1 else "0",
+                "class": cut["class"],
+                "member": style.get("member", ""),
+                "style_basis": style.get("basis", ""),
+                "style_tier": style.get("tier", ""),
                 "contours": _numbers(cut["contours"]),
                 "grain": reading["method"]["grain"],
                 "box": _numbers(cut["box"]),
@@ -108,12 +114,59 @@ def cut_rows(cuts: Json) -> list[Row]:
                 "filled": _optional(checks.get("filled", {}).get("value")),
                 "skeleton": _optional(checks.get("skeleton", {}).get("value")),
                 "calibrated": "" if calibrated is None else calibrated or "0",
+                "division": cut["division"],
                 "status": cut["status"],
-                "licence_outline": cut["licence"]["outline"],
-                "licence_description": cut["licence"]["description"],
-                "licence_guide": cut["licence"].get("guide", ""),
             })  # fmt: skip
     return rows
+
+
+def drawn_rows(cuts: Json) -> list[Row]:
+    """A cut file's drawn IDS as rows of the `drawn` table: one per glyph and structure."""
+    rows = []
+    for selector, entries in cuts["drawn"].items():
+        char = I.selected(selector)
+        for entry in entries:
+            rows.append({
+                "font": cuts["font"],
+                "design": cuts["design"],
+                "glyph": selector,
+                "char": char or "",
+                "structure": entry["structure"],
+                "text": entry["text"],
+                "form": entry["form"],
+                "tier": entry["tier"],
+                "stroke": entry.get("stroke", ""),
+                "stroke_tier": entry.get("strokeTier", ""),
+                "first": "1" if entry["first"] else "0",
+            })  # fmt: skip
+    return rows
+
+
+def structure_rows(drawn: Iterable[Row]) -> list[Row]:
+    """The `structures` table from the rows of `drawn`: per character and structure, the fonts and
+    designs it fits and the distinct form levels it takes, each in the order first met."""
+    found: dict[tuple[str, str], dict[str, list[str]]] = {}
+    texts: dict[tuple[str, str], str] = {}
+    for row in drawn:
+        if not row["char"]:
+            continue
+        key = (row["char"], row["structure"])
+        texts[key] = row["text"]
+        held = found.setdefault(key, {"fonts": [], "designs": [], "forms": []})
+        for name, value in (("fonts", row["font"]), ("designs", row["design"]), ("forms", row["form"])):
+            if value not in held[name]:
+                held[name].append(value)
+    return [
+        {
+            "char": char,
+            "structure": structure,
+            "text": texts[char, structure],
+            "fonts": " ".join(held["fonts"]),
+            "designs": " ".join(held["designs"]),
+            "forms": " ".join(held["forms"]),
+        }
+        for (char, structure), held in sorted(found.items(), key=lambda item: (ord(item[0][0][0]), item[0][1]))
+    ]
 
 
 def skipped_rows(cuts: Json) -> list[Row]:
@@ -123,9 +176,9 @@ def skipped_rows(cuts: Json) -> list[Row]:
             "font": cuts["font"],
             "glyph": I.split_glyph_id(row["glyph"])[1] if "glyph" in row else "",
             "char": _char(row["subject"]),
-            "source": cuts["source"],
-            "description": row["description"],
-            "ids": row["ids"],
+            "layer": _layer(row["layer"]),
+            "structure": row["structure"],
+            "text": row["text"],
             "reason_code": row["reason"]["code"],
             "reason": row["reason"]["text"],
         }

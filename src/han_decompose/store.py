@@ -13,10 +13,13 @@ from .pieces import Glyph
 from .schema import Json
 from .tsv import number
 
-OUTLINES = "han-decompose/outlines@1.0"
-CUTS = "han-decompose/cuts@1.0"
-FORMS = "han-decompose/forms@1.0"
-LIBRARY = "han-decompose/library@1.0"
+OUTLINES = "han-decompose/outlines@2.0"
+STROKES = "han-decompose/strokes@2.0"
+CUTS = "han-decompose/cuts@2.0"
+FORMS = "han-decompose/forms@2.0"
+LIBRARY = "han-decompose/library@2.0"
+FONTS = "han-decompose/fonts@2.0"
+MANIFEST = "han-decompose/manifest@2.0"
 
 
 def _encode(value: Any) -> str:
@@ -50,14 +53,6 @@ def write(path: Path, text: str) -> None:
     path.write_bytes(gzip.compress(data, 9, mtime=0) if path.suffix == ".gz" else data)
 
 
-def _order(selector: str) -> tuple[int, int, int]:
-    match = I.SELECTOR.fullmatch(selector)
-    assert match is not None
-    if match["gid"] is not None:
-        return (1, int(match["gid"]), 0)
-    return (0, int(match["base"], 16), int(match["selector"], 16) if match["selector"] else 0)
-
-
 def _selector(row: Json) -> str | None:
     """The selector a reading or a skipped attempt is filed under: its glyph's, or its subject's
     own where no font draws the subject; None for a subject that is no character."""
@@ -81,32 +76,49 @@ def outline_head(font: str) -> Json:
     return {**head, "em": 1000, "q": 100, "glyphs": {}}
 
 
-def terms(font: str, source: str, guide: str | None = None) -> Json:
-    """The terms a cut file states: the font's licence, the description source's, the guide's, and
-    the copyright and attribution lines of each."""
-    font_row, source_row = pins.font(font), pins.source(source)
-    out: Json = {
-        "outline": font_row["licence"],
-        "description": source_row["licence"],
-        "notices": [font_row["copyright"], source_row["attribution"]],
-    }
-    if guide is not None:
-        guide_row = pins.source(guide)
-        out["guide"] = guide_row["licence"]
-        out["notices"].append(guide_row["attribution"])
+def _score(reading: Json) -> float:
+    """How well a reading's cuts fit: the mean of their `fit` or `match`, 0 where they give none."""
+    scores = [
+        float(cut["evidence"].get("fit", cut["evidence"].get("match", 0)))
+        for cut in reading["cuts"]
+        if "evidence" in cut
+    ]
+    return sum(scores) / len(scores) if scores else 0.0
+
+
+def choose(readings: list[Json]) -> list[Json]:
+    """The readings with `chosen` set: of those of one structure on one layer of one glyph that are
+    accepted, the one with the best fit, an earlier method name breaking a tie; no other."""
+    groups: dict[tuple[str, tuple[str, ...], str], list[int]] = {}
+    for at, row in enumerate(readings):
+        groups.setdefault((row["glyph"], tuple(row["layer"]), row["structure"]), []).append(at)
+    out = [{**row, "chosen": False} for row in readings]
+    for members in groups.values():
+        accepted = [
+            at
+            for at in members
+            if readings[at]["cuts"]
+            and all(cut["status"] in ("accepted", "reviewed-right") for cut in readings[at]["cuts"])
+        ]
+        if accepted:
+            best = min(accepted, key=lambda at: (-_score(readings[at]), readings[at]["method"]["name"], at))
+            out[best]["chosen"] = True
     return out
 
 
 class Store:
-    """Readings, skipped attempts and the glyphs they name, gathered and then written as shards."""
+    """Readings, skipped attempts, drawn IDS, strokes and the glyphs they name, gathered and then
+    written as files."""
 
     def __init__(self) -> None:
         self.glyphs: dict[str, dict[str, Json]] = {}
-        self.readings: dict[tuple[str, str], list[Json]] = {}
-        self.skipped: dict[tuple[str, str], list[Json]] = {}
-        self._read: set[tuple[str, str]] = set()
-        self.forms: dict[str, dict[str, Json]] = {}
-        self.library: dict[str, dict[str, dict[str, list[str]]]] = {}
+        self.readings: dict[str, list[Json]] = {}
+        self.skipped: dict[str, list[Json]] = {}
+        self.drawn: dict[str, dict[str, list[Json]]] = {}
+        self.strokes: dict[str, dict[str, list[Json]]] = {}
+        self._read: set[tuple[str, tuple[str, ...], str, str]] = set()
+        self.forms: dict[str, dict[str, dict[str, Json]]] = {}
+        self.library: dict[str, dict[str, dict[str, dict[str, list[str]]]]] = {}
 
     def glyph(self, glyph: Glyph) -> None:
         """Keep a glyph's outline, once."""
@@ -119,54 +131,70 @@ class Store:
         self.glyphs.setdefault(font, {}).setdefault(selector, record)
 
     def reading(self, row: Json) -> None:
-        """Keep a reading. A glyph has one reading under a description: the first given stands.
-        Two components the registry records the same subtraction for (`㇯𠁾丶`) are read on the
-        same host under the same description, and share that reading."""
+        """Keep a reading. A layer has one reading per method under a structure: the first given
+        stands, so candidates that share a structure are read once."""
         font, _ = I.split_glyph_id(row["glyph"])
-        key = (row["glyph"], row["description"])
+        key = (row["glyph"], tuple(row["layer"]), row["structure"], row["method"]["name"])
         if key not in self._read:
             self._read.add(key)
-            self.readings.setdefault((font, row["description"].rpartition(".")[0]), []).append(row)
+            self.readings.setdefault(font, []).append(row)
 
     def skip(self, row: Json, font: str) -> None:
         """Keep a skipped attempt in the files of `font`: the font of its glyph, or the first of
-        the chain where no font draws the subject."""
-        self.skipped.setdefault((font, row["description"].rpartition(".")[0]), []).append(row)
+        the design where no font draws the subject."""
+        self.skipped.setdefault(font, []).append(row)
 
-    def form(self, chain: str, component: str, form: Json, library: dict[str, list[str]]) -> None:
-        """Keep the cut chosen as a component's form in a chain, and the cuts that confirm it."""
-        self.forms.setdefault(chain, {})[component] = form
+    def draw(self, font: str, selector: str, row: Json) -> None:
+        """Keep a drawn IDS of a glyph."""
+        self.drawn.setdefault(font, {}).setdefault(selector, []).append(row)
+
+    def stroke(self, font: str, selector: str, row: Json) -> None:
+        """Keep the strokes of one leaf cut of a glyph."""
+        self.strokes.setdefault(font, {}).setdefault(selector, []).append(row)
+
+    def form(
+        self, design: str, component: str, style: str, form: Json, library: dict[str, list[str]] | None = None
+    ) -> None:
+        """Keep the cut chosen as a style's form of a class in a design, and the cuts that confirm it."""
+        self.forms.setdefault(design, {}).setdefault(component, {})[style] = form
         if library:
-            self.library.setdefault(chain, {})[component] = library
+            self.library.setdefault(design, {}).setdefault(component, {})[style] = library
 
     def files(self) -> Iterable[tuple[str, Json]]:
         """Every file as its path in a release and its content, in the order of the paths."""
         out: dict[str, Json] = {}
         for font, held in self.glyphs.items():
-            row = pins.font(font)
-            for selector in sorted(held, key=_order):
+            for selector in sorted(held, key=I.order):
                 file = out.setdefault(f"outlines/{font}/{I.shard(selector)}.json.gz", outline_head(font))
                 file["glyphs"][selector] = held[selector]
-        for font, source in sorted({*self.readings, *self.skipped}):
-            guides = {row["method"].get("guide") for row in self.readings.get((font, source), ())} - {None}
-            if len(guides) > 1:
-                raise ValueError(f"The cuts of {font} under {source} follow more than one guide.")
-            head = {"format": CUTS, "font": font, "source": source, "terms": terms(font, source, *guides)}
+        for font, cut_strokes in self.strokes.items():
+            row = pins.font(font)
+            head = {"format": STROKES, "font": font, "licence": row["licence"], "copyright": row["copyright"]}
+            for selector in sorted(cut_strokes, key=I.order):
+                file = out.setdefault(f"strokes/{font}/{I.shard(selector)}.json.gz", {**head, "glyphs": {}})
+                file["glyphs"][selector] = cut_strokes[selector]
+        for font in sorted({*self.readings, *self.skipped, *self.drawn}):
+            design = pins.font(font)["design"]
 
-            def key(row: Json) -> tuple[tuple[int, int, int], str, str]:
-                return (_order(_selector(row) or "gid.0"), row["subject"], row["description"])
+            def file_of(selector: str, font: str = font, design: str = design) -> Json:
+                return out.setdefault(
+                    f"cuts/{font}/{I.shard(selector)}.json.gz",
+                    {"format": CUTS, "font": font, "design": design, "drawn": {}, "readings": [], "skipped": []},
+                )
 
-            for kind, rows in (("readings", self.readings), ("skipped", self.skipped)):
-                for row in sorted(rows.get((font, source), ()), key=key):
-                    file = out.setdefault(
-                        f"cuts/{font}/{source}/{I.shard(_selector(row) or 'gid.0')}.json.gz",
-                        {**head, "readings": [], "skipped": []},
-                    )
-                    file[kind].append(row)
-        for chain, forms in self.forms.items():
-            out[f"forms/{chain}.json.gz"] = {"format": FORMS, "chain": chain, "forms": forms}
-        for chain, library in self.library.items():
-            out[f"library/{chain}.json.gz"] = {"format": LIBRARY, "chain": chain, "library": library}
+            def key(row: Json) -> tuple[tuple[int, int, int, str], str, list[str], str]:
+                return (I.order(_selector(row) or "gid.0"), row["subject"], row["layer"], row["structure"])
+
+            for row in sorted(choose(self.readings.get(font, [])), key=key):
+                file_of(_selector(row) or "gid.0")["readings"].append(row)
+            for row in sorted(self.skipped.get(font, []), key=key):
+                file_of(_selector(row) or "gid.0")["skipped"].append(row)
+            for selector in sorted(self.drawn.get(font, {}), key=I.order):
+                file_of(selector)["drawn"][selector] = self.drawn[font][selector]
+        for design, forms in self.forms.items():
+            out[f"forms/{design}.json.gz"] = {"format": FORMS, "design": design, "forms": forms}
+        for design, library in self.library.items():
+            out[f"library/{design}.json.gz"] = {"format": LIBRARY, "design": design, "library": library}
         return sorted(out.items())
 
     def write(self, folder: Path) -> list[Path]:
