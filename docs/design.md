@@ -96,7 +96,7 @@ of their own. [`licensing.md`](licensing.md) says which file is under which term
 | reading | One alternative applied to one layer: which of its contours go to which operands. |
 | cut | One node of a reading: a component, its path, its contour set, its evidence, checks and style. |
 | stroke | One stroke of a leaf cut, with its type: whole contours, or an outline cut at seams (2.10). |
-| drawn IDS | Per glyph and structure: the accepted reading written with each node's style. 社 in Noto Sans CJK JP is `⿰礻土`. |
+| drawn IDS | Per glyph and structure: the accepted reading at three levels, `structure` (`⿰示土`), `form` (`⿰礻土` in Noto Sans CJK JP) and `stroke` (2.7). |
 | form | A cut seen as a drawing of its component. One per class, style and design is marked as chosen. |
 | library | For a class and a design, its cuts grouped by style and place. |
 | verdict | A reviewer's Right or Wrong on one cut with one exact contour set, or on one cut's style. |
@@ -130,11 +130,15 @@ the release data names none of them.
 **Structure** — `s.<h8>`, `h8` being the first 8 hex digits of the SHA-256 of the structure text:
 社 tried as `⿰示土` and as `⿰礻土` is the structure `⿰示土`, `s.0a1c0fdb`.
 
-**Notation.** Structures and drawn IDS are Unicode IDS: ideographic description characters, the
-variation indicator `〾`, and components written as characters. A component no code point names is
-one token between `&` and `;`, so it never reads as inner nodes: its own IDS where any input gives
-one (`&⿸⿹丅丿丨;`), and otherwise its identifier in ids-input's component ledger (`&X-00777;`).
-`⿰&⿸⿹丅丿丨;土` is a two-operand structure whose left leaf is that shape. The names inputs give
+**Notation.** Structures and drawn IDS are written in ids-input's IDS extension: the zi.tools
+grammar as ids-input states it (`data/baishi-ids.ebnf`, after NightFurySL2001's （白式）IDS 延展语法导论,
+2026-03-20), with the two additions ids-input's parser reads: a variation selector after a
+component character, and an entity token between `&` and `;` as a component. Which constructs a
+text may use depends on its level (2.7). A component no code point names is one token, so it
+never reads as inner nodes: its own IDS where any input gives one (`&⿸⿹丅丿丨;`), and otherwise
+its identifier in ids-input's component ledger (`&X-00777;`). `⿰&⿸⿹丅丿丨;土` is a two-operand
+structure whose left leaf is that shape. Variation selectors are kept wherever a level writes
+them: in its texts, its hashes and its trees. The names inputs give
 such a component (`{42}`, `&CDP-8958;`, `#(丿𠃊)`) are resolved through ids-input's ledger when
 candidates are read and are not published.
 
@@ -229,26 +233,31 @@ table. The bases:
 | Basis | From | Tier | Examples |
 |---|---|---|---|
 | `radical-form` | Unicode `EquivalentUnifiedIdeograph.txt` 18.0.0, as copied into ids-input `component-forms.tsv` | `source` | ⺬ → 示, ⺭ → 礻, ⺼ → 肉, ⻏ → 邑, ⻖ → 阝 |
-| `positional-form` | cjkvi-variants `radical-variants.txt` at e4f1da2, same copy, with its place where it states one | `source` | 礻 → 示, 氵 → 水 (left), 扌 → 手 (left), 忄 → 心, 亻 → 人 (left), 糹 纟 → 糸 (left), 訁 讠 → 言 (left), 釒 钅 → 金 (left), 飠 饣 → 食 (left), 衤 → 衣 (left), 王 𤣩 → 玉, 刂 → 刀 (right), 犭 → 犬 (left), 阝 → 邑 (right) |
-| `unifiable-variant` | IRG N2978 (UCV and NUCV lists, version 2026-10-20), via ids-input `ucv.json` | `source` | entry 362: 示 and 礻 unifiable, criterion JIS 161 and HYDCD 19 |
+| `positional-form` | cjkvi-variants `radical-variants.txt` at e4f1da2, same copy, at the place its row names; a row with no place folds nothing (忄, 王 and 才 stay themselves) | `source` | 礻 → 示 (left), 氵 → 水 (left), 扌 → 手 (left), 亻 → 人 (left), 糹 纟 → 糸 (left), 訁 讠 → 言 (left), 釒 钅 → 金 (left), 飠 饣 → 食 (left), 衤 → 衣 (left), 𤣩 → 玉 (left), 刂 → 刀 (right), 犭 → 犬 (left), 阝 → 邑 (right) |
+| `unifiable-variant` | IRG N2978 (UCV and NUCV lists, version 2026-10-20), via ids-input `ucv.json`: level 1 entries only, read as the first form the entry names, and two characters of an entry only where a variant table also gives them as variants; level 2 never, since it pairs shapes that are different characters elsewhere (土 and 士) | `source` | entry 362 (level 1): 示 and 礻, criterion JIS 161 and HYDCD 19 |
 | `radical-index` | Unihan `kRSUnicode` with no residual strokes | `derived` | 𱍐 (U+31350) is `113.0`: radical 示 itself |
 | `alignment` | the corpus's own alignment, one source writing the member where another writes the target for the same character | `derived` | the 62 existing number–entity pairs |
 | `editorial` | `review/classes.tsv`, a reviewer's row with name, date and note | `editorial` | `&⿸⿹丅丿丨;` → 示, reviewed 2026-11-16: 示 drawn without its first 一 |
 
-The build rule: a member resolves by following its rows to a target that is no member of anything,
-the class's canonical member (⺭ → 礻 → 示). A row with a place applies only at that place: 阝 is
+The build rule follows glyph-atlas's canonical tree (`docs/decisions/0012-structure-layer.md`,
+2026-11-09; `src/glyph_atlas/structures.py`): a member resolves by following its rows to a target
+that is no member of anything, the class's canonical member (⺭ → 礻 → 示). A row with a place applies only at that place: 阝 is
 邑's on the right, and outside that place it is itself. A member that resolves to two canonicals
 at one place joins neither, and the build reports it. A pair with no row, from a table or
 editorial, is never merged: the two components stay apart, and a node drawn in the other shape is refused as
 `unlike-element` as before.
 
-**Styles.** Each cut of a class member gets a `style`: the member its drawing matches, named by
-an existing code point or IDS. Styles are read off the glyph:
+**Styles.** Each cut of a class member gets a `style`: the exact form its drawing matches,
+written as the form level writes it (2.7): a member's code point, an IVD variation sequence, a UCV
+form, or a token. Classes are what the structure level folds; styles are what the form level
+names. Styles are read off the glyph:
 
 1. A `kage` cut (section 2.6) takes its style from the GlyphWiki component it was placed as:
    `u793b-01` is 礻's left form, so the style is 礻.
-2. Otherwise the cut is compared with a reference drawing of each member: the member's own glyph
-   in the same design, and the `kage` cuts of that member. The best match above a limit gives the
+2. Otherwise the cut is compared with a reference drawing of each form: each member's own glyph
+   in the same design, the `kage` cuts of that member, and the GlyphWiki glyphs the IVD
+   sequences and UCV forms of the class are registered with (as ids-input's
+   `src/core/variant-descriptions.js` reads an IVD sequence from its GlyphWiki glyph). The best match above a limit gives the
    style, tier `machine`.
 3. Cuts that match no reference are clustered per class and design; a cluster gets a style once a
    reviewer names it, tier `reviewed`.
@@ -346,13 +355,23 @@ with a reason code (`too-few-pieces`, `unlike-element`, `layout-mismatch`, `ambi
 
 ### 2.7 Drawn IDS
 
-Each glyph gets a drawn IDS for every structure it fits: the chosen accepted root reading of that
-structure, every cut written as its style, opened layers written in place. One of them is marked
-first, the reviewer's pick or else the best evidence. 社 in Noto Sans CJK JP → `⿰礻土`; in a font that
-draws the full 示 → `⿰示土`; 𥘦 → `⿰𱍐攵`. It records the structure and readings it came from and
-is tier `machine`, or `reviewed` once a reviewer has judged every style in it. Candidates that
-share a structure collapse into its one drawn IDS. The viewer shows the first for each font, with
-the glyph's other drawn IDS beside it.
+Each glyph gets a drawn IDS for every structure it fits, from the chosen accepted root reading of
+that structure, opened layers written in place. One of them is marked first, the reviewer's pick
+or else the best evidence. Candidates that share a structure collapse into its one drawn IDS. The
+viewer shows the first for each font, with the glyph's other drawn IDS beside it. A drawn IDS has
+three levels, stored together per reading:
+
+| Level | Writes | May use | 社 in Noto Sans CJK JP |
+|---|---|---|---|
+| `structure` | The canonical tree, by glyph-atlas's rules: a part that spells a character is that character, a ⿰ or ⿱ chain flattens, a positional form is the character it writes at that place, and a level-1 UCV shape is its entry's first form. Every font's 社 has one structure. | Operators, the index bracket of ⿴ ⿵ ⿶ ⿷ ⿼ ㇯ (which space or occurrence), characters, `&…;` tokens. A selector on a candidate's component is folded with the component, since a structure has no stroke design. | `⿰示土` |
+| `form` | Each component as the exact form drawn: a code point; an IVD variation sequence where the IVD registers that shape; a UCV form where the IRG lists it, as zi.tools writes it after the component (`烕q008a2`, the second form of entry 8a); else a `&…;` token. | The structure level's constructs, variation selectors and UCV identifiers after a component. | `⿰礻土` |
+| `stroke` | The form level with every stroke-level difference the glyph shows, from the stroke layer (2.10): per-part stroke letters (`d g h n p s t w x y z u l r m e`, as in ids-input `docs/custom-components.md`), ⿻ slices and crossing matrices, stroke chains `#(…)`. | All of the grammar. | the form level and any stroke letters its parts take |
+
+The structure level is shared across fonts; the form level is what styles say; the stroke level is
+tier `machine` until reviewed. Where a glyph has no stroke layer yet, its stroke level is absent,
+never guessed. In a font that draws the full 示, 社's form level is `⿰示土`; 𥘦's is `⿰𱍐攵`.
+glyph-atlas keeps one structure per character, its first description's; han-decompose keeps every
+structure a glyph divides into, so a character can have several.
 
 A character's published descriptions are its structures that fit at least one pinned font, each
 with the fonts and designs it fits and the drawn IDS it takes in each.
@@ -700,12 +719,12 @@ chains; the viewer and its deployment.
 - 9.2 The cutters rerun over every structure on every pinned font, `kage` included; cut files per
   font and the flat tables.
 - 9.3 Styles where a `kage` placement or a member's own glyph in the same design decides; drawn
-  IDS from them; libraries and forms per design.
+  IDS at the structure and form levels; libraries and forms per design.
 - 9.4 Release v2.0.0.
 
 **Phase 10 — styles**
-- 10.1 Style references from `kage` cuts and member glyphs; matching per class and design for the
-  cuts 9.3 left without a style.
+- 10.1 Style references from `kage` cuts, member glyphs, and the GlyphWiki glyphs of IVD
+  sequences and UCV forms; matching per class and design for the cuts 9.3 left without a style.
 - 10.2 Clustering of unmatched cuts and the style picker in the review queue.
 - 10.3 Drawn IDS rebuilt from reviewed styles; the 193 `⿰示…` characters as the first fixture.
 
@@ -732,6 +751,7 @@ chains; the viewer and its deployment.
 - 14.3 The neck cut and the scanline graft moved from `feat/stroke-lab` for shared contours;
   stroke files in the format.
 - 14.4 Stroke cuts scored against GlyphWiki strokes; stroke review in the viewer.
+- 14.5 The stroke level of drawn IDS, written from the stroke layer where a glyph has one.
 
 **Later** — dealing at contour grain inside fused pieces of the variable faces; hand forms;
 hosted verdicts; more designs (kaisho, fangsong); publishing the JavaScript
@@ -895,6 +915,10 @@ The tables the build reads. They are cited here and in `pins/sources.json`; the 
   `b42b377d7efbc233ae2a4c1833947e04760e68d1` of adobe-type-tools/Adobe-Japan1.
 - GlyphWiki's licence page in its English translation, as archived on 2025-11-14:
   <https://web.archive.org/web/20251114152951/https://en.glyphwiki.org/wiki/GlyphWiki:License>.
+- glyph-atlas `main` at `c207845b` (2026-11-16): `docs/decisions/0012-structure-layer.md` (2026-11-09,
+  status proposed) and `src/glyph_atlas/structures.py` (policy `structure-v1`).
+- ids-input `main`: `docs/custom-components.md`, `src/core/ucv.js`, `src/core/variant-descriptions.js`,
+  `data/baishi-ids.ebnf`, read 2026-11-16.
 - kage-engine at commit `49232bac0348fe815f4200d4116ab7917e0db47f` (2026-02-09),
   <https://github.com/kamichikoichi/kage-engine>: `kage.js` (`makeGlyph3`, `getEachStrokes`,
   `getEachStrokesOfBuhin`, `adjustStrokes`), read 2026-11-16.

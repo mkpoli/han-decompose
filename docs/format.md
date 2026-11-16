@@ -25,7 +25,7 @@ normalised.
 | layer | A contour set with its component: a glyph, or a cut opened into its parts. |
 | reading | One structure applied to one layer: which contours go to which nodes. |
 | cut | One node of a reading: a class, the member drawn, its path and its contour set. |
-| drawn IDS | One accepted structure of a glyph written with each node's style; a glyph has one per structure it fits. |
+| drawn IDS | One accepted structure of a glyph at three levels, `structure`, `form` and `stroke`; a glyph has one per structure it fits. |
 | verdict | A reviewer's right or wrong on one cut with one exact contour set, or a style named for it. |
 
 ## 2. Identifiers and notation
@@ -62,12 +62,22 @@ have no leading zero.
 
 ### 2.4 Notation
 
-Structures and drawn IDS are written in one notation: ideographic description characters
-(U+2FF0–U+2FFF, U+31EF), the variation indicator `〾` (U+303E) before a variant form of its one
-operand, and components. A component is written as its character. A component no code point
-names is one token between `&` and `;`: its own IDS where one is known (`&⿸⿹丅丿丨;`), else its
-identifier in ids-input's component ledger (`&X-00777;`). Inside the token the IDS is one leaf, so
-`⿰&⿸⿹丅丿丨;土` has two operands, and the token is what structure texts and hashes contain.
+Structures and drawn IDS are written in ids-input's IDS extension: the grammar of ids-input's
+`data/baishi-ids.ebnf` (zi.tools' notation) with a variation selector allowed after a component
+character and an entity token `&…;` allowed as a component. A component is written as its
+character. A component no code point names is one token between `&` and `;`: its own IDS where one
+is known (`&⿸⿹丅丿丨;`), else its identifier in ids-input's component ledger (`&X-00777;`).
+Inside the token the IDS is one leaf, so `⿰&⿸⿹丅丿丨;土` has two operands.
+
+Each level of a drawn IDS uses part of the notation:
+
+| Level | Constructs |
+|---|---|
+| `structure` | Ideographic description characters (U+2FF0–U+2FFF, U+31EF), the index bracket after ⿴ ⿵ ⿶ ⿷ ⿼ ㇯, characters, `&…;` tokens. No variation selector, variant identifier, stroke letter, overlap bracket or stroke chain. |
+| `form` | The structure level's, plus a variation selector after a character and a UCV identifier after a component (`q008a2`). |
+| `stroke` | All of the grammar: also per-part stroke letters, the ⿻ slice or crossing matrix, stroke chains `#(…)` and the variation indicator `〾`. |
+
+A variation selector a level writes stays in its text, its hash and its tree.
 
 ### 2.5 Component
 
@@ -78,12 +88,15 @@ identifier in ids-input's component ledger (`&X-00777;`). Inside the token the I
 | character | `u:5C71`, `u:845B.E0100` | 山 | Code point in hex, with a variation selector after a dot. |
 | subtree | `ids:⿸⿹丅丿丨` | `&⿸⿹丅丿丨;` | The component's IDS, starting with its operator. |
 | ledger | `x:X-00777` | `&X-00777;` | The ledger identifier. |
+| UCV form | `ucv:8a.2` | `烕q008a2` | The IRG UCV entry and the form's position in it. |
 | Adobe-Japan1 glyph | `aj1:1815` | — | The CID. |
 
 ### 2.6 Structure
 
 `s.<h8>`, `<h8>` being the first eight hex digits of the SHA-256 of the structure's text in
-UTF-8. The text writes every component as its class's canonical member (section 5.3):
+UTF-8. The text is the canonical tree of glyph-atlas's decision 0012: a part that spells a
+character is that character, a ⿰ or ⿱ chain flattens, and every component is written as its
+class's canonical member (section 5.3):
 `⿰礻土` and `⿰示土` are both the structure `⿰示土`, `s.0a1c0fdb`.
 
 Eight hex digits do not keep every structure apart. A structure identifier is used together with
@@ -242,10 +255,11 @@ A drawn IDS:
 
 | Property | Required | Value |
 |---|---|---|
-| `ids` | yes | The structure written with each cut's style, opened layers written in place: `⿰礻土`. |
-| `structure` | yes | Structure identifier and `text`. |
+| `structure` | yes | Structure identifier and `text`, the canonical tree (2.6): `⿰示土`. |
+| `form` | yes | The structure with each component written as the form its cut's style names, opened layers in place: `⿰礻土`. |
+| `stroke` | | The form with every stroke-level difference the stroke layer shows, and `strokeTier` (`machine` or `reviewed`). Absent where the glyph has no stroke layer. |
 | `readings` | yes | The readings it is written from, as their layer steps. |
-| `tier` | yes | `machine`, or `reviewed` when every style in it is. |
+| `tier` | yes | Of the form level: `machine`, or `reviewed` when every style in it is. |
 | `first` | yes | Whether the viewer shows it first for the glyph: the reviewer's pick, else the best evidence. |
 
 A reading:
@@ -275,7 +289,7 @@ A cut:
 | `path` | yes | Operand indices into the reading's structure. |
 | `place` | yes | Where the node stands in its parent: `L`, `C`, `R` under `⿰` and `⿲`; `T`, `M`, `B` under `⿱` and `⿳`; otherwise the operator and the operand index, as `⿸0`. Empty for the root. |
 | `class` | yes | Component reference of the node as the structure writes it: a class's canonical member, or a component in no class. |
-| `style` | | `member` (the component reference of the class member the drawing matched; the component itself when it is in no class), `basis` (`kage`, `match`, `cluster` or `hand`), `likeness`, `tier` (`source`, `machine` or `reviewed`). A layer opened from the cut is read with the member's structures. |
+| `style` | | `member` (the component reference of the form the drawing matched: a class member, an IVD sequence of one, or a UCV form; the component itself when it is in no class), `basis` (`kage`, `match`, `cluster` or `hand`), `likeness`, `tier` (`source`, `machine` or `reviewed`). A layer opened from the cut is read with the member's structures. |
 | `contours` | yes | Contour indices, ascending. |
 | `box` | yes | Box of the cut's contours. |
 | `frame` | | Box of the parent node's ink. |
@@ -393,12 +407,12 @@ The table holds no outline. A reader joins `font`, `glyph` and `contours` to the
 
 ### 5.2 `drawn` and `structures`
 
-`drawn.tsv.gz`, one row per glyph and structure: `font`, `design`, `glyph`, `char`, `ids`,
-`structure`, `text`, `tier`, `first` (`1` or `0`).
+`drawn.tsv.gz`, one row per glyph and structure: `font`, `design`, `glyph`, `char`, `structure`,
+`text`, `form`, `tier`, `stroke` (empty where absent), `stroke_tier`, `first` (`1` or `0`).
 
 `structures.tsv.gz`, one row per character and structure that fits at least one font: `char`,
-`structure`, `text`, `fonts` (font identifiers separated by spaces), `designs`, and `drawn`, the
-distinct drawn IDS it takes, separated by spaces.
+`structure`, `text`, `fonts` (font identifiers separated by spaces), `designs`, and `forms`, the
+distinct form levels it takes, separated by spaces.
 
 ### 5.3 `classes`
 
@@ -410,7 +424,7 @@ distinct drawn IDS it takes, separated by spaces.
 | `target` | The component the row resolves it to. |
 | `canonical` | Where the rows lead: the class's canonical member. |
 | `place` | The place the row applies at (4.3), or empty for every place. |
-| `basis` | `radical-form` (a radical's own code point and its unified ideograph), `positional-form` (the form a component takes at a place), `unifiable-variant` (shapes the IRG treats as one), `radical-index` (indexed as the radical with no further strokes), `alignment` (written for one another in descriptions of one character) or `editorial`. |
+| `basis` | `radical-form` (a radical's own code point and its unified ideograph), `positional-form` (the form a component takes at the place the row names), `unifiable-variant` (shapes the IRG lists as unifiable at level 1), `radical-index` (indexed as the radical with no further strokes), `alignment` (written for one another in descriptions of one character) or `editorial`. |
 | `tier` | `source` (a table states it), `derived` (inferred from a table) or `editorial` (the project's own reviewed row). |
 | `note` | For an editorial row, the reviewer's reason and date: `示 drawn without its first 一; 2026-11-16`. |
 
