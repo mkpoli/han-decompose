@@ -56,19 +56,33 @@ def merge_outlines(paths: Sequence[Path]) -> Json:
 
 def _key(row: Json) -> tuple[tuple[int, int, int, str], str, list[str], str]:
     selector = I.split_glyph_id(row["glyph"])[1] if "glyph" in row else "gid.0"
-    return (I.order(selector), row["subject"], row["layer"], row["structure"])
+    return (I.order(selector), row["subject"], row["layer"], row.get("structure", ""))
+
+
+def _skip_key(row: Json) -> tuple[str | None, str, tuple[str, ...], str]:
+    return (row.get("glyph"), row["subject"], tuple(row["layer"]), row["text"])
+
+
+def _chosen(readings: Sequence[Json]) -> dict[tuple[str, str], str]:
+    """The method of the chosen reading of each structure on each glyph itself."""
+    return {
+        (row["glyph"], row["structure"]): row["method"]["name"]
+        for row in readings
+        if row["chosen"] and not row["layer"]
+    }
 
 
 def merge_cuts(paths: Sequence[Path]) -> Json:
     """One cut file from the same shard of several runs: the first run's reading of a layer under a
     structure by a method stands, and an attempt is listed as skipped only where no run read it."""
     merged = _load(paths[0])
+    before = _chosen(merged["readings"])
 
     def read_key(row: Json) -> tuple[str, tuple[str, ...], str]:
         return (row["glyph"], tuple(row["layer"]), row["structure"])
 
     read = {(*read_key(row), row["method"]["name"]) for row in merged["readings"]}
-    skipped = {(row.get("glyph"), row["subject"], tuple(row["layer"]), row["structure"]) for row in merged["skipped"]}
+    skipped = {_skip_key(row) for row in merged["skipped"]}
     for path in paths[1:]:
         other = _load(path)
         for row in other["readings"]:
@@ -76,15 +90,30 @@ def merge_cuts(paths: Sequence[Path]) -> Json:
                 read.add((*read_key(row), row["method"]["name"]))
                 merged["readings"].append(row)
         for row in other["skipped"]:
-            key = (row.get("glyph"), row["subject"], tuple(row["layer"]), row["structure"])
+            key = _skip_key(row)
             if key not in skipped:
                 skipped.add(key)
                 merged["skipped"].append(row)
         for selector, entries in other["drawn"].items():
-            merged["drawn"].setdefault(selector, entries)
+            held = merged["drawn"].setdefault(selector, [])
+            held += [
+                {**entry, "first": False}
+                for entry in entries
+                if entry["structure"] not in {kept["structure"] for kept in held}
+            ]
     done = {read_key(row) for row in merged["readings"]}
-    merged["skipped"] = [row for row in merged["skipped"] if ("glyph" not in row or read_key(row) not in done)]
-    merged["readings"] = choose(sorted(merged["readings"], key=_key))
+    merged["skipped"] = [
+        row for row in merged["skipped"] if ("glyph" not in row or "structure" not in row or read_key(row) not in done)
+    ]
+    merged["readings"] = sorted(choose(merged["readings"], keep=True), key=_key)
+    # A drawn IDS written from a reading that no longer stands is left for the next cutting run.
+    changed = {key for key, method in _chosen(merged["readings"]).items() if before.get(key, method) != method}
+    for selector, entries in merged["drawn"].items():
+        glyph = I.glyph_id(merged["font"], selector)
+        entries[:] = [entry for entry in entries if (glyph, entry["structure"]) not in changed]
+        if entries and not any(entry["first"] for entry in entries):
+            entries[0]["first"] = True
+    merged["drawn"] = {selector: entries for selector, entries in merged["drawn"].items() if entries}
     merged["skipped"].sort(key=_key)
     merged["drawn"] = dict(sorted(merged["drawn"].items(), key=lambda item: I.order(item[0])))
     return merged

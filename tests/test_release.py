@@ -203,3 +203,75 @@ def test_a_release_packs_to_one_archive_per_font_and_kind(tmp_path: Path) -> Non
     again = release.pack(tmp_path / "out", tmp_path / "again")
     assert all(path.read_bytes() == (tmp_path / "again" / path.name).read_bytes() for path in made)
     assert len(again) == len(made)
+
+
+def _second_run(tmp_path: Path, edit: object) -> tuple[Path, Path, Json]:
+    first, second = golden(tmp_path / "first"), golden(tmp_path / "second")
+    path = second / "cuts" / FONT / "050.json.gz"
+    content = json.loads(gzip.decompress(path.read_bytes()))
+    edit(content)  # type: ignore[operator]
+    write(path, dumps(content))
+    return first / "cuts" / FONT / "050.json.gz", path, content
+
+
+def test_a_later_runs_drawn_ids_for_other_structures_are_kept(tmp_path: Path) -> None:
+    def edit(content: Json) -> None:
+        other = {**content["drawn"]["U+50AC"][0], "structure": "s.a674f7d6", "text": "⿱山隹", "first": True}
+        content["drawn"] = {"U+50AC": [other], "U+5079": [other]}
+
+    one, two, _ = _second_run(tmp_path, edit)
+    merged = release.merge_cuts([one, two])
+    assert [(row["structure"], row["first"]) for row in merged["drawn"]["U+50AC"]] == [
+        ("s.9d9dea39", True),
+        ("s.a674f7d6", False),
+    ]
+    assert list(merged["drawn"]) == ["U+5079", "U+50AC"] and merged["drawn"]["U+5079"][0]["first"] is True
+
+
+def test_a_chosen_reading_stands_until_a_reviewer_picks_another(tmp_path: Path) -> None:
+    def edit(content: Json) -> None:
+        again = json.loads(json.dumps(content["readings"][0]))
+        again["method"] = {"name": "deal", "tool": "han-decompose", "grain": "piece"}
+        again["chosen"] = True
+        for cut in again["cuts"]:
+            cut["id"] = cut["id"].replace("-hand:", "-deal:")
+            cut["evidence"] = {"fit": 0.99}
+        content["readings"].append(again)
+
+    one, two, _ = _second_run(tmp_path, edit)
+    merged = release.merge_cuts([one, two])
+    root = {row["method"]["name"]: row["chosen"] for row in merged["readings"] if not row["layer"]}
+    assert root == {"hand": True, "deal": False} and len(merged["drawn"]["U+50AC"]) == 1
+
+    def reviewed(content: Json) -> None:
+        edit(content)
+        for cut in content["readings"][-1]["cuts"]:
+            cut["status"] = "reviewed-right"
+
+    one, two, _ = _second_run(tmp_path / "again", reviewed)
+    merged = release.merge_cuts([one, two])
+    root = {row["method"]["name"]: row["chosen"] for row in merged["readings"] if not row["layer"]}
+    assert root == {"hand": False, "deal": True} and "U+50AC" not in merged["drawn"]
+
+
+def test_a_reviewers_pick_is_chosen_before_the_best_fit() -> None:
+    from han_decompose.store import choose
+
+    def reading(method: str, status: str, fit: float, chosen: bool = False) -> Json:
+        cut = {"status": status, "evidence": {"fit": fit}}
+        return {
+            "glyph": "g",
+            "layer": [],
+            "structure": "s.0",
+            "method": {"name": method},
+            "chosen": chosen,
+            "cuts": [cut],
+        }
+
+    rows = [reading("axis", "accepted", 0.9), reading("deal", "reviewed-right", 0.1), reading("hand", "accepted", 0.99)]
+    assert [row["chosen"] for row in choose(rows)] == [False, True, False]
+    assert [row["chosen"] for row in choose(rows[:1] + rows[2:])] == [False, True]
+    held = [reading("axis", "accepted", 0.9, True), reading("hand", "accepted", 0.99)]
+    assert [row["chosen"] for row in choose(held, keep=True)] == [True, False]
+    assert [row["chosen"] for row in choose([*held, rows[1]], keep=True)] == [False, False, True]
+    assert [row["chosen"] for row in choose([reading("axis", "refused", 1.0)])] == [False]

@@ -62,18 +62,36 @@ def _selector(row: Json) -> str | None:
     return f"U+{value}" if kind == "u" else None
 
 
+def change_notice(row: Json) -> str | None:
+    """What a font whose licence asks that a changed copy say how and when it was changed says in
+    each file of its data: the Arphic Public License. Files hold no date, so that a rebuild gives
+    the same bytes; the change is dated by the release that carries the file."""
+    if row["licence"] != "Arphic-1999":
+        return None
+    return (
+        f"Changed from {row['name']} {row['version']} by han-decompose {__version__} when the release "
+        "named in manifest.json was built. Every glyph this file holds, whether it is every glyph the font "
+        "maps or a selection, keeps each contour in the font's order, with its points scaled from "
+        f"{row['upem']} to 1000 units per em and rounded to hundredths of a unit, and with its pieces and box "
+        "added; a stroke file adds outlines cut from those contours. Under the Arphic Public License, as the "
+        "font is."
+    )
+
+
 def outline_head(font: str) -> Json:
     """An outline file without its glyphs: the font, its licence and copyright line, and, for a
     font whose licence asks that a changed copy say how it was changed, that notice."""
     row = pins.font(font)
     head: Json = {"format": OUTLINES, "font": font, "licence": row["licence"], "copyright": row["copyright"]}
-    if row["licence"] == "Arphic-1999":
-        head["notice"] = (
-            f"Outlines of {row['name']} {row['version']}, changed by han-decompose {__version__}: a selection of "
-            f"its glyphs, each contour kept in the font's order with its points scaled from {row['upem']} to 1000 "
-            "units per em and rounded to hundredths of a unit. Under the Arphic Public License, as the font is."
-        )
+    if notice := change_notice(row):
+        head["notice"] = notice
     return {**head, "em": 1000, "q": 100, "glyphs": {}}
+
+
+def _design_of(cut: str) -> str:
+    """The design of the font a cut's glyph is of."""
+    design: str = pins.font(I.split_glyph_id(I.split_cut_id(cut)[0])[0])["design"]
+    return design
 
 
 def _score(reading: Json) -> float:
@@ -86,9 +104,15 @@ def _score(reading: Json) -> float:
     return sum(scores) / len(scores) if scores else 0.0
 
 
-def choose(readings: list[Json]) -> list[Json]:
+def reviewed(reading: Json) -> bool:
+    """Whether a person judged every cut of a reading right: a reviewer's pick."""
+    return bool(reading["cuts"]) and all(cut["status"] == "reviewed-right" for cut in reading["cuts"])
+
+
+def choose(readings: list[Json], keep: bool = False) -> list[Json]:
     """The readings with `chosen` set: of those of one structure on one layer of one glyph that are
-    accepted, the one with the best fit, an earlier method name breaking a tie; no other."""
+    accepted, the reviewer's pick, else the one with the best fit, an earlier method name breaking a
+    tie; no other. With `keep`, a reading already chosen stands unless a reviewer picked another."""
     groups: dict[tuple[str, tuple[str, ...], str], list[int]] = {}
     for at, row in enumerate(readings):
         groups.setdefault((row["glyph"], tuple(row["layer"]), row["structure"]), []).append(at)
@@ -100,9 +124,16 @@ def choose(readings: list[Json]) -> list[Json]:
             if readings[at]["cuts"]
             and all(cut["status"] in ("accepted", "reviewed-right") for cut in readings[at]["cuts"])
         ]
-        if accepted:
-            best = min(accepted, key=lambda at: (-_score(readings[at]), readings[at]["method"]["name"], at))
-            out[best]["chosen"] = True
+        if not accepted:
+            continue
+        picked = [at for at in accepted if reviewed(readings[at])]
+        held = [at for at in accepted if keep and readings[at].get("chosen")]
+        standing = [at for at in held if at in picked] if picked else held
+        if standing:
+            out[standing[0]]["chosen"] = True
+            continue
+        best = min(picked or accepted, key=lambda at: (-_score(readings[at]), readings[at]["method"]["name"], at))
+        out[best]["chosen"] = True
     return out
 
 
@@ -160,6 +191,13 @@ class Store:
         if library:
             self.library.setdefault(design, {}).setdefault(component, {})[style] = library
 
+    def lifted(self, component: str, style: str, form: Json, library: dict[str, list[str]]) -> None:
+        """Keep a lifted form in the design of the font whose glyph it was cut from, with the cuts of
+        its library that come from fonts of that design."""
+        design = _design_of(form["cut"])
+        mine = {place: [cut for cut in cuts if _design_of(cut) == design] for place, cuts in library.items()}
+        self.form(design, component, style, form, {place: cuts for place, cuts in mine.items() if cuts})
+
     def files(self) -> Iterable[tuple[str, Json]]:
         """Every file as its path in a release and its content, in the order of the paths."""
         out: dict[str, Json] = {}
@@ -170,6 +208,8 @@ class Store:
         for font, cut_strokes in self.strokes.items():
             row = pins.font(font)
             head = {"format": STROKES, "font": font, "licence": row["licence"], "copyright": row["copyright"]}
+            if notice := change_notice(row):
+                head["notice"] = notice
             for selector in sorted(cut_strokes, key=I.order):
                 file = out.setdefault(f"strokes/{font}/{I.shard(selector)}.json.gz", {**head, "glyphs": {}})
                 file["glyphs"][selector] = cut_strokes[selector]
@@ -183,7 +223,7 @@ class Store:
                 )
 
             def key(row: Json) -> tuple[tuple[int, int, int, str], str, list[str], str]:
-                return (I.order(_selector(row) or "gid.0"), row["subject"], row["layer"], row["structure"])
+                return (I.order(_selector(row) or "gid.0"), row["subject"], row["layer"], row.get("structure", ""))
 
             for row in sorted(choose(self.readings.get(font, [])), key=key):
                 file_of(_selector(row) or "gid.0")["readings"].append(row)
