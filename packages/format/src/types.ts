@@ -251,7 +251,7 @@ export interface VerdictRow {
 /** One row of `components.tsv`. */
 export interface ComponentRow {
   component: string;
-  kind: "character" | "subtree" | "ledger" | "adobe-japan1";
+  kind: "character" | "subtree" | "ledger" | "numbered" | "entity" | "adobe-japan1";
   text: string;
   relation: "" | "glyph-of" | "equivalent";
   target: string;
