@@ -440,7 +440,7 @@ type and its ink. Two inputs give it.
   `lab/strokes/`.
 
 A stroke cut at a seam is new geometry: it is written as an outline of its own beside the contour
-indices it came from, under the font's licence, in stroke files per font. The neck cut leaves
+indices it came from, under the font's licence, in stroke files per font (`format.md` 4.5). The neck cut leaves
 rounded blobs at joins and loses the shape of curves, so stroke cuts from font outlines are tier
 `machine` until reviewed, and each is scored against the GlyphWiki stroke of the same character
 and type where one exists.

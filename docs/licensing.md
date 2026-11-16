@@ -12,6 +12,7 @@ those terms and no legal advice.
 |---|---|
 | `outlines/<font>/…` | The font's licence, with the font's copyright line in the file. |
 | `outlines/glyphwiki@…/…` | GlyphWiki's licence, with its address in the file. |
+| `strokes/<font>/…` | The font's licence (GlyphWiki's for GlyphWiki). A stroke cut at a seam is new outline drawn from the font's, so it stays font data. |
 | `cuts/<font>/…`, `drawn.tsv.gz`, `structures.tsv.gz`, `cuts.tsv.gz`, `skipped.tsv.gz`, `classes.tsv`, `components.tsv`, `library/…`, `forms/…`, `verdicts.tsv` | CC0-1.0. They hold contour indices, structures and labels, and no outline. |
 | `fonts.json`, `manifest.json` | CC0-1.0. `fonts.json` names each font's licence and copyright line. |
 

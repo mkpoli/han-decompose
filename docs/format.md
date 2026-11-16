@@ -120,6 +120,7 @@ A release is laid out as:
 manifest.json  fonts.json
 components.tsv  classes.tsv
 outlines/<font>/<block>.json.gz
+strokes/<font>/<block>.json.gz
 cuts/<font>/<block>.json.gz
 library/<design>.json.gz  forms/<design>.json.gz
 cuts.tsv.gz  drawn.tsv.gz  structures.tsv.gz  skipped.tsv.gz  verdicts.tsv
@@ -340,6 +341,20 @@ A component that has no character can be read on a host glyph under a structure 
 holds what is left of the host, and its `class` is the structure as a subtree. A
 subtraction that several components share is read once, under the first of them.
 
+### 4.5 Stroke files
+
+`strokes/<font>/<block>.json.gz`, `format` `han-decompose/strokes@2.0`: `font`, `licence` and
+`copyright` as in the outline file, and `glyphs`, selector → the strokes of each leaf cut.
+
+| Property | Required | Value |
+|---|---|---|
+| `cut` | yes | The leaf cut the strokes divide. |
+| `strokes` | yes | In writing order, each with `type` (a CJK stroke character such as ㇑, or the KAGE line type for a GlyphWiki glyph), `method` (`kage`, `lift`, `neck` or `graft`), `contours` (the indices it covers) and `tier` (`source` for `kage`, else `machine` or `reviewed`). |
+| `outline` | | Per stroke cut at a seam: its own contours, `[commands, points]` as in 4.2. |
+
+A stroke file holds outline geometry wherever a stroke is cut at a seam, so it is under the font's
+licence, as the outline files are.
+
 ## 5. Tables
 
 A table is UTF-8 text with tab-separated fields and lines ending in a line feed. Its first line
@@ -438,7 +453,7 @@ A verdict whose `sig` differs from the built cut's applies to nothing.
 
 ## 6. Licences
 
-Outline files are under the licence of their font, stated in the file; GlyphWiki's outline files
+Outline and stroke files are under the licence of their font, stated in the file; GlyphWiki's
 under GlyphWiki's licence. Every other file is under CC0-1.0.
 
 ## 7. Tiers
