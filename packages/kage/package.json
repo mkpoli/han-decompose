@@ -1,0 +1,11 @@
+{
+  "name": "han-decompose-kage",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Draws GlyphWiki glyphs with the KAGE engine and keeps each stroke's polygons and each placed component's strokes.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}
