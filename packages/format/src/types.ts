@@ -12,7 +12,7 @@ export interface Glyph {
   box: Box;
   advance: number;
   /** GlyphWiki glyphs only: per stroke in KAGE order, its type (1 to 7) and the contours it drew. */
-  strokes?: { type: number; contours: number[] }[];
+  strokes?: { type: number; option?: number; contours: number[] }[];
 }
 
 export interface OutlineFile {

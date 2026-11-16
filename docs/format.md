@@ -231,7 +231,7 @@ A glyph:
 | `pieces` | The contour indices of each piece, ascending; pieces ordered by their first index. Every contour is in exactly one piece. |
 | `box` | The box of all contours. |
 | `advance` | The advance width in units. |
-| `strokes` | GlyphWiki glyphs only: per stroke in KAGE order, `type` (1–7) and the contour indices it drew. |
+| `strokes` | GlyphWiki glyphs only: per stroke in KAGE order, `type` (1–7), `option` (the hundreds of KAGE's type where it has any: 103 is type 3 with option 1) and the contour indices it drew. |
 
 `commands` is a string of pen commands. `points` holds x and y interleaved, in command order.
 

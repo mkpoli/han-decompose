@@ -87,7 +87,13 @@ def glyph_of(font: str, selector: str, drawing: gw.Drawing) -> Glyph:
         paths.append(path)
     out = assemble(font, selector, contours, paths, outline, gw.UPEM * 5)
     out.strokes = [
-        {"type": stroke.type, "contours": list(stroke.contours)} for stroke in drawing.strokes if stroke.contours
+        {
+            "type": stroke.type % 100,
+            **({"option": stroke.type // 100} if stroke.type >= 100 else {}),
+            "contours": list(stroke.contours),
+        }
+        for stroke in drawing.strokes
+        if stroke.contours
     ]
     return out
 

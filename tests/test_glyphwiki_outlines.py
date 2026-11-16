@@ -8,6 +8,7 @@ from han_decompose import glyphwiki as gw
 from han_decompose import glyphwiki_outlines as O
 from han_decompose import outlines, pins
 from han_decompose.schema import validate
+from han_decompose.store import outline_head
 
 DUMP = Path(__file__).parent / "fixtures" / "glyphwiki" / "dump.txt"
 FONT = "glyphwiki@20261115"
@@ -77,3 +78,26 @@ def test_the_existing_writer_writes_the_block_of_a_valid_outline_file(tmp_path: 
     file = json.loads(gzip.decompress((tmp_path / "outlines" / FONT / "079.json.gz").read_bytes()))
     validate("outlines", file)
     assert file["licence"] == "LicenseRef-GlyphWiki" and list(file["glyphs"]) == ["U+793E"]
+
+
+def test_a_stroke_type_with_an_option_is_written_as_its_base_type_and_the_option() -> None:
+    square = ((10.0, 10.0), (60.0, 10.0), (60.0, 60.0), (10.0, 60.0))
+    drawing = gw.Drawing(
+        "u4e00-x",
+        tuple(gw.Contour(square, k, ()) for k in range(3)),
+        (gw.Stroke(1, (0,)), gw.Stroke(103, (1,)), gw.Stroke(101, (2,))),
+        (),
+        None,
+        (),
+    )
+    record = O.glyph_of(FONT, "name.u4e00-x", drawing).record()
+    assert record["strokes"] == [
+        {"type": 1, "contours": [0]},
+        {"type": 3, "option": 1, "contours": [1]},
+        {"type": 1, "option": 1, "contours": [2]},
+    ]
+    validate("outlines", {**O_head(), "glyphs": {"name.u4e00-x": record}})
+
+
+def O_head() -> dict[str, object]:
+    return outline_head(FONT, {"licence": "LicenseRef-GlyphWiki", "copyright": "GlyphWiki"})
