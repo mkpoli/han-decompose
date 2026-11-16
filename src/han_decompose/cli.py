@@ -160,7 +160,7 @@ def lift(
 ) -> None:
     """Lift every CHISE entity and numbered component of the component registry that the corpus
     names out of the characters written with it, and count the forms that stand, by kind, and the
-    cuts in their libraries. Forms and libraries are filed under the first design. Stroke chains
+    cuts in their libraries. A form is filed under the design of the font its host glyph is in. Stroke chains
     and entities the corpus has no identifier for are counted and left out. The glyph BabelStone Han
     PUA draws for a numbered component is written with the outlines where a cut was held against
     it."""
@@ -192,7 +192,7 @@ def lift(
             if outcome.form is not None:
                 stand[outcome.kind] = stand.get(outcome.kind, 0) + 1
                 hosts += sum(len(cuts) for cuts in outcome.library.values())
-                store.form(designs[0], outcome.component, outcome.component, outcome.form, outcome.library)
+                store.lifted(outcome.component, outcome.component, outcome.form, outcome.library)
         # The glyphs BabelStone Han PUA draws for the numbered components that were lifted.
         for reference in numbered.glyphs(descriptions.table("babelstone", cache), cache).values():
             if I.glyph_id(reference.font, reference.selector) in held:
@@ -250,7 +250,12 @@ def read(
 def component_rows(cache: Path | None) -> list[Json]:
     """The rows of the component table: the Adobe-Japan1 glyphs that descriptions name, and the
     numbered components with their code points in BabelStone Han PUA."""
-    return [*aj1.pinned(cache), *numbered.rows(descriptions.table("babelstone", cache))]
+    table = descriptions.table("babelstone", cache)
+    names = descriptions.corpus_names(cache)
+    left = numbered.unnamed(table, names)
+    if left:
+        typer.echo(f"no identifier in the corpus, left out: {' '.join(left)}", err=True)
+    return [*aj1.pinned(cache), *numbered.rows(table, names)]
 
 
 @app.command()
@@ -338,9 +343,7 @@ def import_numbered(
                 for row in outcome.readings:
                     store.reading(row)
                 assert outcome.form is not None
-                store.form(
-                    numbered_forms.DESIGNS[0], outcome.component, outcome.component, outcome.form, outcome.library
-                )
+                store.lifted(outcome.component, outcome.component, outcome.form, outcome.library)
             total = len(numbered_forms.forms(file, table))
     except (pins.PinError, KeyError, OSError) as error:
         typer.echo(str(error.args[0]) if isinstance(error, KeyError) else str(error), err=True)

@@ -208,3 +208,21 @@ def test_the_forms_ids_input_cut_for_han_compose_reproduce(chain: str) -> None:
     assert differ == expected["differ"]
     assert {"entity": kinds["entity"], "chain": 0} == expected["forms"]
     assert sum(int(part.split(":")[1]) for row in mine.values() for part in row[5].split()) == expected["library"]
+
+
+def test_a_form_is_filed_under_the_design_of_its_host_font() -> None:
+    plan = "plangothic-p1@2.9.5795/U+4E00~0a1c0fdb-lift:0"
+    noto = "noto-sans-cjk-jp@2.004/U+4E00~0a1c0fdb-lift:0"
+    store = Store()
+    store.lifted(
+        "chise:CDP-8958", "chise:CDP-8958", {"cut": plan, "sig": "00000000", "basis": "agree"}, {"L": [plan, noto]}
+    )
+    store.lifted("chise:CDP-8959", "chise:CDP-8959", {"cut": noto, "sig": "00000000", "basis": "agree"}, {"L": [plan]})
+    files = dict(store.files())
+    assert sorted(files) == [
+        "forms/plangothic.json.gz",
+        "forms/source-han-sans.json.gz",
+        "library/plangothic.json.gz",
+    ]
+    assert files["library/plangothic.json.gz"]["library"] == {"chise:CDP-8958": {"chise:CDP-8958": {"L": [plan]}}}
+    assert files["forms/plangothic.json.gz"]["design"] == "plangothic"
