@@ -125,3 +125,7 @@ def test_versions_are_extracted_from_the_all_versions_dump(tmp_path: Path) -> No
     out = tmp_path / "used.txt"
     assert gw.extract_versions(all_versions, gw.read_dump(DUMP), out) == 1
     assert gw.read_dump(out) == {"u458d-j@3": "99:0:0:0:0:200:200:u458d"}
+
+
+def test_names_alone_match_the_full_read() -> None:
+    assert sorted(gw.read_names(DUMP)) == sorted(gw.read_dump(DUMP))

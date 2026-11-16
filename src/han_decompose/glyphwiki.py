@@ -98,6 +98,18 @@ def extract_versions(all_versions: Path, newest: dict[str, str], out: Path) -> i
     return len(found)
 
 
+def read_names(path: Path) -> list[str]:
+    """Only the glyph names of a dump file, which takes a fraction of the memory `read_dump` does."""
+    with path.open(encoding="utf-8") as lines:
+        return [
+            name
+            for line in lines
+            if (name := line.partition("|")[0].strip()) not in ("", "name")
+            and "|" in line
+            and not name.startswith("---")
+        ]
+
+
 @dataclass(frozen=True)
 class Dump:
     path: Path
@@ -371,9 +383,9 @@ class BatchResult:
     raw_bytes: int = 0
 
 
-def batch(output: Path, dump: Dump, workers: int = 4) -> BatchResult:
+def batch(output: Path, dump: Dump, workers: int = 2) -> BatchResult:
     """Draw every glyph whose name maps to a Han code point, to gzip-compressed JSON lines."""
-    names = sorted(cjk_names(read_dump(dump.path)))
+    names = sorted(cjk_names(read_names(dump.path)))
     result = BatchResult()
     with gzip.open(output, "wt", encoding="utf-8", compresslevel=6) as out:
         for row in draw_rows(names, dump, workers):
