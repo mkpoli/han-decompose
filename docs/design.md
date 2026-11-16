@@ -235,8 +235,8 @@ like as the cut's style. `unlike-element` remains for a node unlike every member
 **Membership is stated.** A class row is `member` → `target`, with a basis, an optional place and
 a tier. Rows read from tables live in ids-input's corpus `equivalences` table under the new kind
 `class-member`, beside the existing alignment rows. The project's own rows live in
-`review/classes.tsv`, each with its reviewer, date and note; a reviewed pair needs no outside
-table. The bases:
+`review/classes.tsv` (`member`, `target`, `place`, `note`, `reviewer`, `at`; basis and tier are
+`editorial`); a reviewed pair needs no outside table. The bases:
 
 | Basis | From | Tier | Examples |
 |---|---|---|---|
@@ -551,7 +551,7 @@ han-decompose/
     importers/ composer_export.py numbered_forms.py
     release.py
   analysis/        gate tuning and the studies behind the limits
-  review/          verdicts.tsv, fixtures
+  review/          verdicts.tsv, classes.tsv, fixtures
   packages/format/ the reader for JavaScript; unpublished
   packages/viewer/ the site
   tests/
