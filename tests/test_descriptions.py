@@ -23,7 +23,7 @@ def test_babelstone_keeps_each_sequence_with_its_regions(tmp_path: Path) -> None
     table = descriptions.babelstone(path)
     assert [(row.text, row.tags) for row in table.of("七")] == [("〾⿻一乚", "GHJKPV"), ("〾⿻一㇄", "T")]
     assert [(row.text, row.tags) for row in table.of("催")] == [("⿰亻崔", "GHTJKPV")]
-    assert table.first("彔") == descriptions.Description("babelstone", "彔", "⿱{42}氺")
+    assert table.first("彔") == descriptions.Description("babelstone", "彔", "⿱&bsp:42;氺")
     assert table.first("催").structure == "⿰亻崔"  # type: ignore[union-attr]
     assert table.first("山") is None and table.of("山") == []
     assert [(row.text, row.tags) for row in table.of("圊")] == [("⿴囗青", "GH[S] T"), ("⿴囗靑", "JK")]
@@ -33,10 +33,10 @@ def test_babelstone_numbered_components_come_from_note_6(tmp_path: Path) -> None
     path = tmp_path / "IDS.TXT"
     path.write_bytes(IDS_TXT.encode("utf-8"))
     table = descriptions.babelstone(path)
-    assert table.numbered["{42}"] == descriptions.Numbered("{42}", "top of 录", "\uf2d4", "彐")
-    assert table.numbered["{5}"].written is None and table.numbered["{63}"].pua == ""
-    assert table.glyph("{42}") == "彐" and table.glyph("山") == "山"
-    assert table.glyph("{5}") is None and table.glyph("{82}") is None and table.glyph("⿱山隹") is None
+    assert table.numbered["&bsp:42;"] == descriptions.Numbered("&bsp:42;", "top of 录", "\uf2d4", "彐")
+    assert table.numbered["&bsp:5;"].written is None and table.numbered["&bsp:63;"].pua == ""
+    assert table.glyph("&bsp:42;") == "彐" and table.glyph("山") == "山"
+    assert table.glyph("&bsp:5;") is None and table.glyph("&bsp:82;") is None and table.glyph("⿱山隹") is None
 
 
 def test_babelstone_refuses_a_line_it_cannot_read(tmp_path: Path) -> None:
@@ -70,7 +70,7 @@ def test_chise_reads_the_third_field_and_apparent_descriptions(tmp_path: Path) -
     second.write_text("U+3400\t㐀\t⿱卝一\nU-00020000\t𠀀\t𠀀\n", encoding="utf-8")
     table = descriptions.chise([second, first])
     assert [(row.text, row.tags) for row in table.of("亚")] == [("亚", None), ("⿱一业", "apparent")]
-    assert table.first("与").tree().children[0].text == "&CDP-8BBF;"  # type: ignore[union-attr]
+    assert table.first("与").tree().children[0].text == "&chise:CDP-8BBF;"  # type: ignore[union-attr]
     assert list(table.rows) == ["与", "亚", "㐀", "𠀀"]
 
 
@@ -90,5 +90,36 @@ def test_the_pinned_tables_read() -> None:
         pytest.skip("The pinned tables are not in the cache; run `han-decompose fetch`.")
     assert len(tables["babelstone"].rows) == 97680 and len(tables["babelstone"].numbered) == 122
     assert tables["babelstone"].first("催").text == "⿰亻崔"  # type: ignore[union-attr]
-    assert tables["chise"].first("与").text == "⿹&CDP-8BBF;一"  # type: ignore[union-attr]
+    assert tables["chise"].first("与").text == "⿹&chise:CDP-8BBF;一"  # type: ignore[union-attr]
     assert tables["zi-tools"].first("马").text == "⿹𢎘一"  # type: ignore[union-attr]
+
+
+@pytest.mark.parametrize(
+    "text, named, unnamed",
+    [
+        ("⿱{42}氺", "⿱&bsp:42;氺", None),
+        ("⿹&CDP-8BBF;一", "⿹&chise:CDP-8BBF;一", None),
+        ("⿰亻山", "⿰亻山", None),
+        ("⿹#(丿𠃊)一", "⿹#(丿𠃊)一", "#(丿𠃊)"),
+        ("⿹&CDP-0000;一", "⿹&CDP-0000;一", "&CDP-0000;"),
+        ("⿱{9999}氺", "⿱{9999}氺", "{9999}"),
+    ],
+)
+def test_components_are_written_as_the_corpus_identifies_them(text: str, named: str, unnamed: str | None) -> None:
+    names = frozenset({"bsp:42", "chise:CDP-8BBF"})
+    assert descriptions.name_components(text, names) == (named, unnamed)
+    table = descriptions.Table("babelstone", names=names)
+    table.add("字", text)
+    found = table.first("字")
+    assert found is not None and found.unnamed == unnamed
+    if unnamed:
+        with pytest.raises(descriptions.Unnamed, match="has no identifier in the corpus"):
+            found.tree()
+
+
+def test_the_pinned_corpus_names_the_components_it_holds() -> None:
+    try:
+        names = descriptions.corpus_names()
+    except pins.PinError:
+        pytest.skip("The pinned tables are not in the cache; run `han-decompose fetch`.")
+    assert len(names) == 1517 and {"bsp:42", "chise:CDP-8958"} <= names

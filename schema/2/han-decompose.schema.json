@@ -51,6 +51,12 @@
           "pattern": "^x:X-[0-9]{5}$"
         },
         {
+          "pattern": "^bsp:(0|[1-9][0-9]*)$"
+        },
+        {
+          "pattern": "^chise:[^&;\\s:]+$"
+        },
+        {
           "pattern": "^ucv:[0-9a-f]+\\.[1-9][0-9]*$"
         },
         {
@@ -1020,7 +1026,8 @@
                 "no-ink",
                 "unlike-whole",
                 "unreadable-description",
-                "unlike-division"
+                "unlike-division",
+                "unnamed-component"
               ]
             },
             "text": {
@@ -1446,6 +1453,8 @@
             "character",
             "subtree",
             "ledger",
+            "numbered",
+            "entity",
             "adobe-japan1"
           ]
         },

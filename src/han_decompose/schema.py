@@ -40,6 +40,8 @@ COMPONENT_KINDS = {
     "u": "character",
     "ids": "subtree",
     "x": "ledger",
+    "bsp": "numbered",
+    "chise": "entity",
     "aj1": "adobe-japan1",
 }
 

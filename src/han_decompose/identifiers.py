@@ -42,6 +42,8 @@ _COMPONENT = {
     "u": re.compile(rf"{_POINT}(?:\.{_VARIATION})?"),
     "ids": re.compile(rf"{_IDC}.+"),
     "x": re.compile(r"X-[0-9]{5}"),
+    "bsp": re.compile(_NUMBER),
+    "chise": re.compile(r"[^&;\s:]+"),
     "ucv": re.compile(r"[0-9a-f]+\.[1-9][0-9]*"),
     "aj1": re.compile(_NUMBER),
 }
@@ -164,12 +166,15 @@ class UnknownComponent(ValueError):
 
 def component_of(text: str) -> str:
     """The reference of a component as a structure writes it: a character with or without a
-    variation selector, an IDS that starts with an operator, or a token `&…;` that holds a ledger
-    identifier (`&X-00777;`) or an IDS (`&⿸⿹丅丿丨;`)."""
+    variation selector, an IDS that starts with an operator, or a token `&…;` that holds a corpus
+    identifier (`&bsp:42;` for BabelStone's `{42}`, `&chise:CDP-8958;`), a ledger identifier
+    (`&X-00777;`) or an IDS (`&⿸⿹丅丿丨;`)."""
     if text[:1] in OPERATORS:
         return component("ids", text)
     if match := re.fullmatch(r"&(X-[0-9]{5});", text):
         return component("x", match[1])
+    if match := re.fullmatch(r"&(bsp|chise):([^&;\s]+);", text):
+        return component(match[1], match[2])
     if match := re.fullmatch(rf"&({_IDC}.+);", text):
         return component("ids", match[1])
     if len(text) > 1 and not re.fullmatch(rf"[^\x00-\x7f]{_VARIATION_CHARS}", text):
@@ -183,8 +188,8 @@ def written(reference: str) -> str | None:
     kind, value = split_component(reference)
     if kind == "u":
         return "".join(chr(int(point, 16)) for point in value.split("."))
-    if kind == "x":
-        return f"&{value};"
+    if kind in ("x", "bsp", "chise"):
+        return f"&{value};" if kind == "x" else f"&{kind}:{value};"
     if kind == "ids":
         return f"&{value};"
     return None

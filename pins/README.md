@@ -83,6 +83,19 @@ from them by `han-decompose citations`.
 
 ## Sources
 
+### `ids-corpus`
+
+- Source: ids-input IDS corpus (data/ids-corpus.json.gz), <https://github.com/mkpoli/ids-input>
+- Role: candidates
+- Pin: commit f6dd3df481dacd870379075e8f8f739cef62c6ac (2026-11-15); retrieved 2026-11-16.
+- Licence: GPL-2.0-or-later. https://github.com/mkpoli/ids-input/blob/f6dd3df481dacd870379075e8f8f739cef62c6ac/docs/ids-corpus.md: the artifact is GPL-2.0-or-later because CHISE's IDS rows are inside it
+- Attribution: ids-input data/ids-corpus.json.gz, merging BabelStone IDS by Andrew West (魏安), File Date 2025-06-27, and CHISE IDS by the CHISE project; read as candidate structures only, never bundled or redistributed.
+- Limits: Phase 6 of docs/design.md adds zi.tools rows, ids-input's own rows and class rows; the pin moves to the commit that does.
+
+| File | SHA-256 | Address |
+|---|---|---|
+| `ids-corpus.json.gz` | `b6a3cac59ca6809ee5feb1a895525222fdfdd6ba71e374dadeb4b94b53578361` | <https://raw.githubusercontent.com/mkpoli/ids-input/f6dd3df481dacd870379075e8f8f739cef62c6ac/data/ids-corpus.json.gz> |
+
 ### `babelstone`
 
 - Source: BabelStone IDS (Ideographic Description Sequences for CJK Unified Ideographs), <https://www.babelstone.co.uk/CJK/IDS.TXT>

@@ -12,7 +12,7 @@ from dataclasses import dataclass
 
 from .. import __version__
 from .. import identifiers as I
-from ..descriptions import Description
+from ..descriptions import Description, Unnamed
 from ..ids import Node, spelled, walk
 from ..pieces import Glyph
 from ..schema import Json, box
@@ -191,6 +191,14 @@ def _below(node: Node, path: Sequence[int]) -> bool:
         if here.opened is not None:
             return True
     return False
+
+
+def unreadable(error: ValueError, where: str = "") -> tuple[str, str]:
+    """The reason code and sentence of a description that does not read: one that names a component
+    the corpus gives no identifier, or one that is no tree."""
+    if isinstance(error, Unnamed):
+        return "unnamed-component", f"{where}{error}"
+    return "unreadable-description", f"{where}the description does not read: {error}"
 
 
 def skipped(description: Description, code: str, text: str, glyph: str | None = None) -> Json:

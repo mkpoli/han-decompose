@@ -96,7 +96,7 @@ def one(description: Description, drawings: Sequence[Drawing], table: Table, sto
         last = ("no-face", "no font of the chain draws it")
     except ValueError as error:
         readable = False
-        last = ("unreadable-description", f"the description does not read: {error}")
+        last = reading.unreadable(error)
     drawn = [drawing for drawing in drawings if drawing.glyph(selector) is not None]
     gate = gates.gate(table.glyph)
     opening = opener(table)
@@ -110,7 +110,11 @@ def one(description: Description, drawings: Sequence[Drawing], table: Table, sto
             last = (reason.code, f"{drawing.id}: {reason.text}")
             continue
         except (ValueError, RecursionError) as error:
-            last = ("unreadable-description", f"{drawing.id}: the description does not read: {error}")
+            last = (
+                reading.unreadable(error, f"{drawing.id}: ")
+                if isinstance(error, ValueError)
+                else ("unreadable-description", f"{drawing.id}: the description does not read: {error}")
+            )
             continue
         store.glyph(glyph)
         counts.readings += 1

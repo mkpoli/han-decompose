@@ -146,7 +146,7 @@ def survey(
             offered = readings(description, table, holds, target)
         except ValueError as error:
             offered = []
-            last: tuple[str, str] | None = ("unreadable-description", f"unreadable description: {error}")
+            last: tuple[str, str] | None = reading.unreadable(error)
         else:
             last = None
         outcome = None
@@ -161,7 +161,14 @@ def survey(
                     last = (reason.code, f"{drawing.id}, {count(cap, 'component')} deep: {reason.text}")
                     continue
                 except (ValueError, KeyError, RecursionError) as error:
-                    last = ("unreadable-description", f"{drawing.id}: unreadable description: {error}")
+                    last = (
+                        reading.unreadable(error, f"{drawing.id}: ")
+                        if isinstance(error, ValueError)
+                        else (
+                            "unreadable-description",
+                            f"{drawing.id}: unreadable description: {error}",
+                        )
+                    )
                     continue
                 outcome = Outcome(char, readings=rows, opened=cap, fullest=offered[0][0])
                 outcome.glyphs[rows[0]["glyph"]] = glyph.record()

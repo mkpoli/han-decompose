@@ -406,7 +406,7 @@ def read(
         try:
             I.component_of(node.text)
         except ValueError as error:
-            raise Skipped("unreadable-description", f"{error}") from error
+            raise Skipped("unnamed-component", f"{error}") from error
     cutter = cutter_for(glyph, drawings, root, glyph_of)
     try:
         subject = glyph_of(description.subject) or description.subject
