@@ -4,7 +4,9 @@ from collections.abc import Callable
 import pytest
 
 from han_decompose import identifiers as I
-from han_decompose.schema import FormatError, Json, box, point_count, problems, schema, validate
+from han_decompose.schema import FormatError, Json, point_count, problems, schema, validate
+
+LAYER = "9d9dea39-hand:1"
 
 
 def test_the_golden_files_follow_the_format(outlines: Json, cuts: Json) -> None:
@@ -30,28 +32,36 @@ def test_point_counts() -> None:
     assert point_count("MCCL") == 8
 
 
-def _reading(cuts: Json) -> Json:
-    reading: Json = cuts["readings"][0]
+def _reading(cuts: Json, at: int = 0) -> Json:
+    reading: Json = cuts["readings"][at]
     return reading
 
 
 def _resign(cut: Json, **changes: object) -> None:
     cut.update(changes)
-    cut["sig"] = I.sig(cut["component"], cut["contours"])
+    cut["sig"] = I.sig(cut["class"], cut["contours"])
 
 
 def _twice(cuts: Json) -> None:
+    again = copy.deepcopy(_reading(cuts))
+    again["chosen"] = False
+    cuts["readings"].append(again)
+
+
+def _another_chosen(cuts: Json) -> None:
     again = copy.deepcopy(_reading(cuts))
     again["method"] = {"name": "deal", "tool": "han-decompose", "grain": "piece"}
     cuts["readings"].append(again)
 
 
-def _guided(cuts: Json) -> None:
-    _reading(cuts)["method"]["guide"] = "kanjivg"
+def _retarget(cuts: Json, selector: str, subject: str) -> None:
+    for reading in cuts["readings"]:
+        reading.update(glyph=I.glyph_id(cuts["font"], selector))
+    _reading(cuts).update(subject=subject)
 
 
 OUTLINE_FAULTS: list[tuple[str, Callable[[Json], None]]] = [
-    ("format: 'han-decompose/outlines@1.0' was expected", lambda o: o.update(format="han-decompose/outlines@2.0")),
+    ("format: 'han-decompose/outlines@2.0' was expected", lambda o: o.update(format="han-decompose/outlines@1.0")),
     ("q: 100 was expected", lambda o: o.update(q=4)),
     ("'u50AC' does not match", lambda o: o["glyphs"].update({"u50AC": o["glyphs"]["U+50AC"]})),
     ("'U+050AC' does not match", lambda o: o["glyphs"].update({"U+050AC": o["glyphs"]["U+50AC"]})),
@@ -64,45 +74,85 @@ OUTLINE_FAULTS: list[tuple[str, Callable[[Json], None]]] = [
     ("ascending order", lambda o: o["glyphs"]["U+50AC"]["pieces"].reverse()),
     ("U+50AC: the box is", lambda o: o["glyphs"]["U+50AC"]["box"].__setitem__(0, 0)),
     ("copyright: 'a\\nb' holds a control character", lambda o: o.update(copyright="a\nb")),
+    ("'sources' was unexpected", lambda o: o.update(sources=[])),
+    (
+        "a stroke names contour 11 of 11",
+        lambda o: o["glyphs"]["U+50AC"].update(strokes=[{"type": 2, "contours": [11]}]),
+    ),
+    ("strokes/0/type: 8 is greater", lambda o: o["glyphs"]["U+50AC"].update(strokes=[{"type": 8, "contours": [0]}])),
 ]
 
 CUT_FAULTS: list[tuple[str, Callable[[Json], None]]] = [
-    ("terms: 'notices' is a required property", lambda c: c["terms"].pop("notices")),
+    ("'design' is a required property", lambda c: c.pop("design")),
+    ("'terms' was unexpected", lambda c: c.update(terms={})),
     ("status: 'fine' is not one of", lambda c: _reading(c)["cuts"][0].update(status="fine")),
-    ("component: '亻' is not valid", lambda c: _reading(c)["cuts"][0].update(component="亻")),
-    ("'licence' is a required property", lambda c: _reading(c)["cuts"][0].pop("licence")),
+    ("class: '亻' is not valid", lambda c: _reading(c)["cuts"][0].update(**{"class": "亻"})),
+    ("class: 'bs:42' is not valid", lambda c: _reading(c)["cuts"][0].update(**{"class": "bs:42"})),
+    ("'division' is a required property", lambda c: _reading(c)["cuts"][0].pop("division")),
+    ("'licence' was unexpected", lambda c: _reading(c)["cuts"][0].update(licence={})),
     ("code: 'unknown' is not one of", lambda c: c["skipped"][0]["reason"].update(code="unknown")),
-    ("opened/0: 'ids' is a required property", lambda c: _reading(c)["opened"][0].pop("ids")),
+    ("opened/0: 'text' is a required property", lambda c: _reading(c)["opened"][0].pop("text")),
     ("opened/0/path: [] should be non-empty", lambda c: _reading(c)["opened"][0].update(path=[])),
     ("text: 'two\\tfields' holds a control character", lambda c: c["skipped"][0]["reason"].update(text="two\tfields")),
+    (
+        "basis: 'guess' is not one of",
+        lambda c: _reading(c)["cuts"][0].update(style={"member": "u:4EBB", "basis": "guess", "tier": "machine"}),
+    ),
     ("not of noto-sans-cjk-jp@2.004", lambda c: _reading(c).update(glyph="jigmo@20250912/U+50AC")),
     ("is not the subject's, u:5C71", lambda c: _reading(c).update(subject="u:5C71")),
-    ("does not name ⿰亻隹 in babelstone", lambda c: _reading(c).update(ids="⿰亻隹")),
-    ("does not name ⿲亻丨备 in chise", lambda c: c.update(source="chise")),
-    ("babelstone.a674f7d6 does not name ⿱山佳", lambda c: _reading(c)["opened"][0].update(ids="⿱山佳")),
-    ("read twice under babelstone.9d9dea39", _twice),
+    ("does not name ⿰亻隹", lambda c: _reading(c).update(text="⿰亻隹")),
+    ("does not name ⿲亻丨备", lambda c: c["skipped"][0].update(text="⿲亻丨备备")),
+    ("read twice under s.9d9dea39 by hand", _twice),
     ("identifier does not name", lambda c: _reading(c)["cuts"][0].update(path=[1])),
-    ("u:5C71 is not the component written 亻", lambda c: _resign(_reading(c)["cuts"][0], component="u:5C71")),
-    ("signature is not that of its component and contours", lambda c: _reading(c)["cuts"][0].update(contours=[9])),
-    ("signature is not that of its component and contours", lambda c: _reading(c)["cuts"][0].update(sig="9fccad38")),
+    ("u:5C71 is not the component at 0", lambda c: _resign(_reading(c)["cuts"][0], **{"class": "u:5C71"})),
+    ("the structure has no node at 2", lambda c: _reading(c)["cuts"][0].update(path=[2])),
+    ("signature is not that of its class and contours", lambda c: _reading(c)["cuts"][0].update(contours=[9])),
+    ("signature is not that of its class and contours", lambda c: _reading(c)["cuts"][0].update(sig="9fccad38")),
     ("not ascending", lambda c: _reading(c)["cuts"][0].update(contours=[10, 9])),
-    ("differ from the file's terms", lambda c: _reading(c)["cuts"][0]["licence"].update(outline="CC0-1.0")),
-    ("guide's licence does not follow", lambda c: _reading(c)["cuts"][0]["licence"].update(guide="CC-BY-SA-3.0")),
-    ("guide's licence does not follow", _guided),
-    ("the glyph has 11 contours", lambda c: _resign(_reading(c)["cuts"][0], contours=[9, 11])),
-    ("~0: the box is [0, 0, 1, 1]", lambda c: _reading(c)["cuts"][0].update(box=[0, 0, 1, 1])),
-    ("contours [0] are also at 1.0", lambda c: _resign(_reading(c)["cuts"][2], contours=[0, 1])),
-    ("marked complete with contours unclaimed", lambda c: _reading(c)["cuts"].pop()),
+    ("holds contours [11] its layer lacks", lambda c: _resign(_reading(c)["cuts"][0], contours=[9, 11])),
+    ("~9d9dea39-hand:0: the box is [0, 0, 1, 1]", lambda c: _reading(c)["cuts"][0].update(box=[0, 0, 1, 1])),
+    ("contours [9] are also at 0", lambda c: _resign(_reading(c)["cuts"][1], contours=[8, 9])),
+    ("marked complete with contours unclaimed", lambda c: _reading(c, 1)["cuts"].pop()),
+    ("marked complete with contours unclaimed", lambda c: _reading(c)["cuts"].pop(0)),
+    (
+        "holds contours [8] its layer lacks",
+        lambda c: _resign(_reading(c)["cuts"][1], contours=[0, 1, 2, 3, 4, 5, 6, 7]),
+    ),
+    ("no cut ", lambda c: _reading(c, 1).update(layer=["9d9dea39-hand:5"])),
+    ("exactly one accepted reading of s.9d9dea39 is chosen", lambda c: _reading(c).update(chosen=False)),
+    (
+        "exactly one accepted reading of s.9d9dea39 is chosen",
+        _another_chosen,
+    ),
+    ("does not name ⿰亻崔", lambda c: c["drawn"]["U+50AC"][0].update(structure="s.00000000")),
+    ("exactly one drawn IDS is marked first", lambda c: c["drawn"]["U+50AC"][0].update(first=False)),
+    ("exactly one drawn IDS is marked first", lambda c: c["drawn"]["U+50AC"].append({**c["drawn"]["U+50AC"][0]})),
+    (
+        "no reading of s.a674f7d6 on the glyph itself",
+        lambda c: c["drawn"]["U+50AC"][0].update(structure="s.a674f7d6", text="⿱山隹"),
+    ),
+    ("which no reading holds", lambda c: c["drawn"]["U+50AC"][0]["readings"].append(["9d9dea39-hand:7"])),
+    ("s.00000000 does not name ⿱山隹", lambda c: _reading(c)["opened"][0].update(structure="s.00000000")),
+    ("has no reading of its layer", lambda c: _reading(c)["opened"][0].update(path=[0])),
+    ("is not read as it says", lambda c: _reading(c)["opened"][0].update(member="u:5C71")),
+    ("the place is 'T'", lambda c: _reading(c)["cuts"][0].update(place="T")),
+    ("the node stands at ''", lambda c: _reading(c)["cuts"][0].update(place="L", path=[])),
+    ("the frame is [0, 0, 1, 1]", lambda c: _reading(c)["cuts"][0].update(frame=[0, 0, 1, 1])),
+    (
+        "the box has more than two decimals",
+        lambda c: _reading(c)["cuts"][0].update(box=[15.981, -78.14, 335.21, 836.36]),
+    ),
+    (
+        "the frame has more than two decimals",
+        lambda c: _reading(c)["cuts"][0].update(frame=[15.98, -78.14, 954.091, 836.36]),
+    ),
+    ("the gap has more than two decimals", lambda c: _reading(c)["cuts"][0].update(gap=1.234)),
+    ("a score has more than four decimals", lambda c: _reading(c)["cuts"][0].update(evidence={"fit": 0.91234})),
+    ("is a structure and has its identifier", lambda c: c["skipped"][0].pop("structure")),
     ("U+50AD: the outline file does not hold the glyph", lambda c: _retarget(c, "U+50AD", "u:50AD")),
     ("U+507A: the outline file does not hold the glyph", lambda c: c["skipped"][0].update(glyph=c["font"] + "/U+507A")),
+    ("U+50AD: the outline file does not hold the glyph", lambda c: c["drawn"].update({"U+50AD": c["drawn"]["U+50AC"]})),
 ]
-
-
-def _retarget(cuts: Json, selector: str, subject: str) -> None:
-    reading = _reading(cuts)
-    reading.update(glyph=I.glyph_id(cuts["font"], selector), subject=subject)
-    for cut in reading["cuts"]:
-        cut["id"] = I.cut_id(reading["glyph"], reading["description"], cut["path"])
 
 
 @pytest.mark.parametrize("expected, fault", OUTLINE_FAULTS)
@@ -117,25 +167,20 @@ def test_a_faulty_cut_file_is_refused(outlines: Json, cuts: Json, expected: str,
     assert any(expected in problem for problem in problems("cuts", cuts, outlines)), problems("cuts", cuts, outlines)
 
 
-def test_an_inner_node_holds_what_its_children_hold(outlines: Json, cuts: Json) -> None:
-    reading = _reading(cuts)
-    inner = copy.deepcopy(reading["cuts"][1])
-    inner.update(path=[1], place="R", text="崔", id=I.cut_id(reading["glyph"], reading["description"], [1]))
-    _resign(inner, component="u:5D14", contours=[0, 1, 2, 3, 4, 5, 6, 7])
-    inner["box"] = box(outlines["glyphs"]["U+50AC"]["contours"], inner["contours"])
-    reading["cuts"].append(inner)
-    assert any("lacks a contour its descendant at 1.1 holds" in problem for problem in problems("cuts", cuts, outlines))
-    _resign(inner, contours=[0, 1, 2, 3, 4, 5, 6, 7, 8])
-    inner["box"] = box(outlines["glyphs"]["U+50AC"]["contours"], inner["contours"])
+def test_an_opened_node_is_a_cut_of_the_layer_above(cuts: Json) -> None:
+    assert _reading(cuts, 1)["layer"] == [LAYER]
+    assert _reading(cuts)["cuts"][1]["id"].endswith("~" + LAYER)
+
+
+def test_a_text_that_is_no_structure_is_skipped_without_one(outlines: Json, cuts: Json) -> None:
+    row = cuts["skipped"][0]
+    row.pop("structure")
+    row["text"] = "&chise:U-i001+2FF1;千北"
     validate("cuts", cuts, outlines)
 
 
-def test_a_guided_reading_carries_the_guide_licence(outlines: Json, cuts: Json) -> None:
-    cuts["terms"]["guide"] = "CC-BY-SA-3.0"
-    validate("cuts", cuts, outlines)
-    _guided(cuts)
-    for cut in _reading(cuts)["cuts"]:
-        cut["licence"]["guide"] = "CC-BY-SA-3.0"
+def test_a_style_names_how_a_cut_is_drawn(outlines: Json, cuts: Json) -> None:
+    _reading(cuts)["cuts"][0]["style"] = {"member": "u:4EBB", "basis": "match", "likeness": 0.9123, "tier": "machine"}
     validate("cuts", cuts, outlines)
 
 
@@ -147,6 +192,54 @@ def test_cuts_are_checked_against_the_outlines_of_their_font(outlines: Json, cut
     outlines["font"] = "jigmo@20250912"
     with pytest.raises(FormatError, match="The outlines are of jigmo@20250912"):
         validate("cuts", cuts, outlines)
+
+
+def test_glyphs_are_selected_by_code_point_index_or_name() -> None:
+    for selector in ("U+50AC", "U+845B.E0100", "gid.1234", "name.u793e-j", "name.u793e@3"):
+        validate("outlines", _empty({selector: _square()}))
+    for selector in ("gid.01", "name.U793E", "name."):
+        assert problems("outlines", _empty({selector: _square()}))
+
+
+def _square() -> Json:
+    return {
+        "contours": [["MLLL", [0, 0, 0, 100, 100, 100, 100, 0]]],
+        "pieces": [[0]],
+        "box": [0, 0, 1, 1],
+        "advance": 1000,
+    }
+
+
+def _empty(glyphs: Json) -> Json:
+    return {
+        "format": "han-decompose/outlines@2.0",
+        "font": "glyphwiki@20261115",
+        "licence": "LicenseRef-GlyphWiki",
+        "copyright": "GlyphWiki",
+        "em": 1000,
+        "q": 100,
+        "glyphs": glyphs,
+    }
+
+
+def test_stroke_files() -> None:
+    file = {
+        "format": "han-decompose/strokes@2.0",
+        "font": "glyphwiki@20261115",
+        "licence": "LicenseRef-GlyphWiki",
+        "copyright": "GlyphWiki",
+        "glyphs": {
+            "name.u793e-j": [
+                {
+                    "cut": "glyphwiki@20261115/name.u793e-j~0a1c0fdb-kage:0",
+                    "strokes": [{"type": "㇑", "method": "neck", "contours": [0, 1], "tier": "machine"}],
+                    "outline": {"0": [["MLLL", [0, 0, 0, 100, 100, 100, 100, 0]]]},
+                }
+            ]
+        },
+    }
+    validate("strokes", file)
+    assert problems("strokes", {**file, "glyphs": {"name.u793e-j": [{"cut": "x", "strokes": []}]}})
 
 
 def test_registry_files() -> None:
@@ -165,11 +258,16 @@ def test_registry_files() -> None:
         "licence": "CC0-1.0",
         "copyright": "No rights reserved.",
         "style": "serif",
+        "design": "jigmo",
+        "grain": "piece",
     }
-    fonts = {"format": "han-decompose/fonts@1.0", "fonts": [font], "chains": {"serif": ["jigmo2@20250912"]}}
+    design = {"id": "jigmo", "name": "Jigmo", "style": "serif", "chain": ["jigmo2@20250912"], "members": []}
+    fonts = {"format": "han-decompose/fonts@2.0", "fonts": [font], "designs": [design]}
     validate("fonts", fonts)
     assert problems("fonts", {**fonts, "fonts": [{**font, "sha256": "5da3"}]})
-    assert problems("fonts", {**fonts, "chains": {"serif": []}})
+    assert problems("fonts", {**fonts, "designs": [{**design, "chain": []}]})
+    assert problems("fonts", {**fonts, "fonts": [{**font, "grain": "stroke"}]})
+    assert problems("fonts", {"format": "han-decompose/fonts@2.0", "fonts": [font], "chains": {}})
     source = {
         "id": "babelstone",
         "name": "BabelStone IDS",
@@ -180,5 +278,41 @@ def test_registry_files() -> None:
         "licence": "LicenseRef-BabelStone-IDS",
         "attribution": "BabelStone IDS by Andrew West",
     }
-    validate("sources", {"format": "han-decompose/sources@1.0", "sources": [source]})
-    assert problems("sources", {"format": "han-decompose/sources@1.0", "sources": [{**source, "role": "oracle"}]})
+    validate("sources", {"format": "han-decompose/sources@2.0", "sources": [source]})
+    assert problems("sources", {"format": "han-decompose/sources@2.0", "sources": [{**source, "role": "oracle"}]})
+
+
+def test_forms_libraries_and_the_manifest() -> None:
+    cut = "noto-sans-cjk-jp@2.004/U+50AC~9d9dea39-hand:0"
+    forms = {
+        "format": "han-decompose/forms@2.0",
+        "design": "source-han-sans",
+        "forms": {"u:4EBB": {"u:4EBB": {"cut": cut, "sig": "933d670e", "basis": "kage", "hosts": 2}}},
+    }
+    validate("forms", forms)
+    assert problems("forms", {**forms, "forms": {"u:4EBB": {"u:4EBB": {"cut": cut, "sig": "933d670e", "basis": "x"}}}})
+    library = {
+        "format": "han-decompose/library@2.0",
+        "design": "source-han-sans",
+        "library": {"u:4EBB": {"u:4EBB": {"L": [cut]}}},
+    }
+    validate("library", library)
+    assert problems("library", {**library, "library": {"u:4EBB": {"u:4EBB": {"L": []}}}})
+    manifest = {
+        "format": "han-decompose/manifest@2.0",
+        "release": "v2.0.0",
+        "tool": {"name": "han-decompose", "version": "0.0.1"},
+        "fonts": [{"id": "noto-sans-cjk-jp@2.004", "sha256": "0" * 64}],
+        "counts": {
+            "noto-sans-cjk-jp@2.004": {
+                "readings": 1,
+                "skipped": 0,
+                "cuts": {"accepted": 3},
+                "structures": 1,
+                "classes": 3,
+            }
+        },
+        "files": [{"path": "fonts.json", "bytes": 10, "sha256": "1" * 64}],
+    }
+    validate("manifest", manifest)
+    assert problems("manifest", {**manifest, "counts": {"noto-sans-cjk-jp@2.004": {"readings": 1}}})

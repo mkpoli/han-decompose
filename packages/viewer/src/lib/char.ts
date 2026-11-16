@@ -1,5 +1,5 @@
 /** What a release holds for one glyph selector: per font, its outline and, per source, its readings and skipped attempts. */
-import type { FontEntry, Glyph, Reading, Skipped } from "han-decompose";
+import type { FontEntry, Glyph, Reading, Skipped } from "./format1";
 import { blockOf } from "./addressing.ts";
 import { chainFonts, cutsShard, glyph, sourcesOfFont, type Release } from "./data.ts";
 import { selectorRef } from "./ids.ts";

@@ -34,7 +34,7 @@ def pinned() -> tuple[dict[str, object], list[dict[str, object]], descriptions.T
         table = descriptions.table("babelstone")
     except pins.PinError:
         pytest.skip("The pinned tables are not in the cache; run `han-decompose fetch`.")
-    return file, registry, table, [Drawing(face) for face in pinned_chain("sans").faces]
+    return file, registry, table, [Drawing(face) for face in pinned_chain(*numbered_forms.DESIGNS).faces]
 
 
 def test_the_forms_that_are_whole_contours_of_a_host_are_taken_over(tmp_path: Path) -> None:
@@ -49,13 +49,13 @@ def test_the_forms_that_are_whole_contours_of_a_host_are_taken_over(tmp_path: Pa
         (cut,) = row["cuts"]
         assert row["method"] == {"name": "axis", "tool": "han-compose", "commit": "bf13d98", "grain": "contour"}
         assert outcome.form == {"cut": cut["id"], "sig": cut["sig"], "basis": "imported"}
-        assert cut["component"] == outcome.component and outcome.library == {cut["place"]: [cut["id"]]}
+        assert cut["class"] == outcome.component and outcome.library == {cut["place"]: [cut["id"]]}
         assert cut["evidence"]["referenceGlyph"].startswith("babelstone-han-pua@1.472/U+")
         assert cut["evidence"]["importedFrom"] == "han-compose-numbered-forms"
         for glyph, record in outcome.glyphs.items():
             store.record(*I.split_glyph_id(glyph), record)
         store.reading(row)
-        store.form("sans", outcome.component, outcome.form, outcome.library)
+        store.form("source-han-sans", outcome.component, outcome.component, outcome.form, outcome.library)
     files = dict(store.files())
     for name, content in files.items():
         kind = name.split("/")[0]
@@ -64,32 +64,33 @@ def test_the_forms_that_are_whole_contours_of_a_host_are_taken_over(tmp_path: Pa
     store.write(tmp_path / "import")
     # In a release the imported form stands, and a library lists only cuts the release holds.
     other = tmp_path / "lift"
-    gone = "noto-sans-cjk-jp@2.004/U+4E00~babelstone.00000000~0"
+    gone = "noto-sans-cjk-jp@2.004/U+4E00~00000000-lift:0"
     first = found[0]
     assert first.form is not None
     place = next(iter(first.library))
-    forms = {first.component: {"cut": gone, "sig": "00000000", "basis": "reference"}}
+    name = first.component
+    forms = {
+        "format": "han-decompose/forms@2.0",
+        "design": "source-han-sans",
+        "forms": {name: {name: {"cut": gone, "sig": "00000000", "basis": "reference"}}},
+    }
+    write(other / "forms" / "source-han-sans.json.gz", dumps(forms))
+    library = {name: {name: {place: [gone], "B": [gone]}}}
     write(
-        other / "forms" / "sans.json.gz", dumps({"format": "han-decompose/forms@1.0", "chain": "sans", "forms": forms})
-    )
-    library = {first.component: {place: [gone], "B": [gone]}}
-    write(
-        other / "library" / "sans.json.gz",
-        dumps({"format": "han-decompose/library@1.0", "chain": "sans", "library": library}),
+        other / "library" / "source-han-sans.json.gz",
+        dumps({"format": "han-decompose/library@2.0", "design": "source-han-sans", "library": library}),
     )
     built = release.Release(tmp_path / "out", "v0.0.1")
     built.shards([tmp_path / "import", other])
     built.indexes()
     assert built.problems == []
     out = tmp_path / "out"
-    assert (
-        json.loads(gzip.decompress((out / "forms" / "sans.json.gz").read_bytes()))["forms"][first.component]
-        == first.form
-    )
-    listed = json.loads(gzip.decompress((out / "library" / "sans.json.gz").read_bytes()))["library"][first.component]
-    assert listed == {place: [first.form["cut"]]}
+    forms_file = json.loads(gzip.decompress((out / "forms" / "source-han-sans.json.gz").read_bytes()))
+    assert forms_file["forms"][name][name] == first.form
+    listed = json.loads(gzip.decompress((out / "library" / "source-han-sans.json.gz").read_bytes()))["library"]
+    assert listed[name][name] == {place: [first.form["cut"]]}
     # A form whose cut no reading holds stops the build.
     alone = release.Release(tmp_path / "alone", "v0.0.1")
     alone.shards([other])
     alone.indexes()
-    assert alone.problems == [f"forms/sans: the form of {first.component} names a cut no reading holds."]
+    assert alone.problems == [f"forms/source-han-sans: the form of {name} in {name} names a cut no reading holds."]

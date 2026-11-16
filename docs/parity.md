@@ -4,8 +4,8 @@ han-compose addresses a cut as indices into the contours of the host glyph. Thos
 same contours here only if both projects read a glyph the same way: the same font of the chain,
 the same contours in the same order, the same pen commands and the same points.
 
-`han-decompose parity <export> --chain <name>` checks that against a han-compose web export
-(format 6). For every record of the export that holds a glyph, it reads the glyph from the pinned
+`han-decompose parity <export> --design <id>…` checks that against a han-compose web export
+(format 6), reading the glyphs in the fonts of the designs named in order (`source-han-sans`, `plangothic` by default). For every record of the export that holds a glyph, it reads the glyph from the pinned
 fonts, brings the points from hundredths of a unit to the export's quarter units, and requires
 equality with the record's weight-400 outline. It also requires that the export took the glyph
 from the same font of the chain, that no glyph record is left without a selector that reaches

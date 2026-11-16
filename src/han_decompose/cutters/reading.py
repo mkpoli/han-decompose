@@ -1,38 +1,32 @@
-"""Readings and cuts as the format writes them (`docs/format.md`, 4.4), built from what a cutter
-found."""
+"""Readings and cuts as the format writes them (`docs/format.md`, 4.3), built from what a cutter
+found.
+
+A cutter reads one description of a glyph as a tree, a leaf of which it may open into its
+component's own description. The format keeps each opened node as a layer: the node is a cut of the
+layer above, and the cuts of its own parts are a reading of their own, whose cut identifiers name
+the step above.
+"""
 
 from collections.abc import Sequence
+from dataclasses import dataclass
 
-from .. import __version__, pins
+from .. import __version__
 from .. import identifiers as I
-from ..descriptions import Description
+from ..descriptions import Description, Unnamed
 from ..ids import Node, spelled, walk
+from ..ids import place as ids_place
 from ..pieces import Glyph
 from ..schema import Json, box
 
 TOOL = "han-decompose"
 
-_PLACES = {"⿰": "LR", "⿱": "TB", "⿲": "LCR", "⿳": "TMB"}
-
-
-def place(operator: str, index: int) -> str:
-    """Where an operand stands in its parent: a letter in a row or a stack, else the operator and
-    the operand's index."""
-    return _PLACES[operator][index] if operator in _PLACES else f"{operator}{index}"
+place = ids_place
 
 
 def number(value: float, digits: int) -> float | int:
     """A number with at most `digits` decimals, whole where it is whole."""
     rounded = round(float(value), digits)
     return int(rounded) if rounded == int(rounded) else rounded
-
-
-def licence(font: str, source: str, guide: str | None = None) -> Json:
-    """The licences a cut names: its font's, its description source's, and its guide's."""
-    out = {"outline": pins.font(font)["licence"], "description": pins.source(source)["licence"]}
-    if guide:
-        out["guide"] = pins.source(guide)["licence"]
-    return out
 
 
 def frame(glyph: Glyph, groups: Sequence[Sequence[int]]) -> list[float]:
@@ -45,6 +39,37 @@ def subject_of(description: Description) -> str:
     return I.component_of(description.subject)
 
 
+@dataclass(frozen=True)
+class Layer:
+    """One layer of a tree: the steps from the glyph to it, its structure's text and its node."""
+
+    steps: tuple[str, ...]
+    text: str
+    node: Node
+    #: The path of the node from the root of the whole tree.
+    at: tuple[int, ...]
+
+
+def layers(description: Description, root: Node, method: str) -> list[Layer]:
+    """The layers of a tree: the glyph's own, then one for each node that was opened, in the order
+    the tree is walked."""
+    found = [Layer((), description.structure, root, ())]
+
+    def visit(layer: Layer, node: Node, path: tuple[int, ...]) -> None:
+        for index, child in enumerate(node.children):
+            at = (*path, index)
+            if child.opened is not None:
+                step = I.step(layer.text, method, at[len(layer.at) :])
+                inner = Layer((*layer.steps, step), child.opened, child, at)
+                found.append(inner)
+                visit(inner, child, at)
+            else:
+                visit(layer, child, at)
+
+    visit(found[0], root, ())
+    return found
+
+
 def cut(
     glyph: Glyph,
     description: Description,
@@ -53,25 +78,35 @@ def cut(
     node: Node,
     contours: Sequence[int],
     status: str = "accepted",
+    method: str = "deal",
+    division: str = "machine",
     **more: object,
 ) -> Json:
-    """One cut: a node of the reading's tree with its contours."""
+    """One cut: a node of the tree with its contours. Its path is that of its layer."""
     indices = sorted(contours)
     component = I.component_of(node.text)
-    parent = root
-    for index in path[:-1]:
+    layer = max(
+        (
+            one
+            for one in layers(description, root, method)
+            if tuple(path[: len(one.at)]) == one.at and (not one.at or len(one.at) < len(path))
+        ),
+        key=lambda one: len(one.at),
+    )
+    local = tuple(path[len(layer.at) :])
+    parent = layer.node
+    for index in local[:-1]:
         parent = parent.children[index]
     out: Json = {
-        "id": I.cut_id(I.glyph_id(glyph.font, glyph.selector), description.id, path),
+        "id": I.cut_id(I.glyph_id(glyph.font, glyph.selector), [*layer.steps, I.step(layer.text, method, local)]),
         "sig": I.sig(component, indices),
-        "path": list(path),
-        "place": place(parent.operator or "", path[-1]) if path else "",
-        "component": component,
-        "text": node.text,
+        "path": list(local),
+        "place": place(parent.operator or "", local[-1]) if local else "",
+        "class": component,
         "contours": indices,
         "box": box(glyph.contours, indices),
+        "division": division,
         "status": status,
-        "licence": licence(glyph.font, description.source),
     }
     out.update({key: value for key, value in more.items() if value is not None})
     return out
@@ -85,50 +120,93 @@ def reading(
     grain: str,
     cuts: list[Json],
     evidence: Json | None = None,
-) -> Json:
-    """One reading of a glyph under a description."""
-    claimed = {index for row in cuts for index in row["contours"]}
-    paths = {tuple(row["path"]) for row in cuts}
-    leaves = [path for path, node in walk(root) if node.leaf]
-    out: Json = {
-        "glyph": I.glyph_id(glyph.font, glyph.selector),
-        "subject": subject_of(description),
-        "description": description.id,
-        "ids": description.text,
-        "tree": spelled(root),
-        "method": {"name": method, "tool": TOOL, "version": __version__, "grain": grain},
-        "complete": claimed == set(range(len(glyph.contours))) and all(path in paths for path in leaves),
-        "cuts": sorted(cuts, key=lambda row: row["path"]),
-    }
-    if description.tags:
-        out["tags"] = description.tags
-    opened = [
-        {
-            "path": list(path),
-            "component": I.component_of(node.text),
-            "description": I.description_id(description.source, node.opened),
-            "ids": node.opened,
+) -> list[Json]:
+    """The readings of a glyph under a description: the glyph's own, and one for each opened node
+    that has cuts. `evidence` belongs to the glyph's own."""
+    glyph_id = I.glyph_id(glyph.font, glyph.selector)
+    by_layer: dict[tuple[str, ...], list[Json]] = {}
+    for row in cuts:
+        by_layer.setdefault(tuple(I.split_cut_id(row["id"])[1][:-1]), []).append(row)
+    held = {row["id"]: row["contours"] for row in cuts}
+    out = []
+    for layer in layers(description, root, method):
+        mine = by_layer.get(layer.steps)
+        if mine is None:
+            continue
+        universe = (
+            set(range(len(glyph.contours))) if not layer.steps else set(held.get(I.cut_id(glyph_id, layer.steps), ()))
+        )
+        paths = {tuple(row["path"]) for row in mine}
+        inside = _leaves(layer.node)
+        opened = [
+            {
+                "path": list(path),
+                "member": I.component_of(node.text),
+                "structure": I.structure_id(node.opened or ""),
+                "text": node.opened,
+            }
+            for path, node in walk(layer.node)
+            if path and node.opened is not None and not _below(layer.node, path)
+        ]
+        row_out: Json = {
+            "glyph": glyph_id,
+            "subject": subject_of(description) if not layer.steps else I.component_of(layer.node.text),
+            "layer": list(layer.steps),
+            "structure": I.structure_id(layer.text),
+            "text": layer.text,
+            "tree": spelled(layer.node),
+            "method": {"name": method, "tool": TOOL, "version": __version__, "grain": grain},
+            "complete": {index for row in mine for index in row["contours"]} == universe
+            and all(path in paths for path in inside),
+            "chosen": all(row["status"] in ("accepted", "reviewed-right") for row in mine),
+            "cuts": sorted(mine, key=lambda row: row["path"]),
         }
-        for path, node in walk(root)
-        if node.opened is not None
-    ]
-    if opened:
-        out["opened"] = opened
-    if evidence:
-        out["evidence"] = evidence
+        if opened:
+            row_out["opened"] = opened
+        if evidence and not layer.steps:
+            row_out["evidence"] = evidence
+        out.append(row_out)
     return out
+
+
+def _leaves(node: Node) -> list[tuple[int, ...]]:
+    """The paths of the leaves of a layer: a node opened into a layer of its own stands as one."""
+    out = []
+    for path, inner in walk(node):
+        if path and (inner.leaf or inner.opened is not None) and not _below(node, path):
+            out.append(path)
+    return out
+
+
+def _below(node: Node, path: Sequence[int]) -> bool:
+    """Whether a node of a layer lies inside an opened node, which belongs to a layer below."""
+    here = node
+    for index in path[:-1]:
+        here = here.children[index]
+        if here.opened is not None:
+            return True
+    return False
+
+
+def unreadable(error: ValueError, where: str = "") -> tuple[str, str]:
+    """The reason code and sentence of a description that does not read: one that names a component
+    the corpus gives no identifier, or one that is no tree."""
+    if isinstance(error, Unnamed):
+        return "unnamed-component", f"{where}{error}"
+    return "unreadable-description", f"{where}the description does not read: {error}"
 
 
 def skipped(description: Description, code: str, text: str, glyph: str | None = None) -> Json:
     """An attempt that closed no reading."""
     out: Json = {
         "subject": subject_of(description),
-        "description": description.id,
-        "ids": description.text,
+        "layer": [],
+        "text": description.structure,
         "reason": {"code": code, "text": text},
     }
+    # A text that does not start with an operator is no structure and has no identifier.
+    if description.structure[:1] in I.OPERATORS:
+        out["structure"] = I.structure_id(description.structure)
     if glyph:
         out["glyph"] = glyph
-    if description.tags:
-        out["tags"] = description.tags
     return out

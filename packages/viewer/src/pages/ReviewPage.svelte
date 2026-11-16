@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { VerdictRow } from "han-decompose";
+  import type { VerdictRow } from "../lib/format1";
   import { chainOf, cutTableSources, forms, postVerdict, verdicts as loadVerdicts, weakestCuts, type QueueRow, type Release } from "../lib/data.ts";
   import { n, t } from "../lib/i18n.svelte.ts";
   import Help from "../ui/Help.svelte";

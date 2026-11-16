@@ -35,7 +35,7 @@ from fontTools.svgLib.path import parse_path
 from .. import descriptions, pins
 from .. import geometry as G
 from .. import identifiers as I
-from ..descriptions import Description, Table
+from ..descriptions import Description, Table, name_components, token
 from ..ids import Node, leaves, parse, spelled, walk, without_notes
 from ..outline import Chain, Face
 from ..pieces import Drawing, Glyph
@@ -70,7 +70,7 @@ ENCLOSING = frozenset("⿴⿵⿶⿷⿸⿹⿺⿼⿽")
 #: The operators whose operands make a component's library of places.
 LEARNED = frozenset("⿰⿱⿸⿺⿵⿹⿶⿴⿷")
 #: The source of the descriptions a kind of component is found in.
-SOURCE_OF = {"entity": "chise", "chain": "zi-tools", "numbered": "babelstone"}
+SOURCE_OF = {"entity": "chise", "numbered": "babelstone"}
 #: The source a subtraction is recorded in.
 REGISTRY = "ids-input-components"
 
@@ -111,9 +111,9 @@ def recipes(component: Json, table: Table) -> list[Recipe]:
             seen.add(key)
             found.append(recipe)
 
-    written = component.get("subtraction") or ""
+    written, unnamed = name_components(component.get("subtraction") or "", table.names)
     try:
-        node: Node | None = parse(without_notes(written)) if written else None
+        node: Node | None = parse(without_notes(written)) if written and unnamed is None else None
     except ValueError:
         node = None
     if node is not None:
@@ -376,6 +376,12 @@ def basis(form: Lift) -> str:
     return "agree" if form.agree else "single"
 
 
+def one(rows: list[Json]) -> Json:
+    """The one reading a host without opened components gives."""
+    (row,) = rows
+    return row
+
+
 def record(got: Lift, text: str, reference_glyph: str | None = None) -> Json:
     """A lift as a reading of its host glyph: the component's cut, and each part's where the
     parts can be told apart."""
@@ -399,9 +405,9 @@ def record(got: Lift, text: str, reference_glyph: str | None = None) -> Json:
     if recipe.op == "㇯":
         # The description is the component's own: the host without its parts. Its root is the
         # component, and the parts are no part of it.
-        cuts = [reading.cut(glyph, description, root, (), root, kept, status, **more)]
-        return reading.reading(
-            glyph, description, root, "lift", "piece", cuts, {"match": got.match, "margin": got.margin}
+        cuts = [reading.cut(glyph, description, root, (), root, kept, status, "lift", **more)]
+        return one(
+            reading.reading(glyph, description, root, "lift", "piece", cuts, {"match": got.match, "margin": got.margin})
         )
     paths = {node.text: path for path, node in walk(root) if node.leaf}
     nodes = {path: node for path, node in walk(root)}
@@ -417,8 +423,10 @@ def record(got: Lift, text: str, reference_glyph: str | None = None) -> Json:
             under = [other for at, other in held.items() if at[: len(path) - 1] == path[:-1]]
             extra["frame"] = reading.frame(glyph, under)
         own = status if nodes[path].text == text else "accepted"
-        cuts.append(reading.cut(glyph, description, root, path, nodes[path], indices, own, **extra))
-    return reading.reading(glyph, description, root, "lift", "piece", cuts, {"match": got.match, "margin": got.margin})
+        cuts.append(reading.cut(glyph, description, root, path, nodes[path], indices, own, "lift", **extra))
+    return one(
+        reading.reading(glyph, description, root, "lift", "piece", cuts, {"match": got.match, "margin": got.margin})
+    )
 
 
 def skipped(recipe: Recipe, drawings: Sequence[Drawing], reason: Skipped) -> tuple[Json, str, Glyph | None]:
@@ -433,12 +441,13 @@ def skipped(recipe: Recipe, drawings: Sequence[Drawing], reason: Skipped) -> tup
     return reading.skipped(recipe.description, reason.code, reason.text, glyph_id), drawing.id, glyph
 
 
-def glyphwiki(outlines: Json) -> dict[str, tuple[str, G.Array | None]]:
+def glyphwiki(outlines: Json, names: frozenset[str] | None = None) -> dict[str, tuple[str, G.Array | None]]:
     """Each component's GlyphWiki glyph, by the component's text: its name and its print."""
     out = {}
-    for text, name in outlines["names"].items():
+    for written, name in outlines["names"].items():
+        text = token(written, names)
         d = outlines["outlines"].get(name)
-        if not d:
+        if not d or text is None:
             continue
         path = pathops.Path()
         parse_path(d, path.getPen())
@@ -469,7 +478,7 @@ class Outcome:
 
 def _cut_of(row: Json, text: str) -> Json:
     """The component's own cut in a reading made by `record`."""
-    return next(cut for cut in row["cuts"] if cut["text"] == text or not cut["path"])
+    return next(cut for cut in row["cuts"] if cut["class"] == I.component_of(text) or not cut["path"])
 
 
 def component(
@@ -513,22 +522,35 @@ def numbered(table: Table, pua: Drawing) -> dict[str, tuple[str, G.Array | None]
     return out
 
 
-def registry(cache: Path | None = None) -> list[Json]:
-    """The components to lift: the entities, chains and numbered components of the pinned
-    ids-input registry."""
+def registry(cache: Path | None = None) -> tuple[list[Json], list[str]]:
+    """The components to lift: the entities and numbered components of the pinned ids-input
+    registry, each with its text as the token of its corpus identifier, and the texts that have
+    none: stroke chains, which the corpus does not name, and entities it does not hold."""
     paths = pins.source_paths(pins.source(REGISTRY), cache, fetch=False)
     rows: list[Json] = json.loads(gzip.decompress(paths["custom-components.json.gz"].read_bytes()))["components"]
-    return [row for row in rows if row["kind"] in SOURCE_OF]
+    names = descriptions.corpus_names(cache)
+    named, left = [], []
+    for row in rows:
+        if row["kind"] not in (*SOURCE_OF, "chain"):
+            continue
+        found = token(row["text"], names) if row["kind"] != "chain" else None
+        if found is None:
+            left.append(row["text"])
+        else:
+            named.append({**row, "text": found, "name": row["text"]})
+    return named, left
 
 
 _STATE: dict[str, Any] = {}
 
 
-def _open(chain: str, cache: Path | None) -> None:
-    _STATE["drawings"] = [Drawing(face) for face in Chain.pinned(chain, cache).faces]
+def _open(designs: Sequence[str], cache: Path | None) -> None:
+    _STATE["drawings"] = [Drawing(face) for face in Chain.pinned(designs, cache).faces]
     _STATE["tables"] = {source: descriptions.table(source, cache) for source in set(SOURCE_OF.values())}
     paths = pins.source_paths(pins.source("glyphwiki"), cache, fetch=False)
-    _STATE["references"] = glyphwiki(json.loads(gzip.decompress(paths["custom-outlines.json.gz"].read_bytes())))
+    _STATE["references"] = glyphwiki(
+        json.loads(gzip.decompress(paths["custom-outlines.json.gz"].read_bytes())), descriptions.corpus_names(cache)
+    )
     _STATE["references"] |= numbered(_STATE["tables"]["babelstone"], Drawing(Face.pinned(PUA, cache)))
 
 
@@ -536,11 +558,13 @@ def _work(rows: list[Json]) -> list[Outcome]:
     return [component(row, _STATE["tables"], _STATE["drawings"], _STATE["references"]) for row in rows]
 
 
-def run(chain: str = "sans", workers: int = 4, cache: Path | None = None) -> Iterator[Outcome]:
-    """Every entity, chain and numbered component of the registry lifted in one chain, on several
-    processes, in the registry's order whatever their number."""
-    rows = registry(cache)
+def run(
+    designs: Sequence[str] = ("source-han-sans", "plangothic"), workers: int = 4, cache: Path | None = None
+) -> Iterator[Outcome]:
+    """Every entity and numbered component of the registry that the corpus names, lifted in the
+    fonts of pinned designs, on several processes, in the registry's order whatever their number."""
+    rows, _ = registry(cache)
     jobs = [rows[at : at + 20] for at in range(0, len(rows), 20)]
-    with ProcessPoolExecutor(workers, initializer=_open, initargs=(chain, cache)) as pool:
+    with ProcessPoolExecutor(workers, initializer=_open, initargs=(designs, cache)) as pool:
         for outcomes in pool.map(_work, jobs):
             yield from outcomes

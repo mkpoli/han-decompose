@@ -7,11 +7,12 @@ import pytest
 from han_decompose import descriptions, ids, pins
 from han_decompose.cutters import library
 from han_decompose.descriptions import Table
+from han_decompose.outline import Face
 from han_decompose.pieces import Drawing
 from han_decompose.schema import problems
 from han_decompose.store import Store
 
-from .fonts import pinned_chain
+from .fonts import build, pinned_chain
 
 
 def table() -> Table:
@@ -35,7 +36,9 @@ def test_a_leaf_opens_into_its_components_own_description() -> None:
 
 def pinned() -> tuple[Table, list[Drawing]]:
     try:
-        return descriptions.table("babelstone"), [Drawing(face) for face in pinned_chain("sans").faces]
+        return descriptions.table("babelstone"), [
+            Drawing(face) for face in pinned_chain("source-han-sans", "plangothic").faces
+        ]
     except pins.PinError:
         pytest.skip("The pinned tables are not in the cache; run `han-decompose fetch`.")
 
@@ -47,16 +50,19 @@ def test_a_glyph_is_cut_as_deep_as_its_pieces_allow() -> None:
     assert description is not None
     library.one(description, drawings, found, store, counts)
     ((_, readings),) = store.readings.items()
-    (row,) = readings
-    assert row["tree"] == "⿰亻⿱山隹" and [node["component"] for node in row["opened"]] == ["u:5D14"]
-    assert [(cut["text"], cut["contours"], cut["status"]) for cut in row["cuts"]] == [
-        ("亻", [9, 10], "accepted"),
-        ("山", [0, 2], "accepted"),
-        ("隹", [1, 3, 4, 5, 6, 7, 8], "accepted"),
+    row, inner = readings
+    assert row["tree"] == "⿰亻⿱山隹" and [node["member"] for node in row["opened"]] == ["u:5D14"]
+    assert inner["subject"] == "u:5D14" and inner["layer"] == [row["cuts"][1]["id"].rsplit("~", 1)[1]]
+    assert [(cut["class"], cut["contours"], cut["status"]) for cut in [*row["cuts"], *inner["cuts"]]] == [
+        ("u:4EBB", [9, 10], "accepted"),
+        ("u:5D14", [0, 1, 2, 3, 4, 5, 6, 7, 8], "accepted"),
+        ("u:5C71", [0, 2], "accepted"),
+        ("u:96B9", [1, 3, 4, 5, 6, 7, 8], "accepted"),
     ]
-    assert all({"filled", "skeleton"} <= set(cut["checks"]) for cut in row["cuts"])
-    assert [cut["calibrated"] for cut in row["cuts"]] == [False, "u:5C71", False]
-    assert counts.readings == 1 and counts.cuts == {"accepted": 3} and len(counts.against) >= 3
+    leaves = [row["cuts"][0], *inner["cuts"]]
+    assert all({"filled", "skeleton"} <= set(cut["checks"]) for cut in leaves)
+    assert [cut["calibrated"] for cut in leaves] == [False, "u:5C71", False]
+    assert counts.readings == 1 and counts.cuts == {"accepted": 4} and len(counts.against) >= 3
     # 偹 has fewer pieces than operands: nothing is dealt, and the attempt is kept with its reason.
     other = found.first("偹")
     assert other is not None
@@ -83,23 +89,25 @@ def test_an_opening_that_fails_further_down_leaves_the_leaf_whole() -> None:
     (row,) = readings
     # 崔 deals into 山 and a rest, but the rest is one piece and cannot be 隹 beside 山: the
     # opening is dropped whole and 崔 stays a leaf.
-    assert row["tree"] == "⿰亻崔" and "opened" not in row
-    assert [(cut["text"], cut["contours"]) for cut in row["cuts"]] == [
-        ("亻", [9, 10]),
-        ("崔", [0, 1, 2, 3, 4, 5, 6, 7, 8]),
+    assert row["tree"] == "⿰亻崔" and "opened" not in row and len(readings) == 1
+    assert [(cut["class"], cut["contours"]) for cut in row["cuts"]] == [
+        ("u:4EBB", [9, 10]),
+        ("u:5D14", [0, 1, 2, 3, 4, 5, 6, 7, 8]),
     ]
     assert counts.skipped == {} and row["evidence"]["likeness"] == min(cut["evidence"]["fit"] for cut in row["cuts"])
 
 
 def test_a_block_is_written_once_and_a_second_run_goes_on_after_it(tmp_path: Path) -> None:
     pinned()
-    ((block, counts),) = list(library.run("sans", "babelstone", tmp_path, workers=1, only=["050"]))
+    ((block, counts),) = list(
+        library.run(["source-han-sans", "plangothic"], "babelstone", tmp_path, workers=1, only=["050"])
+    )
     assert block == "050" and counts.readings > 200 and counts.cuts["accepted"] > 400
     marker = json.loads((tmp_path / "blocks" / "050.json").read_text(encoding="utf-8"))
     assert marker["readings"] == counts.readings and marker["against"]
-    assert list(library.run("sans", "babelstone", tmp_path, workers=1, only=["050"])) == []
-    added = library.named(tmp_path, "sans")
-    assert added > 0 and library.named(tmp_path, "sans") == 0
+    assert list(library.run(["source-han-sans", "plangothic"], "babelstone", tmp_path, workers=1, only=["050"])) == []
+    added = library.named(tmp_path, ["source-han-sans", "plangothic"])
+    assert added > 0 and library.named(tmp_path, ["source-han-sans", "plangothic"]) == 0
     files = {
         path.relative_to(tmp_path).as_posix(): json.loads(gzip.decompress(path.read_bytes()))
         for path in tmp_path.rglob("*.json.gz")
@@ -108,7 +116,7 @@ def test_a_block_is_written_once_and_a_second_run_goes_on_after_it(tmp_path: Pat
         kind, font, *_ = name.split("/")
         outlines = files.get(f"outlines/{font}/{name.split('/')[-1]}") if kind == "cuts" else None
         assert problems(kind, content, outlines) == [], name
-    cuts = files["cuts/noto-sans-cjk-jp@2.004/babelstone/050.json.gz"]
+    cuts = files["cuts/noto-sans-cjk-jp@2.004/050.json.gz"]
     against = {
         check["against"] for row in cuts["readings"] for cut in row["cuts"] for check in cut.get("checks", {}).values()
     }
@@ -116,3 +124,23 @@ def test_a_block_is_written_once_and_a_second_run_goes_on_after_it(tmp_path: Pat
         font, selector = glyph.split("/")
         shard = f"{int(selector[2:], 16) >> 8:03x}"
         assert selector in files[f"outlines/{font}/{shard}.json.gz"]["glyphs"], glyph
+
+
+@pytest.mark.parametrize(
+    ("source", "text"), [("chise", "&U-i001+2FF1;千北"), ("zi-tools", "千北"), ("zi-tools", "&x-y;一")]
+)
+def test_a_text_that_is_no_structure_is_skipped_without_an_identifier(tmp_path: Path, source: str, text: str) -> None:
+    row = {"id": "test@1", "upem": 1024}
+    drawing = Drawing(Face(row, build(tmp_path / "test.ttf")))
+    found = Table(source)
+    found.add("一", text)
+    description = found.first("一")
+    assert description is not None
+    store, counts = Store(), library.Counts()
+    library.one(description, [drawing], found, store, counts)
+    ((_, skipped),) = store.skipped.items()
+    (attempt,) = skipped
+    assert "structure" not in attempt and attempt["text"] == description.structure
+    assert attempt["reason"]["code"] == "unreadable-description" and counts.skipped == {"unreadable-description": 1}
+    file = {"format": "han-decompose/cuts@2.0", "font": "test@1", "design": "x", "drawn": {}, "readings": []}
+    assert problems("cuts", {**file, "skipped": [attempt]}) == []

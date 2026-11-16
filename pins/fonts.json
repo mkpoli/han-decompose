@@ -1,5 +1,5 @@
 {
-  "format": "han-decompose/fonts@1.0",
+  "format": "han-decompose/fonts@2.0",
   "fonts": [
     {
       "id": "noto-sans-cjk-jp@2.004",
@@ -20,7 +20,9 @@
       "reservedNames": [
         "Source"
       ],
-      "style": "sans"
+      "style": "sans",
+      "design": "source-han-sans",
+      "grain": "contour"
     },
     {
       "id": "plangothic-p1@2.9.5795",
@@ -35,7 +37,9 @@
       "licenceEvidence": "the font's name table, record 13 (licence description)",
       "licenceFile": "OFL-1.1.txt",
       "copyright": "Copyright (c) 2024 by Fitzgerald P. Köeingsegg. All rights reserved.",
-      "style": "sans"
+      "style": "sans",
+      "design": "plangothic",
+      "grain": "piece"
     },
     {
       "id": "plangothic-p2@2.9.5795",
@@ -50,7 +54,9 @@
       "licenceEvidence": "the font's name table, record 13 (licence description)",
       "licenceFile": "OFL-1.1.txt",
       "copyright": "Copyright (c) 2024 by Fitzgerald P. Köeingsegg. All rights reserved.",
-      "style": "sans"
+      "style": "sans",
+      "design": "plangothic",
+      "grain": "piece"
     },
     {
       "id": "noto-serif-cjk-jp@2.003",
@@ -68,7 +74,9 @@
       "licenceEvidence": "the font's name table, record 13 (licence description)",
       "licenceFile": "OFL-1.1.txt",
       "copyright": "© 2017-2024 Adobe (http://www.adobe.com/).",
-      "style": "serif"
+      "style": "serif",
+      "design": "source-han-serif",
+      "grain": "contour"
     },
     {
       "id": "jigmo2@20250912",
@@ -87,7 +95,9 @@
       "licenceEvidence": "LICENSE.txt in the archive",
       "licenceFile": "CC0-1.0.txt",
       "copyright": "Koichi Kamichi",
-      "style": "serif"
+      "style": "serif",
+      "design": "jigmo",
+      "grain": "piece"
     },
     {
       "id": "jigmo3@20250912",
@@ -106,7 +116,9 @@
       "licenceEvidence": "LICENSE.txt in the archive",
       "licenceFile": "CC0-1.0.txt",
       "copyright": "Koichi Kamichi",
-      "style": "serif"
+      "style": "serif",
+      "design": "jigmo",
+      "grain": "piece"
     },
     {
       "id": "jigmo@20250912",
@@ -125,7 +137,9 @@
       "licenceEvidence": "LICENSE.txt in the archive",
       "licenceFile": "CC0-1.0.txt",
       "copyright": "Koichi Kamichi",
-      "style": "serif"
+      "style": "serif",
+      "design": "jigmo",
+      "grain": "piece"
     },
     {
       "id": "babelstone-han-pua@1.472",
@@ -143,20 +157,59 @@
       "licenceEvidence": "the font's name table, record 13 (licence description)",
       "licenceFile": "Arphic-1999.txt",
       "copyright": "(c) Copyright 1994-1999, Arphic Technology Co., Ltd.; (c) Copyright 2009-2025, Andrew West.",
-      "style": "serif"
+      "style": "serif",
+      "design": "babelstone-han",
+      "grain": "piece"
     }
   ],
-  "chains": {
-    "sans": [
-      "noto-sans-cjk-jp@2.004",
-      "plangothic-p1@2.9.5795",
-      "plangothic-p2@2.9.5795"
-    ],
-    "serif": [
-      "noto-serif-cjk-jp@2.003",
-      "jigmo2@20250912",
-      "jigmo3@20250912",
-      "jigmo@20250912"
-    ]
-  }
+  "designs": [
+    {
+      "id": "source-han-sans",
+      "name": "Source Han Sans",
+      "style": "sans",
+      "chain": [
+        "noto-sans-cjk-jp@2.004"
+      ],
+      "members": []
+    },
+    {
+      "id": "plangothic",
+      "name": "Plangothic",
+      "style": "sans",
+      "chain": [
+        "plangothic-p1@2.9.5795",
+        "plangothic-p2@2.9.5795"
+      ],
+      "members": []
+    },
+    {
+      "id": "source-han-serif",
+      "name": "Source Han Serif",
+      "style": "serif",
+      "chain": [
+        "noto-serif-cjk-jp@2.003"
+      ],
+      "members": []
+    },
+    {
+      "id": "jigmo",
+      "name": "Jigmo",
+      "style": "serif",
+      "chain": [
+        "jigmo2@20250912",
+        "jigmo3@20250912",
+        "jigmo@20250912"
+      ],
+      "members": []
+    },
+    {
+      "id": "babelstone-han",
+      "name": "BabelStone Han",
+      "style": "serif",
+      "chain": [
+        "babelstone-han-pua@1.472"
+      ],
+      "members": []
+    }
+  ]
 }

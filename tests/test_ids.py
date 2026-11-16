@@ -4,7 +4,7 @@ from han_decompose import identifiers as I
 from han_decompose import ids
 from han_decompose.schema import schema_problems
 
-ROW = {"kind": "subtree", "relation": "", "target": "", "basis": "", "tier": "", "source": "babelstone"}
+ROW = {"kind": "subtree", "relation": "", "target": "", "basis": "", "tier": ""}
 
 
 def test_a_component_of_each_notation_is_one_token() -> None:
@@ -55,8 +55,10 @@ def test_operators_take_one_two_or_three_operands() -> None:
     assert set(ids.ARITY) == I.OPERATORS
     variant = ids.parse("〾⿻一乚")
     assert variant.operator == "〾" and variant.children[0].text == "⿻一乚"
-    assert I.component_of(variant.text) == "ids:〾⿻一乚"
-    assert schema_problems("component", {**ROW, "component": "ids:〾⿻一乚", "text": "〾⿻一乚"}) == []
+    with pytest.raises(ValueError):
+        I.component_of(variant.text)
+    assert I.component_of("⿻一乚") == "ids:⿻一乚"
+    assert schema_problems("component", {**ROW, "component": "ids:⿻一乚", "text": "&⿻一乚;"}) == []
 
 
 def test_an_operator_written_as_an_entity_does_not_read() -> None:

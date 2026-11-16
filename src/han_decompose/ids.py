@@ -109,6 +109,15 @@ def parse(text: str) -> Node:
     return root
 
 
+_PLACES = {"⿰": "LR", "⿱": "TB", "⿲": "LCR", "⿳": "TMB"}
+
+
+def place(operator: str, index: int) -> str:
+    """Where an operand stands in its parent: a letter in a row or a stack, else the operator and
+    the operand's index (`⿸0`)."""
+    return _PLACES[operator][index] if operator in _PLACES else f"{operator}{index}"
+
+
 def leaves(node: Node) -> list[Node]:
     """The components a tree ends in, in the order the description reads."""
     if node.leaf:

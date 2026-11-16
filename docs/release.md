@@ -9,57 +9,51 @@ Each command writes a run: a folder of outline and cut files.
 
 ```sh
 uv run han-decompose fetch
-uv run han-decompose import-numbered runs/sans.numbered
-uv run han-decompose lift --chain sans  --out runs/sans.lift
-uv run han-decompose lift --chain serif --out runs/serif.lift
-uv run han-decompose read runs/sans.babelstone  --chain sans  --source babelstone
-uv run han-decompose read runs/serif.babelstone --chain serif --source babelstone
-uv run han-decompose read runs/sans.zi-tools    --chain sans  --source zi-tools
-uv run han-decompose read runs/serif.zi-tools   --chain serif --source zi-tools
-uv run han-decompose read runs/sans.chise       --chain sans  --source chise
-uv run han-decompose read runs/serif.chise      --chain serif --source chise
+uv run han-decompose import-numbered runs/numbered
+uv run han-decompose lift --out runs/lift
+uv run han-decompose read runs/babelstone --source babelstone
+uv run han-decompose read runs/chise      --source chise
+uv run han-decompose read runs/zi-tools   --source zi-tools
 ```
 
-`import-numbered` takes over the numbered components han-compose cut for its Sans style, where
-a form is whole contours of a host glyph. `lift` cuts the components no code point names (CHISE entities, zi.tools chains, BabelStone's
-numbered components) out of their hosts. `read` deals every glyph to the components of each
-description a source gives it. `read` writes one block of 256 code points at a time and leaves a
-block alone that is already written, so a run that stopped goes on where it was; `--blocks 04e`
-reads single blocks.
+`import-numbered` takes over the numbered components han-compose cut for its Sans style, where a form is
+whole contours of a host glyph. `lift` cuts the components no code point names (CHISE entities and
+BabelStone's numbered components, as the ids-corpus identifies them) out of their hosts. `read` deals every glyph to the components of each description a source gives it, in the fonts of
+the designs named with `--design` (`source-han-sans`, then `plangothic`, by default). It writes one
+block of 256 code points at a time and leaves a block alone that is already written, so a run that
+stopped goes on where it was; `--blocks 04e` reads single blocks. A description that
+names a component the corpus gives no identifier, such as a zi.tools stroke chain, is skipped as
+`unnamed-component`.
 
 A whole table is hours of work on four processes. Run it where it does not starve other work.
 
 ## 2. Build
 
 ```sh
-uv run han-decompose release out/v1.0.0 v1.0.0 \
-  --run runs/sans.numbered --run runs/sans.lift --run runs/serif.lift \
-  --run runs/sans.babelstone --run runs/serif.babelstone \
-  --run runs/sans.zi-tools --run runs/serif.zi-tools \
-  --run runs/sans.chise --run runs/serif.chise \
-  --commit "$(git rev-parse --short HEAD)" --dist dist/v1.0.0
+uv run han-decompose release out/v2.0.0 v2.0.0 \
+  --run runs/numbered --run runs/lift --run runs/babelstone --run runs/chise --run runs/zi-tools \
+  --commit "$(git rev-parse --short HEAD)" --dist dist/v2.0.0
 ```
 
-The runs are merged shard by shard. Where two runs read the same glyph under the same
-description, the run given first stands: the imported forms go first, then the lifts. A component's form
-is the first run's that has one, with that run's library, less any cut whose reading gave way. Every file is checked against the
-schema and the format's invariants, cut files against their outline files. Problems are listed,
-the command fails, and nothing is packed. The folder then holds the layout of `docs/format.md`: outlines, cuts, the form and library
-indexes, the flat tables per source, the component tables, `fonts.json` and `sources.json`, the
-licence texts, a `README.md` that names every font and source with its terms, `manifest.json`
-and `SHA256SUMS`.
+The runs are merged shard by shard. Where two runs read the same layer under the same structure by
+the same method, the run given first stands: the imported forms go first, then the lifts. A class's form
+is the first run's that has one, with that run's library, less any cut whose reading gave way. Every file is checked against the schema and the
+format's invariants, cut files against their outline files. Problems are listed, the command fails,
+and nothing is packed. The folder then holds the layout of `docs/format.md`: outlines, strokes and
+cuts per font, the form and library indexes per design, the flat tables, `fonts.json`, the licence
+texts, a `README.md` that names every font with its terms, `manifest.json` and `SHA256SUMS`.
 
-`--dist` packs it for a release page: one archive of outlines per font, one of cuts per font and
-source, the indexes and licence texts as archives, and the tables, registries, README, manifest
-and checksums as they are. The same release packs to the same bytes.
+`--dist` packs it for a release page: one archive of outlines, one of strokes and one of cuts per
+font, the indexes and licence texts as archives, and the tables, registry, README, manifest and
+checksums as they are. The same release packs to the same bytes.
 
 ## 3. Publish
 
 The build publishes nothing. After the release has been looked at:
 
 ```sh
-git tag v1.0.0 && git push origin v1.0.0
-gh release create v1.0.0 dist/v1.0.0/* --title "han-decompose data v1.0.0" --notes-file out/v1.0.0/README.md
+git tag v2.0.0 && git push origin v2.0.0
+gh release create v2.0.0 dist/v2.0.0/* --title "han-decompose data v2.0.0" --notes-file out/v2.0.0/README.md
 ```
 
 ## Versions

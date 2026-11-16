@@ -20,6 +20,7 @@ import numpy as np
 import pathops
 
 from .. import geometry as G
+from .. import identifiers as I
 from ..descriptions import Description
 from ..ids import Node, leaves, walk
 from ..pieces import Drawing, Glyph
@@ -392,14 +393,20 @@ def read(
     whole: bool = True,
     gate: Gate | None = None,
     opener: Opener | None = None,
-) -> Json:
-    """One glyph read under a tree: every leaf with the contours dealt to it.
+) -> list[Json]:
+    """One glyph read under a tree: every leaf with the contours dealt to it, as the readings of
+    its layers (`reading.reading`).
 
     With `whole`, the reading is held against the glyph: a leaf may not enclose a window its
     component never draws, and the reading drawn again has to look like the glyph. With an `opener`
     a leaf is opened into its component's own description where its pieces allow. `gate` adds
     checks of single leaves. A cut that fails a check is kept and marked refused.
     """
+    for node in leaves(root):
+        try:
+            I.component_of(node.text)
+        except ValueError as error:
+            raise Skipped("unnamed-component", f"{error}") from error
     cutter = cutter_for(glyph, drawings, root, glyph_of)
     try:
         subject = glyph_of(description.subject) or description.subject
@@ -421,7 +428,8 @@ def read(
                 )
             evidence["redrawn"] = reading.number(again, 4)
     paths = {id(node): path for path, node in walk(root)}
-    held = {paths[id(node)]: glyph.contours_of(group) for node, group in hands}
+    groups = {paths[id(node)]: group for node, group in hands}
+    held = {path: glyph.contours_of(group) for path, group in groups.items()}
     cuts = []
     for node, group in hands:
         path = paths[id(node)]
@@ -448,4 +456,13 @@ def read(
             more["calibrated"] = calibrated
         status = "accepted" if all(check["pass"] for check in checks.values()) else "refused"
         cuts.append(reading.cut(glyph, description, root, path, node, held[path], status, **more))
+    # A node opened into a layer is a cut of the layer above, holding what its parts hold.
+    for path, node in walk(root):
+        if path and node.opened is not None:
+            pieces = sorted({index for other, group in groups.items() if other[: len(path)] == path for index in group})
+            below = glyph.contours_of(pieces)
+            more = {"area": reading.number(sum(abs(glyph.pieces[index].area) for index in pieces), 2)}
+            under = [indices for other, indices in held.items() if other[: len(path) - 1] == path[:-1]]
+            more["frame"] = reading.frame(glyph, under)
+            cuts.append(reading.cut(glyph, description, root, path, node, below, "accepted", **more))
     return reading.reading(glyph, description, root, "deal", "piece", cuts, evidence)

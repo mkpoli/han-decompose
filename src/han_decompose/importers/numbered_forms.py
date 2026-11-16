@@ -29,7 +29,9 @@ from ..schema import Json
 SOURCE = "han-compose-numbered-forms"
 REGISTRY = "ids-input-components"
 #: The style of the file whose forms are cuts of host glyphs, and the chain it was cut from.
-STYLE, CHAIN = "sans", "sans"
+STYLE = "sans"
+#: The designs of the fonts the file was cut from, in order.
+DESIGNS = ("source-han-sans", "plangothic")
 
 
 def match(form: Sequence[Sequence[object]], contours: Sequence[Contour]) -> list[int] | None:
@@ -60,7 +62,7 @@ def forms(file: Json, table: Table) -> dict[str, list[list[object]]]:
     """The Sans outlines that are cuts, by the component's text: every contour of every group, the
     PUA fallbacks left out."""
     names = {row.pua: name for name, row in table.numbered.items() if row.pua}
-    fallback = {f"{{{number}}}" for number in file["fallback"]}
+    fallback = {f"&bsp:{number};" for number in file["fallback"]}
     out = {}
     for pua, groups in file["forms"][STYLE].items():
         name = names.get(pua)
@@ -93,9 +95,9 @@ def imports(
 ) -> Iterator[lift.Outcome]:
     """Each Sans form that is whole contours of a host glyph, as a reading of the host under the
     BabelStone description that names the component, and as the component's chosen form."""
-    used = {row["text"]: row["usedIn"] for row in registry if row["kind"] == "numbered"}
+    used = {f"&bsp:{row['text'][1:-1]};": row["usedIn"] for row in registry if row["kind"] == "numbered"}
     cutter = file["sources"]["cutter"].split()
-    for name, form in sorted(forms(file, table).items(), key=lambda item: int(item[0][1:-1])):
+    for name, form in sorted(forms(file, table).items(), key=lambda item: int(item[0][5:-1])):
         found = host_of(form, used.get(name, ""), drawings)
         if found is None:
             continue
@@ -118,8 +120,8 @@ def imports(
                 ink.simplify()
                 evidence["reference"] = reading.number(lift.like(lift.print_of(lift.mask(ink)), print_), 4)
                 evidence["referenceGlyph"] = glyph_id
-            cut = reading.cut(glyph, description, root, path, node, contours, "accepted", evidence=evidence)
-            row = reading.reading(glyph, description, root, "axis", "contour", [cut])
+            cut = reading.cut(glyph, description, root, path, node, contours, "accepted", "axis", evidence=evidence)
+            (row,) = reading.reading(glyph, description, root, "axis", "contour", [cut])
             row["method"] = {"name": "axis", "tool": cutter[0], "commit": cutter[-1], "grain": "contour"}
             out = lift.Outcome(I.component_of(name), "numbered", readings=[row])
             out.form = {"cut": cut["id"], "sig": cut["sig"], "basis": "imported"}

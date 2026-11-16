@@ -1,11 +1,11 @@
 """Build a data release: the shards of several cutting runs merged into the one layout
-`docs/format.md` gives, with the flat tables, the registries, a README that names every source
-and licence, the licence texts, a manifest and checksums; then packed as one archive per font and
-source for the release page.
+`docs/format.md` gives, with the flat tables, the registry, a README that names every font and
+licence, the licence texts, a manifest and checksums; then packed as one archive per font and kind
+for the release page.
 
-A run's folder holds `outlines/` and `cuts/` shards, and may hold `forms/` and `library/`. Runs
-are given in order of precedence: where two hold a reading of the same glyph under the same
-description, the earlier run's stands.
+A run's folder holds `outlines/`, `strokes/` and `cuts/` shards, and may hold `forms/` and
+`library/`. Runs are given in order of precedence: where two hold a reading of the same layer under
+the same structure by the same method, the earlier run's stands.
 """
 
 import gzip
@@ -16,14 +16,14 @@ import shutil
 import tarfile
 from collections.abc import Iterable, Sequence
 from pathlib import Path
+from typing import Any
 
 from . import __version__, pins, tsv
 from . import identifiers as I
 from .resources import resource
 from .schema import Json, problems
-from .store import FORMS, LIBRARY, dumps, terms, write
+from .store import FORMS, LIBRARY, MANIFEST, choose, dumps, write
 
-MANIFEST = "han-decompose/manifest@1.0"
 ACCEPTED = ("accepted", "reviewed-right")
 
 
@@ -50,54 +50,73 @@ def merge_outlines(paths: Sequence[Path]) -> Json:
         for selector, record in _load(path)["glyphs"].items():
             if merged["glyphs"].setdefault(selector, record) != record:
                 raise ValueError(f"{path}: {selector} differs from an earlier run's.")
-    merged["glyphs"] = dict(sorted(merged["glyphs"].items(), key=lambda item: _order(item[0])))
+    merged["glyphs"] = dict(sorted(merged["glyphs"].items(), key=lambda item: I.order(item[0])))
     return merged
 
 
-def _order(selector: str) -> tuple[int, int, int]:
-    match = I.SELECTOR.fullmatch(selector)
-    assert match is not None
-    if match["gid"] is not None:
-        return (1, int(match["gid"]), 0)
-    return (0, int(match["base"], 16), int(match["selector"], 16) if match["selector"] else 0)
-
-
-def _key(row: Json) -> tuple[tuple[int, int, int], str, str]:
+def _key(row: Json) -> tuple[tuple[int, int, int, str], str, list[str], str]:
     selector = I.split_glyph_id(row["glyph"])[1] if "glyph" in row else "gid.0"
-    return (_order(selector), row["subject"], row["description"])
+    return (I.order(selector), row["subject"], row["layer"], row.get("structure", ""))
+
+
+def _skip_key(row: Json) -> tuple[str | None, str, tuple[str, ...], str]:
+    return (row.get("glyph"), row["subject"], tuple(row["layer"]), row["text"])
+
+
+def _chosen(readings: Sequence[Json]) -> dict[tuple[str, str], str]:
+    """The method of the chosen reading of each structure on each glyph itself."""
+    return {
+        (row["glyph"], row["structure"]): row["method"]["name"]
+        for row in readings
+        if row["chosen"] and not row["layer"]
+    }
 
 
 def merge_cuts(paths: Sequence[Path]) -> Json:
-    """One cut file from the same shard of several runs: the first run's reading of a glyph under
-    a description stands, and an attempt is listed as skipped only where no run read it."""
+    """One cut file from the same shard of several runs: the first run's reading of a layer under a
+    structure by a method stands, and an attempt is listed as skipped only where no run read it."""
     merged = _load(paths[0])
-    read = {(row["glyph"], row["description"]) for row in merged["readings"]}
-    skipped = {(row.get("glyph"), row["subject"], row["description"]) for row in merged["skipped"]}
+    before = _chosen(merged["readings"])
+
+    def read_key(row: Json) -> tuple[str, tuple[str, ...], str]:
+        return (row["glyph"], tuple(row["layer"]), row["structure"])
+
+    read = {(*read_key(row), row["method"]["name"]) for row in merged["readings"]}
+    skipped = {_skip_key(row) for row in merged["skipped"]}
     for path in paths[1:]:
         other = _load(path)
         for row in other["readings"]:
-            if (row["glyph"], row["description"]) not in read:
-                read.add((row["glyph"], row["description"]))
+            if (*read_key(row), row["method"]["name"]) not in read:
+                read.add((*read_key(row), row["method"]["name"]))
                 merged["readings"].append(row)
         for row in other["skipped"]:
-            key = (row.get("glyph"), row["subject"], row["description"])
+            key = _skip_key(row)
             if key not in skipped:
                 skipped.add(key)
                 merged["skipped"].append(row)
-    merged["skipped"] = [row for row in merged["skipped"] if (row.get("glyph"), row["description"]) not in read]
-    merged["readings"].sort(key=_key)
+        for selector, entries in other["drawn"].items():
+            held = merged["drawn"].setdefault(selector, [])
+            held += [
+                {**entry, "first": False}
+                for entry in entries
+                if entry["structure"] not in {kept["structure"] for kept in held}
+            ]
+    done = {read_key(row) for row in merged["readings"]}
+    merged["skipped"] = [
+        row for row in merged["skipped"] if ("glyph" not in row or "structure" not in row or read_key(row) not in done)
+    ]
+    merged["readings"] = sorted(choose(merged["readings"], keep=True), key=_key)
+    # A drawn IDS written from a reading that no longer stands is left for the next cutting run.
+    changed = {key for key, method in _chosen(merged["readings"]).items() if before.get(key, method) != method}
+    for selector, entries in merged["drawn"].items():
+        glyph = I.glyph_id(merged["font"], selector)
+        entries[:] = [entry for entry in entries if (glyph, entry["structure"]) not in changed]
+        if entries and not any(entry["first"] for entry in entries):
+            entries[0]["first"] = True
+    merged["drawn"] = {selector: entries for selector, entries in merged["drawn"].items() if entries}
     merged["skipped"].sort(key=_key)
-    # The terms are those of the readings that stand: a guide is named only where one is followed.
-    guides = sorted({row["method"]["guide"] for row in merged["readings"] if "guide" in row["method"]})
-    if len(guides) > 1:
-        raise ValueError(f"{paths[0].name}: the cuts of {merged['font']} follow more than one guide.")
-    merged["terms"] = terms(merged["font"], merged["source"], *guides)
+    merged["drawn"] = dict(sorted(merged["drawn"].items(), key=lambda item: I.order(item[0])))
     return merged
-
-
-def _score(cut: Json) -> float:
-    evidence = cut.get("evidence", {})
-    return float(evidence.get("fit", evidence.get("match", 0)))
 
 
 class Release:
@@ -107,135 +126,131 @@ class Release:
         if out.exists() and any(out.iterdir()):
             raise ValueError(f"{out} is not empty.")
         self.out, self.version = out, version
-        self.counts: dict[str, dict[str, Json]] = {}
-        self.library: dict[str, dict[str, dict[str, list[tuple[float, str]]]]] = {}
-        self.forms: dict[str, dict[str, Json]] = {}
-        self.lifted: dict[str, dict[str, dict[str, list[str]]]] = {}
-        self.tables: dict[tuple[str, str], list[str]] = {}
+        self.counts: dict[str, Json] = {}
+        self.forms: dict[str, dict[str, dict[str, Json]]] = {}
+        self.library: dict[str, dict[str, dict[str, dict[str, list[str]]]]] = {}
+        self.tables: dict[str, list[str]] = {name: [] for name in ("cuts", "skipped")}
+        self.drawn: list[tsv.Row] = []
         self.problems: list[str] = []
-        self.guides: set[str] = set()
         self.fonts: set[str] = set()
         self.cuts: set[str] = set()
-        self.chains = {font: name for name, fonts in pins.fonts()["chains"].items() for font in fonts}
 
-    def _count(self, font: str, source: str) -> Json:
-        return self.counts.setdefault(font, {}).setdefault(
-            source, {"readings": 0, "skipped": 0, "cuts": {}, "components": set()}
+    def _count(self, font: str) -> Json:
+        return self.counts.setdefault(
+            font, {"readings": 0, "skipped": 0, "cuts": {}, "structures": set(), "classes": set()}
         )
 
     def shards(self, runs: Sequence[Path], check: bool = True) -> None:
-        """Merge the runs' outline and cut shards into the release, validating each file, and
-        gather what the tables, the indexes and the counts need."""
-        outlines = _shards(runs, "outlines")
-        for name, paths in outlines.items():
-            content = merge_outlines(paths)
-            self.fonts.add(content["font"])
-            if check:
-                self.problems += [f"{name}: {problem}" for problem in problems("outlines", content)]
-            write(self.out / name, dumps(content))
+        """Merge the runs' outline, stroke and cut shards into the release, validating each file,
+        and gather what the tables, the indexes and the counts need."""
+        for top, kind in (("outlines", "outlines"), ("strokes", "strokes")):
+            for name, paths in _shards(runs, top).items():
+                content = merge_outlines(paths) if kind == "outlines" else _first(paths)
+                self.fonts.add(content["font"])
+                if check:
+                    self.problems += [f"{name}: {problem}" for problem in problems(kind, content)]
+                write(self.out / name, dumps(content))
         for name, paths in _shards(runs, "cuts").items():
             content = merge_cuts(paths)
-            font, source = content["font"], content["source"]
-            self.guides |= {row["method"]["guide"] for row in content["readings"] if "guide" in row["method"]}
+            font = content["font"]
             if check:
                 beside = self.out / "outlines" / font / Path(name).name
                 found = problems("cuts", content, _load(beside) if beside.exists() else None)
                 self.problems += [f"{name}: {problem}" for problem in found]
             write(self.out / name, dumps(content))
-            count = self._count(font, source)
+            count = self._count(font)
             count["readings"] += len(content["readings"])
             count["skipped"] += len(content["skipped"])
-            self.tables.setdefault(("cuts", source), []).extend(_lines("cuts", tsv.cut_rows(content)))
-            self.tables.setdefault(("skipped", source), []).extend(_lines("skipped", tsv.skipped_rows(content)))
-            chain = self.chains.get(font)
+            self.tables["cuts"] += _lines("cuts", tsv.cut_rows(content))
+            self.tables["skipped"] += _lines("skipped", tsv.skipped_rows(content))
+            drawn = tsv.drawn_rows(content)
+            self.drawn += drawn
+            count["structures"] |= {(row["char"], row["structure"]) for row in drawn if row["char"]}
             for row in content["readings"]:
                 for cut in row["cuts"]:
                     self.cuts.add(cut["id"])
                     count["cuts"][cut["status"]] = count["cuts"].get(cut["status"], 0) + 1
                     if cut["status"] in ACCEPTED:
-                        count["components"].add(cut["component"])
-                        if chain and cut["path"]:
-                            places = self.library.setdefault(chain, {}).setdefault(cut["component"], {})
-                            places.setdefault(cut["place"], []).append((-_score(cut), cut["id"]))
+                        count["classes"].add(cut["class"])
         for run in runs:
-            # A component's form is the first run's that has one, and its library is that run's:
-            # a library lists the cuts that confirm the form it stands beside.
-            mine: set[tuple[str, str]] = set()
+            # A class's form in a style is the first run's that has one, with that run's library.
+            mine: set[tuple[str, str, str]] = set()
             for path in sorted((run / "forms").glob("*.json.gz")) if (run / "forms").is_dir() else []:
                 content = _load(path)
-                for component, form in content["forms"].items():
-                    if component not in self.forms.setdefault(content["chain"], {}):
-                        self.forms[content["chain"]][component] = form
-                        mine.add((content["chain"], component))
+                for component, styles in content["forms"].items():
+                    for style, form in styles.items():
+                        held = self.forms.setdefault(content["design"], {}).setdefault(component, {})
+                        if style not in held:
+                            held[style] = form
+                            mine.add((content["design"], component, style))
             for path in sorted((run / "library").glob("*.json.gz")) if (run / "library").is_dir() else []:
                 content = _load(path)
-                for component, listed in content["library"].items():
-                    if (content["chain"], component) in mine:
-                        self.lifted.setdefault(content["chain"], {})[component] = listed
+                for component, styles in content["library"].items():
+                    for style, places in styles.items():
+                        if (content["design"], component, style) in mine:
+                            self.library.setdefault(content["design"], {}).setdefault(component, {})[style] = places
 
     def indexes(self) -> None:
-        """Write the form and library files: a lifted component keeps the library that confirms
-        its form; every other component lists its accepted cuts by place, best first."""
-        for chain, forms in sorted(self.forms.items()):
+        """Write the form and library files, naming no cut that no reading holds."""
+        for design, forms in sorted(self.forms.items()):
             self.problems += [
-                f"forms/{chain}: the form of {component} names a cut no reading holds."
-                for component, form in sorted(forms.items())
+                f"forms/{design}: the form of {component} in {style} names a cut no reading holds."
+                for component, styles in sorted(forms.items())
+                for style, form in sorted(styles.items())
                 if form["cut"] not in self.cuts
             ]
-            content = {"format": FORMS, "chain": chain, "forms": dict(sorted(forms.items()))}
-            self.problems += [f"forms/{chain}: {problem}" for problem in problems("forms", content)]
-            write(self.out / "forms" / f"{chain}.json.gz", dumps(content))
-        for chain in sorted({*self.library, *self.lifted}):
-            library: dict[str, dict[str, list[str]]] = {}
-            for component, places in self.library.get(chain, {}).items():
-                library[component] = {
-                    place: [name for _, name in sorted(cuts)] for place, cuts in sorted(places.items())
-                }
-            # A cut another run's reading took the place of is no longer there to be listed.
-            for component, listed in self.lifted.get(chain, {}).items():
-                kept = {place: [name for name in names if name in self.cuts] for place, names in listed.items()}
-                library[component] = {place: names for place, names in sorted(kept.items()) if names}
-            library = {component: places for component, places in library.items() if places}
-            content = {"format": LIBRARY, "chain": chain, "library": dict(sorted(library.items()))}
-            self.problems += [f"library/{chain}: {problem}" for problem in problems("library", content)]
-            write(self.out / "library" / f"{chain}.json.gz", dumps(content))
+            content = {"format": FORMS, "design": design, "forms": _sorted(forms)}
+            self.problems += [f"forms/{design}: {problem}" for problem in problems("forms", content)]
+            write(self.out / "forms" / f"{design}.json.gz", dumps(content))
+        for design, library in sorted(self.library.items()):
+            kept: dict[str, dict[str, dict[str, list[str]]]] = {}
+            for component, styles in library.items():
+                for style, places in styles.items():
+                    # A cut another run's reading took the place of is no longer there to be listed.
+                    found = {place: [name for name in names if name in self.cuts] for place, names in places.items()}
+                    found = {place: names for place, names in sorted(found.items()) if names}
+                    if found:
+                        kept.setdefault(component, {})[style] = found
+            content = {"format": LIBRARY, "design": design, "library": _sorted(kept)}
+            self.problems += [f"library/{design}: {problem}" for problem in problems("library", content)]
+            write(self.out / "library" / f"{design}.json.gz", dumps(content))
 
-    def flat(self, components: Iterable[Json]) -> None:
-        """Write the flat tables, one per source."""
-        for (name, source), lines in sorted(self.tables.items()):
-            head = tsv.write_table(name, [], self.version)
-            write(self.out / f"{name}.{source}.tsv.gz", head + "".join(lines))
-        by: dict[str, list[Json]] = {}
-        for row in components:
-            by.setdefault(row["source"], []).append(row)
-        for source, rows in sorted(by.items()):
-            write(self.out / f"components.{source}.tsv", tsv.write_table("components", rows, self.version))
-        write(self.out / "verdicts.tsv", tsv.write_table("verdicts", [], self.version))
+    def flat(
+        self, components: Iterable[Json] = (), classes: Iterable[Json] = (), verdicts: Iterable[Json] = ()
+    ) -> None:
+        """Write the flat tables: the cuts, drawn IDS, structures and skipped attempts of every
+        font, and the component, class and verdict rows given."""
+        for name, lines in self.tables.items():
+            write(self.out / f"{name}.tsv.gz", tsv.write_table(name, [], self.version) + "".join(lines))
+        write(self.out / "drawn.tsv.gz", tsv.write_table("drawn", self.drawn, self.version))
+        write(
+            self.out / "structures.tsv.gz", tsv.write_table("structures", tsv.structure_rows(self.drawn), self.version)
+        )
+        for name, rows in (("components", components), ("classes", classes), ("verdicts", verdicts)):
+            write(self.out / f"{name}.tsv", tsv.write_table(name, list(rows), self.version))
 
     def summary(self) -> Json:
-        """Counts per font and source, sets as their sizes."""
+        """Counts per font, sets as their sizes."""
         return {
             font: {
-                source: {**count, "components": len(count["components"]), "cuts": dict(sorted(count["cuts"].items()))}
-                for source, count in sorted(sources.items())
+                **count,
+                "structures": len(count["structures"]),
+                "classes": len(count["classes"]),
+                "cuts": dict(sorted(count["cuts"].items())),
             }
-            for font, sources in sorted(self.counts.items())
+            for font, count in sorted(self.counts.items())
         }
 
     def finish(self, commit: str | None = None) -> Json:
-        """Write the registries, the licence texts, the README, the manifest and the checksums."""
+        """Write the registry, the licence texts, the README, the manifest and the checksums."""
         fonts = sorted({*self.fonts, *self.counts})
-        sources = sorted({source for held in self.counts.values() for source in held})
         write(self.out / "fonts.json", dumps(pins.fonts()))
-        write(self.out / "sources.json", dumps(pins.sources()))
         texts = resource("LICENSES")
         known = {row["id"]: row for row in pins.fonts()["fonts"]}
         rows = [known[font] for font in fonts if font in known]
-        rows += [row for row in pins.sources()["sources"] if row["role"] != "guide" or row["id"] in self.guides]
-        for name in sorted({row["licenceFile"] for row in rows if "licenceFile" in row}):
+        for name in sorted({"CC0-1.0.txt", *(row["licenceFile"] for row in rows if "licenceFile" in row)}):
             shutil.copyfile(texts / name, _ensure(self.out / "LICENSES" / name))
-        text = readme(self.version, self.summary(), self.forms, fonts, sources, sorted(self.guides))
-        write(self.out / "README.md", text)
+        write(self.out / "README.md", readme(self.version, self.summary(), self.forms, fonts))
         files = []
         for path in sorted(self.out.rglob("*")):
             if path.is_file() and path.name not in ("manifest.json", "SHA256SUMS"):
@@ -251,18 +266,25 @@ class Release:
             "release": self.version,
             "tool": {"name": "han-decompose", "version": __version__, **({"commit": commit} if commit else {})},
             "fonts": [{"id": row["id"], "sha256": row["sha256"]} for row in pins.fonts()["fonts"]],
-            "sources": [
-                {"id": row["id"], "pin": row["pin"], "files": {f["file"]: f["sha256"] for f in row.get("files", ())}}
-                for row in pins.sources()["sources"]
-            ],
             "counts": self.summary(),
             "files": files,
         }
+        self.problems += [f"manifest.json: {problem}" for problem in problems("manifest", manifest)]
         write(self.out / "manifest.json", dumps(manifest))
         sums = [f"{row['sha256']}  {row['path']}\n" for row in files]
         sums.append(f"{_digest(self.out / 'manifest.json')}  manifest.json\n")
         write(self.out / "SHA256SUMS", "".join(sums))
         return manifest
+
+
+def _first(paths: Sequence[Path]) -> Json:
+    """The first run's file of a shard that several runs may hold."""
+    return _load(paths[0])
+
+
+def _sorted(nested: dict[str, Any]) -> dict[str, Any]:
+    """A nested mapping with every level in key order."""
+    return {key: _sorted(value) if isinstance(value, dict) else value for key, value in sorted(nested.items())}
 
 
 def _ensure(path: Path) -> Path:
@@ -280,11 +302,9 @@ def _lines(name: str, rows: Sequence[tsv.Row]) -> list[str]:
     return tsv.write_table(name, rows).split("\n", 2)[2].splitlines(keepends=True) if rows else []
 
 
-def readme(
-    version: str, counts: Json, forms: Json, fonts: Sequence[str], sources: Sequence[str], guides: Sequence[str]
-) -> str:
-    """The release's README: what it holds, how much, and every font and source with its licence
-    and attribution."""
+def readme(version: str, counts: Json, forms: Json, fonts: Sequence[str]) -> str:
+    """The release's README: what it holds, how much, and every font with its licence and
+    copyright line."""
     known = {row["id"]: row for row in pins.fonts()["fonts"]}
     lines = [
         f"# han-decompose data {version}",
@@ -296,27 +316,26 @@ def readme(
         "",
         "## What is here",
         "",
-        "| Font | Descriptions | Glyphs read | Cuts accepted | Cuts refused | Components cut | Attempts skipped |",
+        "| Font | Glyphs read | Cuts accepted | Cuts refused | Classes cut | Structures | Attempts skipped |",
         "|---|---|---|---|---|---|---|",
     ]
-    for font, held in counts.items():
-        for source, count in held.items():
-            lines.append(
-                f"| `{font}` | `{source}` | {count['readings']:,} | {count['cuts'].get('accepted', 0):,} | "
-                f"{count['cuts'].get('refused', 0):,} | {count['components']:,} | {count['skipped']:,} |"
-            )
+    for font, count in counts.items():
+        lines.append(
+            f"| `{font}` | {count['readings']:,} | {count['cuts'].get('accepted', 0):,} | "
+            f"{count['cuts'].get('refused', 0):,} | {count['classes']:,} | {count['structures']:,} | "
+            f"{count['skipped']:,} |"
+        )
     if forms:
-        lines += ["", "| Chain | Components with a chosen form |", "|---|---|"]
-        lines += [f"| `{chain}` | {len(held):,} |" for chain, held in sorted(forms.items())]
+        lines += ["", "| Design | Classes with a chosen form |", "|---|---|"]
+        lines += [f"| `{design}` | {len(held):,} |" for design, held in sorted(forms.items())]
     statuses: dict[str, int] = {}
-    for held in counts.values():
-        for count in held.values():
-            for status, number in count["cuts"].items():
-                statuses[status] = statuses.get(status, 0) + number
+    for count in counts.values():
+        for status, number in count["cuts"].items():
+            statuses[status] = statuses.get(status, 0) + number
     judged = statuses.get("reviewed-right", 0) + statuses.get("reviewed-wrong", 0)
     lines += [
         "",
-        "By status, over all fonts and sources: " + ", ".join(f"{n:,} {s}" for s, n in sorted(statuses.items())) + "."
+        "By status, over all fonts: " + ", ".join(f"{n:,} {s}" for s, n in sorted(statuses.items())) + "."
         if statuses
         else "",
         "",
@@ -329,11 +348,9 @@ def readme(
         "",
         "## Licences",
         "",
-        "An outline file is under the licence of its font. A cut file holds contour indices and labels, is",
-        "under the licence of its font, and states the terms of the description source its labels were read",
-        "from; a flat table holds the rows of one source. The texts are in `LICENSES/`. This is how the",
-        "project applies the terms and no legal advice:",
-        "<https://github.com/mkpoli/han-decompose/blob/main/docs/licensing.md>.",
+        "An outline file and a stroke file are under the licence of its font, named below. Every other file",
+        "is label data under CC0-1.0. The texts are in `LICENSES/`. This is how the project applies the terms",
+        "and no legal advice: <https://github.com/mkpoli/han-decompose/blob/main/docs/licensing.md>.",
         "",
         "### Fonts",
         "",
@@ -344,31 +361,19 @@ def readme(
             lines.append(
                 f"- `{font}`: {row['name']} {row['version']}, {row['licence']}. {row['copyright']} <{row['url']}>"
             )
-    lines += ["", "### Sources", ""]
-    for row in pins.sources()["sources"]:
-        if row["role"] == "guide" and row["id"] not in guides:
-            continue
-        role = "descriptions" if row["id"] in sources else row["role"]
-        lines.append(
-            f"- `{row['id']}` ({role}): {row['attribution'].rstrip('.')}. {row['licence']}. Pin: {row['pin']}."
-        )
     lines += [
-        "",
-        "Cuts made along a guide name it and its licence, and their files carry its attribution."
-        if guides
-        else "No cut in this release was made along a guide.",
         "",
         "## Checking a download",
         "",
-        "`SHA256SUMS` lists every file; `manifest.json` adds the pinned inputs and the counts above.",
+        "`SHA256SUMS` lists every file; `manifest.json` adds the pinned fonts and the counts above.",
         "",
     ]
     return "\n".join(lines)
 
 
 def pack(release: Path, dist: Path) -> list[Path]:
-    """The release as the files of a release page: one archive of outlines per font, one of cuts
-    per font and source, and the tables, indexes and registries as they are. Archives are written
+    """The release as the files of a release page: one archive of outlines, one of strokes and one
+    of cuts per font, and the tables, indexes and registries as they are. Archives are written
     with fixed times and owners, so the same release packs to the same bytes."""
     if dist.exists() and any(dist.iterdir()):
         raise ValueError(f"{dist} is not empty.")
@@ -379,10 +384,8 @@ def pack(release: Path, dist: Path) -> list[Path]:
         if not path.is_file():
             continue
         parts = path.relative_to(release).parts
-        if parts[0] == "outlines":
-            groups.setdefault(f"outlines.{parts[1].replace('@', '-')}", []).append(path)
-        elif parts[0] == "cuts":
-            groups.setdefault(f"cuts.{parts[1].replace('@', '-')}.{parts[2]}", []).append(path)
+        if parts[0] in ("outlines", "strokes", "cuts"):
+            groups.setdefault(f"{parts[0]}.{parts[1].replace('@', '-')}", []).append(path)
         elif parts[0] in ("LICENSES", "library", "forms"):
             groups.setdefault(parts[0].lower(), []).append(path)
         else:

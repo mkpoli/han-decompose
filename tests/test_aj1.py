@@ -34,16 +34,18 @@ def test_a_cid_is_a_glyph_of_the_character_adobe_gives_it(tmp_path: Path) -> Non
         "field 20: the variation sequence <U+5F50,U+E0101>",
         "code-point",
     )
-    found = aj1.rows(["&AJ1-01815;"], kanji)
-    assert [(row["component"], row["relation"], row["target"], row["source"]) for row in found] == [
-        ("chise:AJ1-01815", "same", "aj1:1815", "chise"),
-        ("aj1:1815", "glyph-of", "u:5F62", "adobe-japan1"),
-    ]
-    assert found[0]["text"] == "&AJ1-01815;" and found[1]["text"] == "" and "JIS X 0208 23-33" in found[1]["basis"]
-    assert "maps U+5F62 to the CID" in found[1]["basis"] and "<U+5F62,U+E0100>" in found[1]["basis"]
-    assert all(problems("component", row) == [] for row in found)
+    (found,) = aj1.rows([1815], kanji)
+    assert (found["component"], found["relation"], found["target"], found["text"]) == (
+        "aj1:1815",
+        "glyph-of",
+        "u:5F62",
+        "",
+    )
+    assert "JIS X 0208 23-33" in found["basis"] and "maps U+5F62 to the CID" in found["basis"]
+    assert "<U+5F62,U+E0100>" in found["basis"]
+    assert problems("component", found) == []
     with pytest.raises(ValueError, match="no CID 9"):
-        aj1.rows(["&AJ1-00009;"], kanji)
+        aj1.rows([9], kanji)
     path.write_text("1\t2\n", encoding="utf-8")
     with pytest.raises(ValueError, match="2 fields"):
         aj1.table(path)
@@ -56,13 +58,8 @@ def test_every_entity_of_the_registry_has_its_character() -> None:
     except pins.PinError:
         pytest.skip("The pinned tables are not in the cache; run `han-decompose fetch`.")
     kanji = aj1.table(paths["aj17-kanji.txt"])
-    names = aj1.entities()
-    assert len(names) == 164 and len(found) == 328
-    assert Counter(aj1.glyph_of(kanji[int(name[5:-1])])[2] for name in names) == {
-        "jis": 118,
-        "code-point": 45,
-        "sequence": 1,
-    }
+    assert len(aj1.CIDS) == 164 and len(found) == 164
+    assert Counter(aj1.glyph_of(kanji[cid])[2] for cid in aj1.CIDS) == {"jis": 118, "code-point": 45, "sequence": 1}
     assert all(problems("component", row) == [] for row in found)
     by = {row["component"]: row["target"] for row in found if row["relation"] == "glyph-of"}
     assert (by["aj1:1815"], by["aj1:1829"], by["aj1:2014"]) == ("u:5F62", "u:7CFB", "u:8015")

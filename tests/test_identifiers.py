@@ -18,16 +18,17 @@ def test_fonts_and_glyphs() -> None:
 
 
 @pytest.mark.parametrize(
-    "selector, shard", [("U+50AC", "050"), ("U+20B36", "20b"), ("U+845B.E0100", "084"), ("gid.9", "gid")]
+    "selector, shard",
+    [("U+50AC", "050"), ("U+20B36", "20b"), ("U+845B.E0100", "084"), ("gid.9", "gid"), ("name.u793e-j", "name")],
 )
 def test_shards(selector: str, shard: str) -> None:
     assert I.shard(selector) == shard
 
 
-def test_a_description_is_named_by_its_text() -> None:
-    assert I.description_id("babelstone", "⿰亻崔") == "babelstone.9d9dea39"
-    assert I.description_id("chise", "⿰亻崔") == "chise.9d9dea39"
-    assert I.description_id("zi-tools", "⿱山隹") == "zi-tools.a674f7d6"
+def test_a_structure_is_named_by_its_text() -> None:
+    assert I.structure_id("⿰亻崔") == "s.9d9dea39"
+    assert I.structure_id("⿱山隹") == "s.a674f7d6"
+    assert I.structure_id("⿰示土") == "s.0a1c0fdb"
 
 
 @pytest.mark.parametrize(
@@ -35,16 +36,21 @@ def test_a_description_is_named_by_its_text() -> None:
     [
         ("山", "u:5C71"),
         ("葛\U000e0100", "u:845B.E0100"),
-        ("{42}", "bs:42"),
-        ("&CDP-8958;", "chise:CDP-8958"),
-        ("&U-i001+20B36;", "chise:U-i001+20B36"),
-        ("#(丿𠃊)", "zi:#(丿𠃊)"),
+        ("&X-00777;", "x:X-00777"),
+        ("&⿸⿹丅丿丨;", "ids:⿸⿹丅丿丨"),
         ("⿱𰀪亻", "ids:⿱𰀪亻"),
     ],
 )
-def test_components_as_sources_write_them(text: str, reference: str) -> None:
+def test_components_as_structures_write_them(text: str, reference: str) -> None:
     assert I.component_of(text) == reference
-    assert I.written(reference) == text
+    expected = text if text[0] != "⿱" else f"&{text};"
+    assert I.written(reference) == expected
+
+
+@pytest.mark.parametrize("text", ["{42}", "&CDP-8958;", "&U-i001+20B36;", "#(丿𠃊)"])
+def test_a_component_no_ledger_names_has_no_reference(text: str) -> None:
+    with pytest.raises(I.UnknownComponent):
+        I.component_of(text)
 
 
 def test_an_adobe_japan1_glyph_has_no_written_form() -> None:
@@ -54,11 +60,20 @@ def test_an_adobe_japan1_glyph_has_no_written_form() -> None:
 
 def test_cuts() -> None:
     glyph = "noto-sans-cjk-jp@2.004/U+50AC"
-    cut = I.cut_id(glyph, "babelstone.9d9dea39", [1, 0])
-    assert cut == "noto-sans-cjk-jp@2.004/U+50AC~babelstone.9d9dea39~1.0"
-    assert I.split_cut_id(cut) == (glyph, "babelstone.9d9dea39", (1, 0))
-    assert I.cut_id(glyph, "babelstone.9d9dea39", []).endswith("~-")
+    steps = [I.step("⿰亻崔", "deal", [1]), I.step("⿱山隹", "deal", [0])]
+    assert steps == ["9d9dea39-deal:1", "a674f7d6-deal:0"]
+    cut = I.cut_id(glyph, steps)
+    assert cut == "noto-sans-cjk-jp@2.004/U+50AC~9d9dea39-deal:1~a674f7d6-deal:0"
+    assert I.split_cut_id(cut) == (glyph, steps)
+    assert I.cut_id(glyph, [I.step("⿰亻崔", "kage", [])]).endswith(":-")
     assert I.parse_path("-") == ()
+
+
+def test_glyphs_are_selected_by_name() -> None:
+    assert I.name_selector("u793e-j") == "name.u793e-j"
+    assert I.glyph_id("glyphwiki@20261115", "name.u793e-j@3") == "glyphwiki@20261115/name.u793e-j@3"
+    assert I.shard("name.u793e-j") == "name" and I.selected("name.u793e-j") is None
+    assert I.order("U+50AC") < I.order("gid.0") < I.order("name.a")
 
 
 def test_a_signature_names_the_component_and_the_contour_set() -> None:
@@ -82,19 +97,22 @@ def test_a_signature_names_the_component_and_the_contour_set() -> None:
         lambda: I.shard("U+50AC.0041"),
         lambda: I.shard("gid.01"),
         lambda: I.split_glyph_id("noto-sans-cjk-jp@2.004/U+50AC\n"),
-        lambda: I.description_id("babelstone", ""),
+        lambda: I.structure_id(""),
+        lambda: I.structure_id("山"),
+        lambda: I.name_selector("U793E"),
         lambda: I.component("u", "5c71"),
         lambda: I.component("u", "50AC\n"),
-        lambda: I.component("bs", "042"),
+        lambda: I.component("bs", "42"),
+        lambda: I.component("x", "X-777"),
         lambda: I.component("ids", "山"),
         lambda: I.split_component("kanji:山"),
-        lambda: I.component_of("{x}"),
-        lambda: I.component_of("{042}"),
         lambda: I.component_of("⿰"),
         lambda: I.component_of("催促"),
         lambda: I.parse_path("1..0"),
         lambda: I.parse_path("01"),
-        lambda: I.split_cut_id("noto-sans-cjk-jp@2.004/U+50AC~babelstone.9d9dea39"),
+        lambda: I.split_cut_id("noto-sans-cjk-jp@2.004/U+50AC"),
+        lambda: I.split_cut_id("noto-sans-cjk-jp@2.004/U+50AC~babelstone.9d9dea39~0"),
+        lambda: I.step("", "deal", []),
         lambda: I.sig("u:5C71", []),
         lambda: I.sig("山", [0]),
     ],

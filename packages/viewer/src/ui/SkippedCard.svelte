@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Skipped } from "han-decompose";
+  import type { Skipped } from "../lib/format1";
   import Ids from "./Ids.svelte";
   import ComponentLabel from "./ComponentLabel.svelte";
 

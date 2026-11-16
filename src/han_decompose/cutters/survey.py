@@ -100,10 +100,10 @@ def readings(description: Description, table: Table, holds: set[str], target: st
 
 @dataclass
 class Outcome:
-    """What the survey made of one character: a reading, or the reason there is none."""
+    """What the survey made of one character: its readings, or the reason there is none."""
 
     char: str
-    reading: Json | None = None
+    readings: list[Json] | None = None
     skipped: Json | None = None
     #: How many components deep the reading was spelled out, and the deepest a tree went.
     opened: int = 0
@@ -112,9 +112,14 @@ class Outcome:
     glyphs: dict[str, Json] = field(default_factory=dict)
 
 
-def instances(row: Json, target: str) -> list[Json]:
-    """The cuts of a reading that are the target and passed its checks."""
-    return [cut for cut in row["cuts"] if cut["text"] == target and cut["status"] == "accepted"]
+def instances(rows: Sequence[Json], target: str) -> list[Json]:
+    """The cuts of the readings of a glyph that are the target and passed its checks."""
+    return [
+        cut
+        for row in rows
+        for cut in row["cuts"]
+        if cut["class"] == I.component_of(target) and cut["status"] == "accepted"
+    ]
 
 
 def survey(
@@ -141,7 +146,7 @@ def survey(
             offered = readings(description, table, holds, target)
         except ValueError as error:
             offered = []
-            last: tuple[str, str] | None = ("unreadable-description", f"unreadable description: {error}")
+            last: tuple[str, str] | None = reading.unreadable(error)
         else:
             last = None
         outcome = None
@@ -151,15 +156,22 @@ def survey(
                 assert glyph is not None
                 try:
                     others = [drawing, *(other for other in drawings if other is not drawing)]
-                    row = read(glyph, others, description, root, table.glyph, whole=False, gate=gate)
+                    rows = read(glyph, others, description, root, table.glyph, whole=False, gate=gate)
                 except Skipped as reason:
                     last = (reason.code, f"{drawing.id}, {count(cap, 'component')} deep: {reason.text}")
                     continue
                 except (ValueError, KeyError, RecursionError) as error:
-                    last = ("unreadable-description", f"{drawing.id}: unreadable description: {error}")
+                    last = (
+                        reading.unreadable(error, f"{drawing.id}: ")
+                        if isinstance(error, ValueError)
+                        else (
+                            "unreadable-description",
+                            f"{drawing.id}: unreadable description: {error}",
+                        )
+                    )
                     continue
-                outcome = Outcome(char, reading=row, opened=cap, fullest=offered[0][0])
-                outcome.glyphs[row["glyph"]] = glyph.record()
+                outcome = Outcome(char, readings=rows, opened=cap, fullest=offered[0][0])
+                outcome.glyphs[rows[0]["glyph"]] = glyph.record()
                 break
             if outcome is not None:
                 break
@@ -179,8 +191,8 @@ def survey(
 _STATE: dict[str, object] = {}
 
 
-def _open(chain: str, source: str, target: str, cache: Path | None) -> None:
-    _STATE["drawings"] = [Drawing(face) for face in Chain.pinned(chain, cache).faces]
+def _open(designs: Sequence[str], source: str, target: str, cache: Path | None) -> None:
+    _STATE["drawings"] = [Drawing(face) for face in Chain.pinned(designs, cache).faces]
     _STATE["table"] = descriptions.table(source, cache)
     _STATE["holds"] = holders(descriptions.table(source, cache), target)
 
@@ -191,12 +203,16 @@ def _work(job: tuple[str, list[str]]) -> list[Outcome]:
 
 
 def run(
-    target: str, chain: str = "sans", source: str = "babelstone", workers: int = 4, cache: Path | None = None
+    target: str,
+    designs: Sequence[str] = ("source-han-sans", "plangothic"),
+    source: str = "babelstone",
+    workers: int = 4,
+    cache: Path | None = None,
 ) -> Iterator[Outcome]:
-    """The survey of one component over a pinned chain and table, on several processes, in code
+    """The survey of one component over the fonts of pinned designs and a pinned table, on several processes, in code
     point order whatever their number."""
     chars = sorted(holders(descriptions.table(source, cache), target))
     jobs = [(target, chars[at : at + 40]) for at in range(0, len(chars), 40)]
-    with ProcessPoolExecutor(workers, initializer=_open, initargs=(chain, source, target, cache)) as pool:
+    with ProcessPoolExecutor(workers, initializer=_open, initargs=(designs, source, target, cache)) as pool:
         for outcomes in pool.map(_work, jobs):
             yield from outcomes

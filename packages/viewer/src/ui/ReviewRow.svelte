@@ -1,7 +1,7 @@
 <script lang="ts">
   // One cut of the review queue: the host with its pieces one colour each, the cut in the host, the
   // part alone and the reference glyph, then the verdict.
-  import type { VerdictRow } from "han-decompose";
+  import type { VerdictRow } from "../lib/format1";
   import { referenceGlyph } from "../lib/components.ts";
   import { resolveCut, type Release } from "../lib/data.ts";
   import { n, t } from "../lib/i18n.svelte.ts";

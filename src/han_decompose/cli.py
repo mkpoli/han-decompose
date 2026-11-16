@@ -18,6 +18,9 @@ from .release import Release, pack
 from .schema import Json
 from .store import Store
 
+#: The designs glyphs are read in when none is named: Source Han Sans, then Plangothic where it lacks one.
+DESIGNS = ["source-han-sans", "plangothic"]
+
 app = typer.Typer(no_args_is_help=True, add_completion=False, help=__doc__)
 
 
@@ -63,13 +66,15 @@ def citations() -> None:
 @app.command()
 def parity(
     export: Annotated[Path, typer.Argument(help="A han-compose web export folder.")],
-    chain: Annotated[str, typer.Option(help="The font chain the export was written from.")] = "sans",
+    design: Annotated[
+        list[str] | None, typer.Option(help="A design of the fonts the export was written from, in order.")
+    ] = None,
     cache: Annotated[Path | None, typer.Option(help="The cache folder the pinned fonts are in.")] = None,
 ) -> None:
     """Check that every glyph record of a han-compose export is the outline read here from the
     same fonts: the same contours in the same order, point for point on the export's grid."""
     try:
-        with Chain.pinned(chain, cache) as fonts:
+        with Chain.pinned(design or DESIGNS, cache) as fonts:
             result = composer_export.parity(export, fonts)
     except (pins.PinError, KeyError, ValueError, OSError) as error:
         typer.echo(str(error.args[0]) if isinstance(error, KeyError) else str(error), err=True)
@@ -88,7 +93,9 @@ def parity(
 @app.command()
 def survey(
     component: Annotated[str, typer.Argument(help="The component to cut out, as one character.")],
-    chain: Annotated[str, typer.Option(help="The font chain to read the glyphs in.")] = "sans",
+    design: Annotated[
+        list[str] | None, typer.Option(help="A design whose fonts the glyphs are read in, in order of preference.")
+    ] = None,
     source: Annotated[str, typer.Option(help="The description source.")] = "babelstone",
     out: Annotated[Path | None, typer.Option(help="A folder to write outline and cut files into.")] = None,
     workers: Annotated[int, typer.Option(help="How many processes cut at once.")] = 4,
@@ -100,27 +107,33 @@ def survey(
     if out is not None and out.exists() and any(out.iterdir()):
         typer.echo(f"{out} is not empty.", err=True)
         raise typer.Exit(1)
+    designs = design or DESIGNS
     store = Store()
     read = accepted = characters = refused = 0
     reasons: dict[str, int] = {}
     try:
-        for outcome in surveys.run(component, chain, source, workers, cache):
+        for outcome in surveys.run(component, designs, source, workers, cache):
             for glyph, record in outcome.glyphs.items():
                 store.record(*I.split_glyph_id(glyph), record)
-            if outcome.reading is not None:
+            if outcome.readings is not None:
                 read += 1
-                found = surveys.instances(outcome.reading, component)
+                found = surveys.instances(outcome.readings, component)
                 accepted += len(found)
                 characters += bool(found)
                 refused += sum(
-                    cut["text"] == component and cut["status"] == "refused" for cut in outcome.reading["cuts"]
+                    cut["class"] == I.component_of(component) and cut["status"] == "refused"
+                    for row in outcome.readings
+                    for cut in row["cuts"]
                 )
-                store.reading(outcome.reading)
+                for row in outcome.readings:
+                    store.reading(row)
             elif outcome.skipped is not None:
                 code = outcome.skipped["reason"]["code"]
                 reasons[code] = reasons.get(code, 0) + 1
                 font = (
-                    outcome.skipped["glyph"].split("/")[0] if "glyph" in outcome.skipped else pins.chain(chain)[0]["id"]
+                    outcome.skipped["glyph"].split("/")[0]
+                    if "glyph" in outcome.skipped
+                    else pins.chain(designs[0])[0]["id"]
                 )
                 store.skip(outcome.skipped, font)
     except (pins.PinError, KeyError, OSError) as error:
@@ -138,25 +151,30 @@ def survey(
 
 @app.command()
 def lift(
-    chain: Annotated[str, typer.Option(help="The font chain to read the glyphs in.")] = "sans",
+    design: Annotated[
+        list[str] | None, typer.Option(help="A design whose fonts the glyphs are read in, in order of preference.")
+    ] = None,
     out: Annotated[Path | None, typer.Option(help="A folder to write the files into.")] = None,
     workers: Annotated[int, typer.Option(help="How many processes cut at once.")] = 4,
     cache: Annotated[Path | None, typer.Option(help="The cache folder the pinned files are in.")] = None,
 ) -> None:
-    """Lift every CHISE entity, zi.tools chain and numbered component of the component registry
-    out of the characters written with it, and count the forms that stand, by kind, and the cuts
-    in their libraries. The glyph BabelStone Han PUA draws for a numbered component is written
-    with the outlines where a cut was held against it."""
+    """Lift every CHISE entity and numbered component of the component registry that the corpus
+    names out of the characters written with it, and count the forms that stand, by kind, and the
+    cuts in their libraries. A form is filed under the design of the font its host glyph is in. Stroke chains
+    and entities the corpus has no identifier for are counted and left out. The glyph BabelStone Han
+    PUA draws for a numbered component is written with the outlines where a cut was held against
+    it."""
     if out is not None and out.exists() and any(out.iterdir()):
         typer.echo(f"{out} is not empty.", err=True)
         raise typer.Exit(1)
+    designs = design or DESIGNS
     store = Store()
     tried: dict[str, int] = {}
     held: set[str] = set()
     stand: dict[str, int] = {}
     hosts = readings = skipped = 0
     try:
-        for outcome in lifts.run(chain, workers, cache):
+        for outcome in lifts.run(designs, workers, cache):
             tried[outcome.kind] = tried.get(outcome.kind, 0) + 1
             for glyph, record in outcome.glyphs.items():
                 store.record(*I.split_glyph_id(glyph), record)
@@ -174,11 +192,12 @@ def lift(
             if outcome.form is not None:
                 stand[outcome.kind] = stand.get(outcome.kind, 0) + 1
                 hosts += sum(len(cuts) for cuts in outcome.library.values())
-                store.form(chain, outcome.component, outcome.form, outcome.library)
+                store.lifted(outcome.component, outcome.component, outcome.form, outcome.library)
         # The glyphs BabelStone Han PUA draws for the numbered components that were lifted.
         for reference in numbered.glyphs(descriptions.table("babelstone", cache), cache).values():
             if I.glyph_id(reference.font, reference.selector) in held:
                 store.glyph(reference)
+        left = lifts.registry(cache)[1]
     except BrokenProcessPool as error:
         typer.echo("A process could not start: run `han-decompose fetch` and check the cache.", err=True)
         raise typer.Exit(1) from error
@@ -190,6 +209,7 @@ def lift(
     typer.echo(f"library cuts\t{hosts}")
     typer.echo(f"hosts read\t{readings}")
     typer.echo(f"hosts skipped\t{skipped}")
+    typer.echo(f"unnamed-component: left out\t{len(left)}")
     if out is not None:
         typer.echo(f"files\t{len(store.write(out))}\t{out}")
 
@@ -197,21 +217,24 @@ def lift(
 @app.command()
 def read(
     out: Annotated[Path, typer.Argument(help="A folder to write the outline and cut files into.")],
-    chain: Annotated[str, typer.Option(help="The font chain to read the glyphs in.")] = "sans",
+    design: Annotated[
+        list[str] | None, typer.Option(help="A design whose fonts the glyphs are read in, in order of preference.")
+    ] = None,
     source: Annotated[str, typer.Option(help="The description source.")] = "babelstone",
     workers: Annotated[int, typer.Option(help="How many processes cut at once.")] = 4,
     blocks: Annotated[list[str] | None, typer.Option(help="Blocks of 256 code points to read, as `04e`.")] = None,
     cache: Annotated[Path | None, typer.Option(help="The cache folder the pinned files are in.")] = None,
 ) -> None:
-    """Read every description of a source in a chain: each glyph dealt to the components of its
+    """Read every description of a source in a design: each glyph dealt to the components of its
     description, and deeper where they can be told apart. A block already written under the
     folder is left as it is, so a run that stopped goes on where it was."""
+    designs = design or DESIGNS
     total = libraries.Counts()
     try:
-        for block, counts in libraries.run(chain, source, out, workers, cache, blocks):
+        for block, counts in libraries.run(designs, source, out, workers, cache, blocks):
             total.add(counts)
             typer.echo(f"{block}\t{counts.readings}\t{sum(counts.skipped.values())}", err=True)
-        added = libraries.named(out, chain, cache)
+        added = libraries.named(out, designs, cache)
     except (pins.PinError, KeyError, OSError) as error:
         typer.echo(str(error.args[0]) if isinstance(error, KeyError) else str(error), err=True)
         raise typer.Exit(1) from error
@@ -225,9 +248,14 @@ def read(
 
 
 def component_rows(cache: Path | None) -> list[Json]:
-    """The rows of the component tables: the Adobe-Japan1 glyphs CHISE names, and the numbered
-    components with their code points in BabelStone Han PUA."""
-    return [*aj1.pinned(cache), *numbered.rows(descriptions.table("babelstone", cache))]
+    """The rows of the component table: the Adobe-Japan1 glyphs that descriptions name, and the
+    numbered components with their code points in BabelStone Han PUA."""
+    table = descriptions.table("babelstone", cache)
+    names = descriptions.corpus_names(cache)
+    left = numbered.unnamed(table, names)
+    if left:
+        typer.echo(f"no identifier in the corpus, left out: {' '.join(left)}", err=True)
+    return [*aj1.pinned(cache), *numbered.rows(table, names)]
 
 
 @app.command()
@@ -238,14 +266,14 @@ def release(
         list[Path], typer.Option(help="A folder of outline and cut files; the first given takes precedence.")
     ],
     dist: Annotated[
-        Path | None, typer.Option(help="A folder to pack the release into, one archive per font and source.")
+        Path | None, typer.Option(help="A folder to pack the release into, one archive per font and kind.")
     ] = None,
     commit: Annotated[str | None, typer.Option(help="The commit the runs were made from.")] = None,
     cache: Annotated[Path | None, typer.Option(help="The cache folder the pinned files are in.")] = None,
 ) -> None:
-    """Build a data release from cutting runs: their files merged and checked, the flat tables per
-    source, the component tables, the registries, a README with every source and licence, the
-    licence texts, a manifest and checksums. Nothing is published."""
+    """Build a data release from cutting runs: their files merged and checked, the flat tables, the
+    registry, a README with every font and licence, the licence texts, a manifest and checksums.
+    Nothing is published."""
     try:
         built = Release(out, version)
         built.shards(run)
@@ -258,10 +286,9 @@ def release(
     for problem in built.problems[:50]:
         typer.echo(problem, err=True)
     typer.echo(f"files\t{len(manifest['files'])}")
-    for font, sources in manifest["counts"].items():
-        for source, count in sources.items():
-            cuts = " ".join(f"{status} {number}" for status, number in count["cuts"].items())
-            typer.echo(f"{font}\t{source}\treadings {count['readings']}\t{cuts}\tcomponents {count['components']}")
+    for font, count in manifest["counts"].items():
+        cuts = " ".join(f"{status} {number}" for status, number in count["cuts"].items())
+        typer.echo(f"{font}\treadings {count['readings']}\t{cuts}\tclasses {count['classes']}")
     if built.problems:
         typer.echo(f"problems\t{len(built.problems)}", err=True)
         raise typer.Exit(1)
@@ -275,22 +302,20 @@ def release(
 
 @app.command()
 def components(
-    out: Annotated[Path, typer.Argument(help="A folder to write the component tables into.")],
+    out: Annotated[Path, typer.Argument(help="A folder to write the component table into.")],
     cache: Annotated[Path | None, typer.Option(help="The cache folder the pinned files are in.")] = None,
 ) -> None:
-    """Write the component tables, one per source: the Adobe-Japan1 glyphs CHISE's descriptions
-    name, each with the character Adobe's kanji table makes it a glyph of, and BabelStone's numbered
-    components with their code points in BabelStone Han PUA."""
+    """Write the component table: each Adobe-Japan1 glyph that descriptions name, with the
+    character Adobe's kanji table makes it a glyph of, and BabelStone's numbered components with
+    their code points in BabelStone Han PUA."""
     try:
         rows = component_rows(cache)
     except (pins.PinError, ValueError, KeyError, OSError) as error:
         typer.echo(str(error.args[0]) if isinstance(error, KeyError) else str(error), err=True)
         raise typer.Exit(1) from error
     out.mkdir(parents=True, exist_ok=True)
-    for source in sorted({row["source"] for row in rows}):
-        mine = [row for row in rows if row["source"] == source]
-        (out / f"components.{source}.tsv").write_text(tsv.write_table("components", mine), encoding="utf-8")
-        typer.echo(f"components.{source}.tsv\t{len(mine)}")
+    (out / "components.tsv").write_text(tsv.write_table("components", rows), encoding="utf-8")
+    typer.echo(f"components.tsv\t{len(rows)}")
 
 
 @app.command("import-numbered")
@@ -308,7 +333,7 @@ def import_numbered(
     try:
         file, registry = numbered_forms.pinned(cache)
         table = descriptions.table("babelstone", cache)
-        with Chain.pinned(numbered_forms.CHAIN, cache) as chain:
+        with Chain.pinned(numbered_forms.DESIGNS, cache) as chain:
             drawings = [Drawing(face) for face in chain.faces]
             references = lifts.numbered(table, Drawing(Face.pinned(numbered.FONT, cache)))
             for outcome in numbered_forms.imports(file, table, registry, drawings, references):
@@ -318,7 +343,7 @@ def import_numbered(
                 for row in outcome.readings:
                     store.reading(row)
                 assert outcome.form is not None
-                store.form(numbered_forms.CHAIN, outcome.component, outcome.form, outcome.library)
+                store.lifted(outcome.component, outcome.component, outcome.form, outcome.library)
             total = len(numbered_forms.forms(file, table))
     except (pins.PinError, KeyError, OSError) as error:
         typer.echo(str(error.args[0]) if isinstance(error, KeyError) else str(error), err=True)

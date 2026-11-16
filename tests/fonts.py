@@ -89,13 +89,14 @@ def row(identifier: str, upem: int = 1024) -> Json:
     return {"id": identifier, "upem": upem}
 
 
-def pinned_chain(name: str) -> Chain:
-    """A pinned chain, or a skip when its fonts are not in the cache (`han-decompose fetch`)."""
+def pinned_chain(*designs: str) -> Chain:
+    """The fonts of pinned designs in order, or a skip when they are not in the cache
+    (`han-decompose fetch`)."""
     cache = pins.cache_root() / "fonts"
-    missing = [font["file"] for font in pins.chain(name) if not (cache / font["file"]).exists()]
+    missing = [font["file"] for name in designs for font in pins.chain(name) if not (cache / font["file"]).exists()]
     if missing:
         pytest.skip(f"not in the cache: {', '.join(missing)}")
-    return Chain.pinned(name)
+    return Chain.pinned(designs)
 
 
 def pinned_face(identifier: str) -> Face:

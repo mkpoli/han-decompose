@@ -7,20 +7,19 @@ from pathlib import Path
 import pytest
 
 from han_decompose import release, tsv
-from han_decompose.schema import Json
+from han_decompose.schema import Json, problems
 from han_decompose.store import dumps, write
 
 from .conftest import FONT, GOLDEN
 
 ROW = {
-    "component": "bs:42",
-    "kind": "babelstone",
-    "text": "{42}",
-    "relation": "same",
-    "target": "u:F2D4",
-    "basis": "IDS.TXT note 6",
-    "tier": "source",
-    "source": "babelstone",
+    "component": "aj1:1815",
+    "kind": "adobe-japan1",
+    "text": "",
+    "relation": "glyph-of",
+    "target": "u:5F62",
+    "basis": "Adobe-Japan1 CID order",
+    "tier": "derived",
 }
 
 
@@ -40,51 +39,65 @@ def build(out: Path, runs: list[Path]) -> tuple[release.Release, Json]:
     return built, built.finish("abc1234")
 
 
-def test_a_release_holds_the_runs_files_tables_indexes_and_terms(tmp_path: Path) -> None:
+def test_a_release_holds_the_runs_files_tables_indexes_and_licences(tmp_path: Path) -> None:
     built, manifest = build(tmp_path / "out", [golden(tmp_path / "run")])
     out = tmp_path / "out"
     assert built.problems == []
     names = {row["path"] for row in manifest["files"]}
     assert {
         f"outlines/{FONT}/050.json.gz",
-        f"cuts/{FONT}/babelstone/050.json.gz",
-        "cuts.babelstone.tsv.gz",
-        "skipped.babelstone.tsv.gz",
-        "components.babelstone.tsv",
+        f"cuts/{FONT}/050.json.gz",
+        "cuts.tsv.gz",
+        "drawn.tsv.gz",
+        "structures.tsv.gz",
+        "skipped.tsv.gz",
+        "components.tsv",
+        "classes.tsv",
         "verdicts.tsv",
-        "library/sans.json.gz",
         "fonts.json",
-        "sources.json",
         "README.md",
         "LICENSES/OFL-1.1.txt",
-        "LICENSES/LicenseRef-BabelStone-IDS.txt",
+        "LICENSES/CC0-1.0.txt",
     } <= names
-    assert "LICENSES/CC-BY-SA-3.0.txt" not in names
-    table = gzip.decompress((out / "cuts.babelstone.tsv.gz").read_bytes()).decode("utf-8")
-    name, version, rows = tsv.read_table(table)
-    assert (name, version) == ("cuts", "v0.0.1")
-    (table_file,) = GOLDEN.glob("cuts*.tsv")
-    assert rows == tsv.read_table(table_file.read_text(encoding="utf-8"))[2]
-    library = json.loads(gzip.decompress((out / "library" / "sans.json.gz").read_bytes()))["library"]
-    assert library["u:5C71"] == {"T": [f"{FONT}/U+50AC~babelstone.9d9dea39~1.0"]}
-    counts = manifest["counts"][FONT]["babelstone"]
-    assert counts == {"readings": 1, "skipped": 1, "cuts": {"accepted": 3}, "components": 3}
+    assert "sources.json" not in names and not [name for name in names if "babelstone" in name]
+    for name, golden_name in (
+        ("cuts", "cuts"),
+        ("drawn", "drawn"),
+        ("structures", "structures"),
+        ("skipped", "skipped"),
+    ):
+        table = gzip.decompress((out / f"{name}.tsv.gz").read_bytes()).decode("utf-8")
+        found, version, rows = tsv.read_table(table)
+        assert (found, version) == (name, "v0.0.1")
+        assert rows == tsv.read_table((GOLDEN / f"{golden_name}.tsv").read_text(encoding="utf-8"))[2]
+    assert tsv.read_table((out / "components.tsv").read_text(encoding="utf-8"))[2] == [ROW]
+    assert tsv.read_table((out / "classes.tsv").read_text(encoding="utf-8"))[2] == []
+    assert manifest["counts"][FONT] == {
+        "readings": 2,
+        "skipped": 1,
+        "cuts": {"accepted": 4},
+        "structures": 1,
+        "classes": 4,
+    }
+    assert problems("manifest", manifest) == []
     assert manifest["tool"]["commit"] == "abc1234" and manifest["release"] == "v0.0.1"
     for line in (out / "SHA256SUMS").read_text(encoding="utf-8").splitlines():
         digest, path = line.split("  ")
         assert hashlib.sha256((out / path).read_bytes()).hexdigest() == digest
     readme = (out / "README.md").read_text(encoding="utf-8")
-    assert "Noto Sans CJK JP 2.004, OFL-1.1" in readme and "BabelStone IDS by Andrew West" in readme
-    assert "No cut in this release was made along a guide." in readme
-    assert "By status, over all fonts and sources: 3 accepted." in readme
+    assert "Noto Sans CJK JP 2.004, OFL-1.1" in readme and "© 2014-2021 Adobe" in readme
+    assert "Every other file is label data under CC0-1.0" in readme.replace("\n", " ")
+    assert "By status, over all fonts: 4 accepted." in readme
     assert "No cut in this release has been judged by a person." in readme
+    fonts = json.loads((out / "fonts.json").read_text(encoding="utf-8"))
+    assert problems("fonts", fonts) == [] and {row["id"] for row in fonts["designs"]} >= {"source-han-sans"}
     with pytest.raises(ValueError, match="is not empty"):
         release.Release(out, "v0.0.2")
 
 
 def test_a_font_that_gives_outlines_alone_is_named_with_its_licence(tmp_path: Path) -> None:
     run = golden(tmp_path / "run")
-    head = {"format": "han-decompose/outlines@1.0", "font": "babelstone-han-pua@1.472", "licence": "Arphic-1999"}
+    head = {"format": "han-decompose/outlines@2.0", "font": "babelstone-han-pua@1.472", "licence": "Arphic-1999"}
     square = {
         "contours": [["MLLL", [0, 0, 0, 100, 100, 100, 100, 0]]],
         "pieces": [[0]],
@@ -94,6 +107,7 @@ def test_a_font_that_gives_outlines_alone_is_named_with_its_licence(tmp_path: Pa
     file = {
         **head,
         "copyright": "(c) Arphic Technology, Andrew West.",
+        "notice": "Outlines of BabelStone Han PUA 1.472, changed by han-decompose: a selection of its glyphs.",
         "em": 1000,
         "q": 100,
         "glyphs": {"U+F2D4": square},
@@ -107,24 +121,42 @@ def test_a_font_that_gives_outlines_alone_is_named_with_its_licence(tmp_path: Pa
 
 def test_the_first_run_given_stands_and_a_skip_gives_way_to_a_reading(tmp_path: Path) -> None:
     first, second = golden(tmp_path / "first"), golden(tmp_path / "second")
-    path = second / "cuts" / FONT / "babelstone" / "050.json.gz"
+    one = first / "cuts" / FONT / "050.json.gz"
+    path = second / "cuts" / FONT / "050.json.gz"
     content = json.loads(gzip.decompress(path.read_bytes()))
-    (kept,) = content["readings"]
-    content["skipped"].append({key: kept[key] for key in ("subject", "glyph", "description", "ids")})
+    kept = content["readings"][0]
+    content["skipped"].append({key: kept[key] for key in ("subject", "glyph", "layer", "structure", "text")})
     content["skipped"][-1]["reason"] = {"code": "ambiguous", "text": "two readings fit equally well"}
     content["readings"][0]["method"]["tool"] = "another"
     write(path, dumps(content))
-    merged = release.merge_cuts([first / "cuts" / FONT / "babelstone" / "050.json.gz", path])
-    assert [row["method"]["tool"] for row in merged["readings"]] == ["hand"]
+    merged = release.merge_cuts([one, path])
+    assert [row["method"]["tool"] for row in merged["readings"]] == ["hand", "hand"]
     assert [row["reason"]["code"] for row in merged["skipped"]] == ["too-few-pieces"]
-    other = release.merge_cuts([path, first / "cuts" / FONT / "babelstone" / "050.json.gz"])
-    assert [row["method"]["tool"] for row in other["readings"]] == ["another"]
+    other = release.merge_cuts([path, one])
+    assert [row["method"]["tool"] for row in other["readings"]] == ["another", "hand"]
     outline = second / "outlines" / FONT / "050.json.gz"
     changed = json.loads(gzip.decompress(outline.read_bytes()))
     changed["glyphs"]["U+50AC"]["advance"] = 999
     write(outline, dumps(changed))
     with pytest.raises(ValueError, match="differs from an earlier run"):
         release.merge_outlines([first / "outlines" / FONT / "050.json.gz", outline])
+
+
+def test_another_method_reads_the_same_structure_beside_the_first(tmp_path: Path) -> None:
+    first, second = golden(tmp_path / "first"), golden(tmp_path / "second")
+    path = second / "cuts" / FONT / "050.json.gz"
+    content = json.loads(gzip.decompress(path.read_bytes()))
+    again = content["readings"][0]
+    again["method"] = {"name": "deal", "tool": "han-decompose", "grain": "piece"}
+    for cut in again["cuts"]:
+        cut["id"] = cut["id"].replace("-hand:", "-deal:")
+    content["readings"] = [again]
+    content["readings"][0]["layer"] = []
+    write(path, dumps(content))
+    merged = release.merge_cuts([first / "cuts" / FONT / "050.json.gz", path])
+    root = [row for row in merged["readings"] if row["layer"] == []]
+    assert {row["method"]["name"] for row in root} == {"hand", "deal"}
+    assert [row["chosen"] for row in root].count(True) == 1
 
 
 def test_the_command_builds_and_packs_and_refuses_a_run_that_is_not_there(tmp_path: Path) -> None:
@@ -135,18 +167,14 @@ def test_the_command_builds_and_packs_and_refuses_a_run_that_is_not_there(tmp_pa
 
     try:
         pins.source_paths(pins.source("adobe-japan1"), fetch=False)
-        pins.source_paths(pins.source("ids-input-components"), fetch=False)
-        pins.source_paths(pins.source("babelstone"), fetch=False)
     except pins.PinError:
         pytest.skip("The pinned tables are not in the cache; run `han-decompose fetch`.")
     run = golden(tmp_path / "run")
     arguments = ["release", str(tmp_path / "out"), "v0.0.1", "--run", str(run), "--dist", str(tmp_path / "dist")]
     result = CliRunner().invoke(app, arguments)
     assert result.exit_code == 0, result.output
-    assert f"{FONT}\tbabelstone\treadings 1\taccepted 3\tcomponents 3" in result.output
-    assert (tmp_path / "dist" / "components.adobe-japan1.tsv").exists() and (
-        tmp_path / "dist" / "SHA256SUMS.assets"
-    ).exists()
+    assert f"{FONT}\treadings 2\taccepted 4\tclasses 4" in result.output
+    assert (tmp_path / "dist" / "components.tsv").exists() and (tmp_path / "dist" / "SHA256SUMS.assets").exists()
     missing = ["release", str(tmp_path / "other"), "v0.0.1", "--run", str(tmp_path / "nowhere")]
     result = CliRunner().invoke(app, missing)
     assert result.exit_code == 1 and "is not the folder of a run" in result.output
@@ -156,23 +184,94 @@ def test_the_command_builds_and_packs_and_refuses_a_run_that_is_not_there(tmp_pa
     assert again.exit_code == 1 and "is not empty" in again.output
 
 
-def test_a_release_packs_to_one_archive_per_font_and_source(tmp_path: Path) -> None:
+def test_a_release_packs_to_one_archive_per_font_and_kind(tmp_path: Path) -> None:
     build(tmp_path / "out", [golden(tmp_path / "run")])
     made = release.pack(tmp_path / "out", tmp_path / "dist")
     names = {path.name for path in made}
     assert {
         "outlines.noto-sans-cjk-jp-2.004.tar.gz",
-        "cuts.noto-sans-cjk-jp-2.004.babelstone.tar.gz",
+        "cuts.noto-sans-cjk-jp-2.004.tar.gz",
         "licenses.tar.gz",
-        "library.tar.gz",
-        "cuts.babelstone.tsv.gz",
+        "cuts.tsv.gz",
         "manifest.json",
         "README.md",
         "SHA256SUMS",
         "SHA256SUMS.assets",
     } <= names
-    with tarfile.open(tmp_path / "dist" / "cuts.noto-sans-cjk-jp-2.004.babelstone.tar.gz") as archive:
-        assert archive.getnames() == [f"cuts/{FONT}/babelstone/050.json.gz"]
+    with tarfile.open(tmp_path / "dist" / "cuts.noto-sans-cjk-jp-2.004.tar.gz") as archive:
+        assert archive.getnames() == [f"cuts/{FONT}/050.json.gz"]
     again = release.pack(tmp_path / "out", tmp_path / "again")
     assert all(path.read_bytes() == (tmp_path / "again" / path.name).read_bytes() for path in made)
     assert len(again) == len(made)
+
+
+def _second_run(tmp_path: Path, edit: object) -> tuple[Path, Path, Json]:
+    first, second = golden(tmp_path / "first"), golden(tmp_path / "second")
+    path = second / "cuts" / FONT / "050.json.gz"
+    content = json.loads(gzip.decompress(path.read_bytes()))
+    edit(content)  # type: ignore[operator]
+    write(path, dumps(content))
+    return first / "cuts" / FONT / "050.json.gz", path, content
+
+
+def test_a_later_runs_drawn_ids_for_other_structures_are_kept(tmp_path: Path) -> None:
+    def edit(content: Json) -> None:
+        other = {**content["drawn"]["U+50AC"][0], "structure": "s.a674f7d6", "text": "⿱山隹", "first": True}
+        content["drawn"] = {"U+50AC": [other], "U+5079": [other]}
+
+    one, two, _ = _second_run(tmp_path, edit)
+    merged = release.merge_cuts([one, two])
+    assert [(row["structure"], row["first"]) for row in merged["drawn"]["U+50AC"]] == [
+        ("s.9d9dea39", True),
+        ("s.a674f7d6", False),
+    ]
+    assert list(merged["drawn"]) == ["U+5079", "U+50AC"] and merged["drawn"]["U+5079"][0]["first"] is True
+
+
+def test_a_chosen_reading_stands_until_a_reviewer_picks_another(tmp_path: Path) -> None:
+    def edit(content: Json) -> None:
+        again = json.loads(json.dumps(content["readings"][0]))
+        again["method"] = {"name": "deal", "tool": "han-decompose", "grain": "piece"}
+        again["chosen"] = True
+        for cut in again["cuts"]:
+            cut["id"] = cut["id"].replace("-hand:", "-deal:")
+            cut["evidence"] = {"fit": 0.99}
+        content["readings"].append(again)
+
+    one, two, _ = _second_run(tmp_path, edit)
+    merged = release.merge_cuts([one, two])
+    root = {row["method"]["name"]: row["chosen"] for row in merged["readings"] if not row["layer"]}
+    assert root == {"hand": True, "deal": False} and len(merged["drawn"]["U+50AC"]) == 1
+
+    def reviewed(content: Json) -> None:
+        edit(content)
+        for cut in content["readings"][-1]["cuts"]:
+            cut["status"] = "reviewed-right"
+
+    one, two, _ = _second_run(tmp_path / "again", reviewed)
+    merged = release.merge_cuts([one, two])
+    root = {row["method"]["name"]: row["chosen"] for row in merged["readings"] if not row["layer"]}
+    assert root == {"hand": False, "deal": True} and "U+50AC" not in merged["drawn"]
+
+
+def test_a_reviewers_pick_is_chosen_before_the_best_fit() -> None:
+    from han_decompose.store import choose
+
+    def reading(method: str, status: str, fit: float, chosen: bool = False) -> Json:
+        cut = {"status": status, "evidence": {"fit": fit}}
+        return {
+            "glyph": "g",
+            "layer": [],
+            "structure": "s.0",
+            "method": {"name": method},
+            "chosen": chosen,
+            "cuts": [cut],
+        }
+
+    rows = [reading("axis", "accepted", 0.9), reading("deal", "reviewed-right", 0.1), reading("hand", "accepted", 0.99)]
+    assert [row["chosen"] for row in choose(rows)] == [False, True, False]
+    assert [row["chosen"] for row in choose(rows[:1] + rows[2:])] == [False, True]
+    held = [reading("axis", "accepted", 0.9, True), reading("hand", "accepted", 0.99)]
+    assert [row["chosen"] for row in choose(held, keep=True)] == [True, False]
+    assert [row["chosen"] for row in choose([*held, rows[1]], keep=True)] == [False, False, True]
+    assert [row["chosen"] for row in choose([reading("axis", "refused", 1.0)])] == [False]

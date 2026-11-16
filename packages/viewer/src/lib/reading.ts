@@ -1,5 +1,5 @@
 /** Reading a reading: which cut owns which contour, and the colour of each node. */
-import type { Cut, Reading } from "han-decompose";
+import type { Cut, Reading } from "./format1";
 
 export const NODE_COLOURS = 8;
 

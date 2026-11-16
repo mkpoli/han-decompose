@@ -12,7 +12,7 @@ from han_decompose.cutters import lift
 from han_decompose.cutters.deal import Skipped
 from han_decompose.descriptions import Table
 from han_decompose.pieces import Drawing
-from han_decompose.schema import problems
+from han_decompose.schema import Json, problems
 from han_decompose.store import Store
 
 from .fonts import pinned_chain
@@ -31,7 +31,7 @@ def table() -> Table:
 
 
 def test_the_hosts_of_a_component_and_what_to_lift_from_each() -> None:
-    row = {"text": "&X;", "kind": "entity", "usedIn": "冐肖胃育骨謂亂", "subtraction": "㇯㇯媿鬼女"}
+    row = {"text": "&chise:X;", "kind": "entity", "usedIn": "冐肖胃育骨謂亂", "subtraction": "㇯㇯媿鬼女"}
     found = lift.recipes(row, table())
     assert [(r.host, r.parts, r.op, r.side) for r in found] == [
         ("媿", ["女", "鬼"], "㇯", 0),
@@ -42,9 +42,9 @@ def test_the_hosts_of_a_component_and_what_to_lift_from_each() -> None:
         ("骨", ["冎", "一"], None, 0),
         ("謂", ["言", "田"], None, 0),
     ]
-    assert found[0].description == descriptions.Description("ids-input-components", "&X;", "㇯㇯媿鬼女")
+    assert found[0].description == descriptions.Description("ids-input-components", "&chise:X;", "㇯㇯媿鬼女")
     assert found[-1].siblings == ["言", "田"] and found[1].siblings == ["⺜"]
-    assert lift.recipes({"text": "&Z;", "kind": "entity", "usedIn": "亂"}, table()) == []
+    assert lift.recipes({"text": "&chise:Z;", "kind": "entity", "usedIn": "亂"}, table()) == []
 
 
 def test_a_print_reads_the_shape_whatever_its_size() -> None:
@@ -59,25 +59,35 @@ def test_a_part_sits_where_its_operator_puts_it() -> None:
     upper, lower = np.zeros((126, 126), dtype=bool), np.zeros((126, 126), dtype=bool)
     upper[5:40, 20:100] = True
     lower[60:120, 20:100] = True
-    (recipe,) = lift.recipes({"text": "&X;", "kind": "entity", "usedIn": "冐"}, table())
+    (recipe,) = lift.recipes({"text": "&chise:X;", "kind": "entity", "usedIn": "冐"}, table())
     assert lift.placed(recipe, lower, upper) and not lift.placed(recipe, upper, lower)
-    (other,) = lift.recipes({"text": "&X;", "kind": "entity", "usedIn": "肖"}, table())
+    (other,) = lift.recipes({"text": "&chise:X;", "kind": "entity", "usedIn": "肖"}, table())
     assert lift.placed(other, upper, lower) and not lift.placed(other, lower, upper)
+
+
+#: The designs each chain of ids-input's forms stands for.
+DESIGNS = {"sans": ("source-han-sans", "plangothic"), "serif": ("source-han-serif",)}
 
 
 def pinned(chain: str) -> tuple[dict[str, Table], list[Drawing], dict[str, tuple[str, G.Array | None]]]:
     try:
-        tables = {source: descriptions.table(source) for source in ("chise", "zi-tools")}
+        tables = {source: descriptions.table(source) for source in ("chise", "babelstone")}
         paths = pins.source_paths(pins.source("glyphwiki"), fetch=False)
+        names = descriptions.corpus_names()
     except pins.PinError:
         pytest.skip("The pinned tables are not in the cache; run `han-decompose fetch`.")
-    references = lift.glyphwiki(json.loads(gzip.decompress(paths["custom-outlines.json.gz"].read_bytes())))
-    return tables, [Drawing(face) for face in pinned_chain(chain).faces], references
+    references = lift.glyphwiki(json.loads(gzip.decompress(paths["custom-outlines.json.gz"].read_bytes())), names)
+    return tables, [Drawing(face) for face in pinned_chain(*DESIGNS[chain]).faces], references
+
+
+def entity(text: str) -> Json:
+    """The registry row of a component as the lift reads it, by the text the registry writes."""
+    return next(row for row in lift.registry()[0] if row["name"] == text)
 
 
 def test_a_component_is_what_a_host_leaves_and_its_form_is_the_cut_that_stands() -> None:
     tables, drawings, references = pinned("sans")
-    row = next(row for row in lift.registry() if row["text"] == "&CDP-8958;")
+    row = entity("&CDP-8958;")
     outcome = lift.component(row, tables, drawings, references)
     assert outcome.component == "chise:CDP-8958" and outcome.form is not None
     assert outcome.form["basis"] == "reference" and outcome.form["hosts"] == len(outcome.readings)
@@ -97,37 +107,33 @@ def test_a_component_is_what_a_host_leaves_and_its_form_is_the_cut_that_stands()
         store.reading(found)
     for skipped, font in outcome.skipped:
         store.skip(skipped, font)
-    store.form("sans", outcome.component, outcome.form, outcome.library)
+    store.form("source-han-sans", outcome.component, outcome.component, outcome.form, outcome.library)
     files = dict(store.files())
     for name, content in files.items():
         kind = name.split("/")[0]
         outlines = files.get(f"outlines/{name.split('/')[1]}/{name.split('/')[-1]}") if kind == "cuts" else None
         assert problems(kind, content, outlines) == [], name
-    assert "forms/sans.json.gz" in files and "library/sans.json.gz" in files
+    assert "forms/source-han-sans.json.gz" in files and "library/source-han-sans.json.gz" in files
 
 
 def test_a_subtraction_is_read_as_a_cut_of_the_component_itself() -> None:
     tables, drawings, references = pinned("sans")
-    rows = {row["text"]: row for row in lift.registry()}
-    # Two chains the registry records the same subtraction for, 𠁾 without 丶.
-    first, second = rows["#(-𠃍丨b一)"], rows["#(-𠃍𠄌)"]
-    assert first["subtraction"] == second["subtraction"] == "㇯𠁾丶"
-    recipe = lift.recipes(first, tables["zi-tools"])[0]
-    assert (recipe.host, recipe.parts, recipe.op) == ("𠁾", ["丶"], "㇯")
-    found = lift.record(lift.lift(drawings, recipe), first["text"])
-    assert found["subject"] == "zi:#(-𠃍丨b一)" and found["description"].startswith("ids-input-components.")
+    row = entity("&CDP-8958;")
+    assert row["subtraction"] == "\u31ef冐⺜"
+    recipe = lift.recipes(row, tables["chise"])[0]
+    assert (recipe.host, recipe.parts, recipe.op) == ("冐", ["⺜"], "㇯")
+    found = lift.record(lift.lift(drawings, recipe), row["text"])
+    assert found["subject"] == "chise:CDP-8958" and found["layer"] == [] and found["text"] == "㇯冐⺜"
     (cut,) = found["cuts"]
-    assert cut["path"] == [] and cut["place"] == "" and cut["component"] == "ids:㇯𠁾丶" and not found["complete"]
-    assert set(found["evidence"]) == {"match", "margin"}
+    assert cut["path"] == [] and cut["place"] == "" and cut["class"] == "ids:㇯冐⺜" and not found["complete"]
+    assert cut["id"].endswith("-lift:-") and set(found["evidence"]) == {"match", "margin"}
     store = Store()
-    outcomes = [lift.component(row, tables, drawings, references) for row in (first, second)]
-    for outcome in outcomes:
-        for glyph, record in outcome.glyphs.items():
-            store.record(*I.split_glyph_id(glyph), record)
-        for row in outcome.readings:
-            store.reading(row)
-    assert outcomes[0].form is not None and outcomes[1].form is not None
-    assert outcomes[0].form["cut"] == outcomes[1].form["cut"] and outcomes[0].form["sig"] == outcomes[1].form["sig"]
+    outcome = lift.component(row, tables, drawings, references)
+    for glyph, record in outcome.glyphs.items():
+        store.record(*I.split_glyph_id(glyph), record)
+    for reading in outcome.readings:
+        store.reading(reading)
+    assert outcome.form is not None
     files = dict(store.files())
     for name, content in files.items():
         kind = name.split("/")[0]
@@ -135,9 +141,19 @@ def test_a_subtraction_is_read_as_a_cut_of_the_component_itself() -> None:
         assert problems(kind, content, outlines) == [], name
 
 
+def test_a_chain_and_an_entity_the_corpus_lacks_are_left_out_with_their_reason() -> None:
+    try:
+        rows, left = lift.registry()
+    except pins.PinError:
+        pytest.skip("The pinned tables are not in the cache; run `han-decompose fetch`.")
+    assert all(row["kind"] in ("entity", "numbered") and row["text"].startswith("&") for row in rows)
+    assert left and all(text.startswith("#(") for text in left)
+    assert sum(text.startswith("#(") for text in left) == 164
+
+
 def test_a_host_that_gives_nothing_is_filed_with_the_glyph_that_was_read() -> None:
     tables, drawings, _ = pinned("sans")
-    row = next(row for row in lift.registry() if row["text"] == "&CDP-8958;")
+    row = entity("&CDP-8958;")
     for recipe in lift.recipes(row, tables["chise"]):
         try:
             lift.lift(drawings, recipe)
@@ -155,7 +171,8 @@ def reference() -> dict[str, dict[str, tuple[str, float, float, int, float | Non
     for line in text.splitlines()[1:]:
         chain, component, host, _, match, margin, agree, likeness, library = line.split("\t")
         scores = (float(match), float(margin), int(agree), float(likeness) if likeness else None)
-        out[chain][I.component_of(component)] = (host, *scores, library)
+        named = descriptions.token(component)
+        out[chain][I.component_of(named) if named else component] = (host, *scores, library)
     return out
 
 
@@ -169,7 +186,7 @@ def test_the_forms_ids_input_cut_for_han_compose_reproduce(chain: str) -> None:
     expected = json.loads((FIXTURES / "expected.json").read_text(encoding="utf-8"))[chain]
     mine = {}
     kinds: dict[str, int] = {}
-    for outcome in lift.run(chain):
+    for outcome in lift.run(DESIGNS[chain]):
         # ids-input cut entities and chains; numbered components have no forms of its to hold against.
         if outcome.form is None or outcome.kind == "numbered":
             continue
@@ -189,5 +206,23 @@ def test_the_forms_ids_input_cut_for_han_compose_reproduce(chain: str) -> None:
         if found[:4] != other[:4] or found[5] != other[5] or not likeness:
             differ.append(component)
     assert differ == expected["differ"]
-    assert {kind: kinds[kind] for kind in ("entity", "chain")} == expected["forms"]
+    assert {"entity": kinds["entity"], "chain": 0} == expected["forms"]
     assert sum(int(part.split(":")[1]) for row in mine.values() for part in row[5].split()) == expected["library"]
+
+
+def test_a_form_is_filed_under_the_design_of_its_host_font() -> None:
+    plan = "plangothic-p1@2.9.5795/U+4E00~0a1c0fdb-lift:0"
+    noto = "noto-sans-cjk-jp@2.004/U+4E00~0a1c0fdb-lift:0"
+    store = Store()
+    store.lifted(
+        "chise:CDP-8958", "chise:CDP-8958", {"cut": plan, "sig": "00000000", "basis": "agree"}, {"L": [plan, noto]}
+    )
+    store.lifted("chise:CDP-8959", "chise:CDP-8959", {"cut": noto, "sig": "00000000", "basis": "agree"}, {"L": [plan]})
+    files = dict(store.files())
+    assert sorted(files) == [
+        "forms/plangothic.json.gz",
+        "forms/source-han-sans.json.gz",
+        "library/plangothic.json.gz",
+    ]
+    assert files["library/plangothic.json.gz"]["library"] == {"chise:CDP-8958": {"chise:CDP-8958": {"L": [plan]}}}
+    assert files["forms/plangothic.json.gz"]["design"] == "plangothic"

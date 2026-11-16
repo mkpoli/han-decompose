@@ -1,7 +1,7 @@
 <script lang="ts">
   // One reading: the description, the glyph with each cut painted in the colour of its node, and the
   // list of cuts. A row and its contours light up together.
-  import type { Cut, Glyph, Reading } from "han-decompose";
+  import type { Cut, Glyph, Reading } from "../lib/format1";
   import { componentText } from "../lib/ids.ts";
   import { n, t, tx } from "../lib/i18n.svelte.ts";
   import { byPath, isRefused, layers, nodeColour, nodeIndex, pathKey, type Paint } from "../lib/reading.ts";

@@ -1,7 +1,7 @@
 <script lang="ts">
   // A glyph drawn from its outline: the em square with y up, the ink in the current colour. Sets of
   // contours are painted over the ink, each in one colour; a refused cut is hatched, never coloured.
-  import type { Glyph } from "han-decompose";
+  import type { Glyph } from "../lib/format1";
   import { contoursPath, EM_VIEWBOX } from "../lib/path.ts";
   import type { Paint } from "../lib/reading.ts";
 
