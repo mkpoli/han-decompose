@@ -93,9 +93,9 @@ its glyph or character, and the text stands beside it wherever it appears.
 A path is a node's place in one reading's tree: the operand indices from the root, counted from 0,
 joined by dots (`1.0`). The root is `-`.
 
-A cut is `<glyph>~<step>…`, one step per layer from the glyph down, each `<h8>:<path>` with the
-`h8` of the structure that layer was read as: `noto-sans-cjk-jp@2.004/U+793E~0a1c0fdb:0` is the
-left part of 社 read as `⿰示土`.
+A cut is `<glyph>~<step>…`, one step per layer from the glyph down, each `<h8>-<method>:<path>`
+with the `h8` of the structure that layer was read as and the reading's method name:
+`noto-sans-cjk-jp@2.004/U+793E~0a1c0fdb-deal:0` is the left part of 社 dealt under `⿰示土`.
 
 Its signature `sig` is the first eight hex digits of the SHA-256 of its class reference and
 its contour indices, ascending, in decimal, all joined by single spaces. 山 at contours `[0, 2]`
@@ -256,6 +256,7 @@ A reading:
 | `opened` | | The nodes of `tree` read as layers below: `path`, `member` (whose structures the layer was read with), `structure` and its `text`. |
 | `method` | yes | `name`: `deal`, `lift`, `kage`, `axis`, `kanjivg` or `hand`. `tool`, with `version` and `commit`. `grain`: `piece` when whole pieces were assigned, `contour` when single contours were. |
 | `complete` | yes | Whether every contour of the layer is in a cut and every leaf of `tree` has one. |
+| `chosen` | yes | Whether this is the reading its layer and structure use. |
 | `evidence` | | Scores of the reading as a whole. |
 | `cuts` | yes | One cut per labelled node. |
 
@@ -280,7 +281,10 @@ A cut:
 | `division` | yes | `source` for a `kage` division, `machine`, `reviewed` or `hand`. |
 | `status` | yes | `accepted`, `refused` (a check failed), `reviewed-right` or `reviewed-wrong`. |
 
-Within a file, a layer has at most one reading under a structure. A subject that is a character
+Within a file, a layer has at most one reading per method under a structure. Of the readings of
+one structure on one layer, exactly one that is accepted, if any is, has `chosen` true: the one a
+reviewer picked, else the one with the best evidence. Drawn IDS, libraries and opened layers
+use the chosen reading. A subject that is a character
 is read on the glyph of its own code point.
 
 Within a reading:

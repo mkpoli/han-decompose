@@ -163,8 +163,9 @@ is an IVS (13763 = 工 U+E0101). So `glyph-of` rows can be generated from that t
 table is pinned by commit and digest like the fonts.
 
 **Cut** — `<glyph>~<step>~<step>…`, one step per layer from the glyph down, each step
-`<structure h8>:<path>`. 山 in 催, read as `⿰亻崔` and then 崔 as `⿱山隹`:
-`noto-sans-cjk-jp@2.004/U+50AC~9d9dea39:1~a674f7d6:0`. A path inside one step is the
+`<structure h8>-<method>:<path>`, so readings of one structure by different methods (`kage`,
+`deal`, `axis`) stand side by side; one of them is marked chosen. 山 in 催, read as `⿰亻崔` and then 崔 as `⿱山隹`:
+`noto-sans-cjk-jp@2.004/U+50AC~9d9dea39-deal:1~a674f7d6-deal:0`. A path inside one step is the
 operand indices of that alternative joined by dots; a reading's root is `-`. A cut also carries
 `sig`, the first 8 hex digits of the SHA-256 of its class reference and its sorted contour
 indices; `id` + `sig` is what a verdict binds to.
