@@ -44,7 +44,7 @@ def test_the_readings_of_ids_input_come_out_for_its_cuts() -> None:
         table = descriptions.table("babelstone")
     except Exception:
         pytest.skip("The pinned tables are not in the cache; run `han-decompose fetch`.")
-    drawings = [Drawing(face) for face in pinned_chain("sans").faces]
+    drawings = [Drawing(face) for face in pinned_chain("source-han-sans", "plangothic").faces]
     wanted = {
         "仙": [(0.2145, 0.0065, "noto-sans-cjk-jp@2.004")],
         "岸": [(0.4057, 0.0101, "plangothic-p2@2.9.5795")],
@@ -54,7 +54,7 @@ def test_the_readings_of_ids_input_come_out_for_its_cuts() -> None:
         description = table.first(char)
         glyph = drawings[0].glyph(f"U+{ord(char):04X}")
         assert description is not None and glyph is not None
-        row = deal.read(
+        rows = deal.read(
             glyph,
             drawings,
             description,
@@ -63,9 +63,10 @@ def test_the_readings_of_ids_input_come_out_for_its_cuts() -> None:
             whole=False,
             gate=gates.gate(table.glyph, "山"),
         )
-        cuts = [cut for cut in row["cuts"] if cut["text"] == "山"]
+        every = [cut for row in rows for cut in row["cuts"]]
+        cuts = [cut for cut in every if cut["class"] == "u:5C71"]
         assert cuts and all(cut["calibrated"] == "u:5C71" and cut["status"] == "accepted" for cut in cuts)
-        assert all("checks" not in cut for cut in row["cuts"] if cut["text"] != "山")
+        assert all("checks" not in cut for cut in every if cut["class"] != "u:5C71")
         found = [
             (cut["checks"]["filled"]["value"], cut["checks"]["skeleton"]["value"], cut["checks"]["filled"]["against"])
             for cut in cuts
@@ -79,18 +80,19 @@ def test_limits_are_borrowed_outside_the_fonts_and_the_component_they_were_set_o
         table = descriptions.table("babelstone")
     except Exception:
         pytest.skip("The pinned tables are not in the cache; run `han-decompose fetch`.")
-    sans = [Drawing(face) for face in pinned_chain("sans").faces]
-    serif = [Drawing(face) for face in pinned_chain("serif").faces]
+    sans = [Drawing(face) for face in pinned_chain("source-han-sans", "plangothic").faces]
+    serif = [Drawing(face) for face in pinned_chain("source-han-serif").faces]
     description = table.first("仙")
     assert description is not None
     for drawings, calibrated in ((sans, ["u:5C71"]), (serif, [False])):
         glyph = drawings[0].glyph("U+4ED9")
         assert glyph is not None
-        row = deal.read(
+        rows = deal.read(
             glyph, drawings, description, description.tree(), table.glyph, whole=False, gate=gates.gate(table.glyph)
         )
-        assert [cut["calibrated"] for cut in row["cuts"] if cut["text"] == "山"] == calibrated
-        assert [cut["calibrated"] for cut in row["cuts"] if cut["text"] == "亻"] == [False]
+        every = [cut for row in rows for cut in row["cuts"]]
+        assert [cut["calibrated"] for cut in every if cut["class"] == "u:5C71"] == calibrated
+        assert [cut["calibrated"] for cut in every if cut["class"] == "u:4EBB"] == [False]
 
 
 def test_a_reading_past_a_limit_refuses_the_cut() -> None:

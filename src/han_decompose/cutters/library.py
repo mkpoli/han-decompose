@@ -105,7 +105,7 @@ def one(description: Description, drawings: Sequence[Drawing], table: Table, sto
         assert glyph is not None
         others = [drawing, *(other for other in drawings if other is not drawing)]
         try:
-            row = read(glyph, others, description, description.tree(), table.glyph, gate=gate, opener=opening)
+            rows = read(glyph, others, description, description.tree(), table.glyph, gate=gate, opener=opening)
         except Skipped as reason:
             last = (reason.code, f"{drawing.id}: {reason.text}")
             continue
@@ -113,12 +113,15 @@ def one(description: Description, drawings: Sequence[Drawing], table: Table, sto
             last = ("unreadable-description", f"{drawing.id}: the description does not read: {error}")
             continue
         store.glyph(glyph)
-        store.reading(row)
         counts.readings += 1
-        for cut in row["cuts"]:
-            counts.cuts[cut["status"]] = counts.cuts.get(cut["status"], 0) + 1
-            counts.components.setdefault(cut["status"], set()).add(cut["component"])
-            counts.against.update(check["against"] for check in cut.get("checks", {}).values() if "against" in check)
+        for row in rows:
+            store.reading(row)
+            for cut in row["cuts"]:
+                counts.cuts[cut["status"]] = counts.cuts.get(cut["status"], 0) + 1
+                counts.components.setdefault(cut["status"], set()).add(cut["class"])
+                counts.against.update(
+                    check["against"] for check in cut.get("checks", {}).values() if "against" in check
+                )
         return
     first = drawn[0].glyph(selector) if drawn else None
     has_ink = first is not None and bool(first.contours)
@@ -136,8 +139,8 @@ def block_of(char: str) -> str:
 _STATE: dict[str, Any] = {}
 
 
-def _open(chain: str, source: str, cache: Path | None) -> None:
-    _STATE["drawings"] = [Drawing(face) for face in Chain.pinned(chain, cache).faces]
+def _open(designs: Sequence[str], source: str, cache: Path | None) -> None:
+    _STATE["drawings"] = [Drawing(face) for face in Chain.pinned(designs, cache).faces]
     _STATE["table"] = descriptions.table(source, cache)
 
 
@@ -163,9 +166,14 @@ def _work(job: tuple[str, list[str], str]) -> tuple[str, Counts]:
 
 
 def run(
-    chain: str, source: str, out: Path, workers: int = 4, cache: Path | None = None, only: Sequence[str] | None = None
+    designs: Sequence[str],
+    source: str,
+    out: Path,
+    workers: int = 4,
+    cache: Path | None = None,
+    only: Sequence[str] | None = None,
 ) -> Iterator[tuple[str, Counts]]:
-    """Every description of a source read in a chain, block by block, each block's files written
+    """Every description of a source read in the fonts of pinned designs, block by block, each block's files written
     under `out`. A block whose marker is already there is left as it is. `only` names blocks."""
     table = descriptions.table(source, cache)
     blocks: dict[str, list[str]] = {}
@@ -178,11 +186,11 @@ def run(
         if (only is None or block in only) and not (out / "blocks" / f"{block}.json").exists()
     ]
     # Blocks differ in cost by an order of magnitude; one per task keeps the processes even.
-    with ProcessPoolExecutor(workers, initializer=_open, initargs=(chain, source, cache)) as pool:
+    with ProcessPoolExecutor(workers, initializer=_open, initargs=(designs, source, cache)) as pool:
         yield from pool.map(_work, jobs, chunksize=1)
 
 
-def named(out: Path, chain: str, cache: Path | None = None) -> int:
+def named(out: Path, designs: Sequence[str], cache: Path | None = None) -> int:
     """Add the outlines of the glyphs the checks compared with, where no reading named them:
     each goes into the outline file of its block. How many were added."""
     import gzip
@@ -191,7 +199,7 @@ def named(out: Path, chain: str, cache: Path | None = None) -> int:
     wanted: set[str] = set()
     for marker in sorted((out / "blocks").glob("*.json")):
         wanted.update(json.loads(marker.read_text(encoding="utf-8")).get("against", ()))
-    drawings = {face.id: Drawing(face) for face in Chain.pinned(chain, cache).faces}
+    drawings = {face.id: Drawing(face) for face in Chain.pinned(designs, cache).faces}
     added = 0
     files: dict[Path, Json] = {}
     for glyph_id in sorted(wanted):

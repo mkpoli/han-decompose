@@ -24,7 +24,7 @@ def test_babelstone_keeps_each_sequence_with_its_regions(tmp_path: Path) -> None
     assert [(row.text, row.tags) for row in table.of("七")] == [("〾⿻一乚", "GHJKPV"), ("〾⿻一㇄", "T")]
     assert [(row.text, row.tags) for row in table.of("催")] == [("⿰亻崔", "GHTJKPV")]
     assert table.first("彔") == descriptions.Description("babelstone", "彔", "⿱{42}氺")
-    assert table.first("催").id == "babelstone.9d9dea39"  # type: ignore[union-attr]
+    assert table.first("催").structure == "⿰亻崔"  # type: ignore[union-attr]
     assert table.first("山") is None and table.of("山") == []
     assert [(row.text, row.tags) for row in table.of("圊")] == [("⿴囗青", "GH[S] T"), ("⿴囗靑", "JK")]
 

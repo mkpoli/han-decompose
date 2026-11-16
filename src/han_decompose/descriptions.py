@@ -1,8 +1,8 @@
 """The description tables of the three pinned sources, read as each source writes them.
 
-`docs/format.md` (2.3) states what a description's text is in each source and what the source
-attaches to it. A table keeps every description of a subject in the source's order; the first is
-the one a reading takes unless told otherwise.
+Each source writes a description in its own notation and may attach tags to it. A table keeps every
+description of a subject in the source's order; the first is the one a reading takes unless told
+otherwise.
 """
 
 import re
@@ -11,7 +11,6 @@ from dataclasses import dataclass, field
 from functools import cache
 from pathlib import Path
 
-from . import identifiers as I
 from . import ids, pins
 
 SOURCES = ("babelstone", "chise", "zi-tools")
@@ -33,8 +32,9 @@ class Description:
     tags: str | None = None
 
     @property
-    def id(self) -> str:
-        return I.description_id(self.source, self.text)
+    def structure(self) -> str:
+        """The text the format's structure is of: the description without the notes zi.tools adds."""
+        return ids.without_notes(self.text) if self.source == "zi-tools" else self.text
 
     def tree(self) -> ids.Node:
         """The description as a tree; ValueError when it does not read as one."""

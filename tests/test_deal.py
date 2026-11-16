@@ -53,7 +53,7 @@ def cached_table() -> descriptions.Table:
 
 
 def test_the_golden_cuts_are_what_dealing_gives() -> None:
-    golden = json.loads((GOLDEN / "cuts" / FONT / "babelstone" / "050.json").read_text(encoding="utf-8"))
+    golden = json.loads((GOLDEN / "cuts" / FONT / "050.json").read_text(encoding="utf-8"))
     table, drawing = cached_table(), Drawing(pinned_face(FONT))
     glyph = drawing.glyph("U+50AC")
     description = table.first("催")
@@ -61,28 +61,34 @@ def test_the_golden_cuts_are_what_dealing_gives() -> None:
     root = description.tree()
     inside = ids.parse("⿱山隹")
     root.children[1] = ids.Node("崔", inside.operator, inside.children, opened="⿱山隹")
-    row = deal.read(glyph, [drawing], description, root, table.glyph)
-    (wanted,) = golden["readings"]
-    for key in ("glyph", "subject", "description", "ids", "tags", "tree", "opened", "complete"):
-        assert row[key] == wanted[key]
-    assert row["method"] == {
-        "name": "deal",
-        "tool": "han-decompose",
-        "version": row["method"]["version"],
-        "grain": "piece",
-    }
-    for cut, other in zip(row["cuts"], wanted["cuts"], strict=True):
-        for key in ("id", "sig", "path", "place", "component", "text", "contours", "box", "frame", "status", "licence"):
-            assert cut[key] == other[key]
-        assert 0 < cut["evidence"]["fit"] <= 1
+    rows = deal.read(glyph, [drawing], description, root, table.glyph)
+    assert len(rows) == len(golden["readings"]) == 2
+    for row, wanted in zip(rows, golden["readings"], strict=True):
+        for key in ("glyph", "subject", "layer", "structure", "text", "tree", "opened", "complete"):
+            expected = json.loads(json.dumps(wanted.get(key)).replace("-hand:", "-deal:"))
+            assert row.get(key) == expected, key
+        assert row["method"] == {
+            "name": "deal",
+            "tool": "han-decompose",
+            "version": row["method"]["version"],
+            "grain": "piece",
+        }
+        for cut, other in zip(row["cuts"], wanted["cuts"], strict=True):
+            for key in ("sig", "path", "place", "class", "contours", "box", "frame", "status"):
+                assert cut[key] == other[key], key
+            assert cut["id"] == other["id"].replace("-hand:", "-deal:") and cut["division"] == "machine"
+    assert rows[1]["layer"] == [rows[0]["cuts"][1]["id"].rsplit("~", 1)[1]]
     # 亻 and 山 draw no window and may not come to enclose one; 隹 draws its own.
-    assert [cut.get("checks") for cut in row["cuts"]] == [
+    assert [cut.get("checks") for row in rows for cut in row["cuts"]] == [
         {"windows": {"value": 0, "limit": 1, "against": f"{FONT}/U+4EBB", "pass": True}},
+        None,
         {"windows": {"value": 0, "limit": 1, "against": f"{FONT}/U+5C71", "pass": True}},
         None,
     ]
-    assert 0 < row["evidence"]["likeness"] <= min(cut["evidence"]["fit"] for cut in row["cuts"])
-    file = {**{key: golden[key] for key in ("format", "font", "source", "terms")}, "readings": [row], "skipped": []}
+    leaves = [cut for row in rows for cut in row["cuts"] if cut["class"] != "u:5D14"]
+    assert all(0 < cut["evidence"]["fit"] <= 1 for cut in leaves)
+    assert 0 < rows[0]["evidence"]["likeness"] <= min(cut["evidence"]["fit"] for cut in leaves)
+    file = {**{key: golden[key] for key in ("format", "font", "design")}, "drawn": {}, "readings": rows, "skipped": []}
     outlines = json.loads((GOLDEN / "outlines" / FONT / "050.json").read_text(encoding="utf-8"))
     assert problems("cuts", file, outlines) == []
 
@@ -133,14 +139,20 @@ def test_the_stacks_on_shan_of_ids_input_reproduce() -> None:
                 row = deal.read(glyph, others, description, description.tree(), table.glyph)
             except deal.Skipped:
                 continue
-            if all(cut["status"] == "accepted" for cut in row["cuts"]):
+            (reading,) = row
+            if all(cut["status"] == "accepted" for cut in reading["cuts"]):
                 pieces = [
-                    sum(1 for piece in glyph.members if set(piece) <= set(cut["contours"])) for cut in row["cuts"]
+                    sum(1 for piece in glyph.members if set(piece) <= set(cut["contours"])) for cut in reading["cuts"]
                 ]
-                found[char] = (drawing.id, row["evidence"]["likeness"], pieces)
+                found[char] = (drawing.id, reading["evidence"]["likeness"], pieces)
                 break
-    assert set(found) == set(wanted)
+    # Four of the 114 that ids-input closed are described with a component no ledger names, which
+    # the format has no reference for.
+    missing = set(wanted) - set(found)
+    assert set(found) <= set(wanted) and missing == {"㞪", "𡶓", "𰎨", "𡸸"}
     for char, (font, likeness, taken) in wanted.items():
+        if char in missing:
+            continue
         assert found[char][0] == font and abs(found[char][1] - likeness) < 0.0006 and found[char][2] == taken
 
 
@@ -176,12 +188,12 @@ def test_a_gate_decides_a_cut_and_names_what_its_limits_rest_on() -> None:
             return None
         return {"filled": {"value": 0.7, "limit": 0.6081, "against": f"{FONT}/U+5C71", "pass": False}}, "u:5C71"
 
-    row = deal.read(glyph, [drawing], description, description.tree(), table.glyph, whole=False, gate=gate)
+    (row,) = deal.read(glyph, [drawing], description, description.tree(), table.glyph, whole=False, gate=gate)
     left, right = row["cuts"]
     assert left["status"] == "accepted" and "checks" not in left and "calibrated" not in left
     assert right["status"] == "refused" and right["calibrated"] == "u:5C71" and set(right["checks"]) == {"filled"}
     assert "redrawn" not in row["evidence"] and left["frame"] == right["frame"]
-    held = deal.read(glyph, [drawing], description, description.tree(), table.glyph)
+    ((held),) = deal.read(glyph, [drawing], description, description.tree(), table.glyph)
     assert 0.4 <= held["evidence"]["redrawn"] <= 1 and set(held["cuts"][1]["checks"]) == {"windows"}
 
 
