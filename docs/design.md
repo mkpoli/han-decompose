@@ -72,8 +72,8 @@ of their own. [`licensing.md`](licensing.md) says which file is under which term
     `99:0:0:0:0:180:200:u793b-01$99:0:0:64:0:197:200:u571f-j`: the left form of 礻 (`u793b-01`)
     in x 0–180 and 土 (`u571f-j`) in x 64–197. `u793a-01`, the left form of 示, is strokes only.
     Jigmo, a font built from GlyphWiki, joins the strokes into one outline (its README names
-    Clipper), which loses both the division and the strokes. Drawn from the data directly, every
-    stroke is a contour of its own and every contour belongs to one placed component.
+    Clipper), which loses both the division and the strokes. Drawn from the data directly, each
+    stroke is its own group of polygons and each group belongs to one placed component.
 
 ## 2. Data model
 
@@ -303,12 +303,19 @@ the structures of every member of its class are tried, and the one that fits set
 - `status`: `accepted`, `refused` (a check failed), `reviewed-right`, `reviewed-wrong`.
 
 **The `kage` method.** GlyphWiki is read as a glyph source of its own. The build takes the latest
-dump at build time (`https://glyphwiki.org/dump.tar.gz`), draws every glyph with the KAGE engine's
-Mincho style without joining strokes, and records the dump's date and SHA-256 in the font row and
+dump at build time (`https://glyphwiki.org/dump.tar.gz`) and draws every glyph the way the KAGE
+engine's `makeGlyph3` does (`kage.js` at kage-engine commit `49232bac`, 2026-02-09):
+`getEachStrokes` expands the type-99 lines into the placed glyphs' strokes in order,
+`adjustStrokes` reshapes each stroke against its neighbours (hooks, bends, verticals, feet, scales
+and cut ends in the Mincho style) and keeps their number and order, and each adjusted stroke is
+drawn into its own polygons. The polygons are not joined; each becomes a contour, and the contours
+of one stroke are kept as a group. A line drawn alone would miss the adjustment, so it is never
+used as the glyph's stroke. The build records the dump's date and SHA-256 in the font row and
 the release manifest. Each release mirrors the dump it read as a release asset of this repository,
 as it mirrors BabelStone Han PUA, and a rebuild reads that mirror. A glyph whose data is a list
 of type-99 lines places one component glyph per line in a box; the placed glyph's name gives the
-style (`u793b-01` is 礻's left form); the strokes each placed glyph draws are its cut, exactly. The
+style (`u793b-01` is 礻's left form); counting the strokes each type-99 line expands to gives the
+range of strokes, and so of contours, that the placed glyph draws, which is its cut, exactly. The
 reading's operands are matched to the placed components in reading order by class, through each
 placed glyph's `related` code point. The division's tier is `source` (GlyphWiki's editors drew it);
 the match to the structure is `machine`. Limits:
@@ -412,8 +419,9 @@ Below the components lies a stroke layer: a leaf cut opened into its strokes, ea
 type and its ink. Two inputs give it.
 
 - **GlyphWiki.** Every line of a KAGE glyph whose type is 1 to 7 is one stroke; type 99 places a
-  component. Drawing each line alone gives that stroke's exact outline, and the placed components
-  say which component it belongs to. These strokes are tier `source` and are the reference the
+  component. The drawing of the `kage` method keeps each adjusted stroke's polygons as a group, so
+  the stroke's outline is that group, and the placed components say which component it belongs
+  to. These strokes are tier `source` and are the reference the
   other method is measured against.
 - **Font outlines.** KanjiVG's centrelines say which contours a stroke runs through: han-compose's
   `Cutter.owners` and `groups` in `kanjivg_cuts.py` (han-compose PR #40, 2026-10-29) map each
@@ -457,7 +465,7 @@ same structure for machines. What shaped them:
 | Source | Becomes | Lacks today |
 |---|---|---|
 | ids-input `data/ids-corpus.json.gz` (BabelStone and CHISE, 211,319 rows) | Candidate structures, read at build time; its `equivalences` the class rows | zi.tools rows, ids-input's own rows, class rows. |
-| GlyphWiki dump (KAGE data, type-99 component lines) | Outlines of the `glyphwiki` design, one contour per stroke; `kage` readings, cuts and styles | The KAGE renderer in the build. |
+| GlyphWiki dump (KAGE data, type-99 component lines) | Outlines of the `glyphwiki` design, contours grouped per stroke; `kage` readings, cuts and styles | The KAGE renderer in the build. |
 | ids-input `data/donor-parts.json` (114 of 138 stacks on 山; BabelStone; Noto then Jigmo) | Complete readings, method `deal`, grain `piece`; `parts` → leaf cuts, `first`/`terminal`/`recursive` → inner nodes derived from leaves | Contour indices (paths are pathops output); node paths (leaves are told apart by label and counting); per-part scores (one `likeness` per character); description id. Its chain puts Jigmo's mincho under a sans face. |
 | `mountain-instances.json.gz`, `component-instances-口.json.gz` (山: 2,220 instances in 2,150 of 2,926 characters; 口: 5,033 in 4,731 of 26,446) | Readings with `tree`, `opened`, `depth`; `route` → `path`; `fit`, `disagreement`, `skeletonAway` and their `…Against` → evidence and checks; `skipped` → skipped rows; `shallower` and `closed` → the reading's depth and the reason the deeper one failed | Contour indices; the other operands' hands (dealt, then dropped); reason codes (free text carrying face and depth); calibration marker for 口; the 口 file still says `ids-input/mountain-instances`. Hand labels live apart in `analysis/mountain-fit/labels.json`, keyed `char#index`. |
 | `strokes` and `tiling` in the 山 file (`split_mountain_strokes.py`), the stroke lab (`feat/stroke-lab`, `lab/strokes/`) | The stroke layer (2.10): neck-cut strokes of 山, tier `machine` | Stroke types per contour set in the format; the neck cut's joins and curves. |
@@ -869,6 +877,9 @@ The tables the build reads. They are cited here and in `pins/sources.json`; the 
   `b42b377d7efbc233ae2a4c1833947e04760e68d1` of adobe-type-tools/Adobe-Japan1.
 - GlyphWiki's licence page in its English translation, as archived on 2025-11-14:
   <https://web.archive.org/web/20251114152951/https://en.glyphwiki.org/wiki/GlyphWiki:License>.
+- kage-engine at commit `49232bac0348fe815f4200d4116ab7917e0db47f` (2026-02-09),
+  <https://github.com/kamichikoichi/kage-engine>: `kage.js` (`makeGlyph3`, `getEachStrokes`,
+  `getEachStrokesOfBuhin`, `adjustStrokes`), read 2026-11-16.
 - GlyphWiki's API, read 2026-11-16: `u793e` (version 7), `u793e-j` (version 3), `u793b-01`
   (version 4) and `u793a-01` (version 7), at `https://glyphwiki.org/api/glyph?name=<name>`.
 - Unihan, read 2026-11-16 at `https://www.unicode.org/cgi-bin/GetUnihanData.pl`: U+31350

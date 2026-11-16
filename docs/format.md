@@ -176,9 +176,10 @@ other file is under CC0-1.0, and `LICENSES/` holds the licence texts.
 | `design` | yes | Design identifier. |
 
 GlyphWiki is one font, `glyphwiki@<YYYYMMDD>` after the date of the dump read: its `url` and
-`sha256` are the dump's, `mirrors` names the copy this repository keeps as a release asset, `file` its cache name, `upem` 200, `licence` `LicenseRef-GlyphWiki`, and
-`renderer` names the KAGE engine's commit and style (`mincho`). Its contours are the polygons the
-engine draws per stroke, not joined.
+`sha256` are the dump's, `mirrors` names the copy this repository keeps as a release asset,
+`file` its cache name, `upem` 200, `licence` `LicenseRef-GlyphWiki`, and `renderer` names the KAGE
+engine's commit, style (`mincho`) and route (`makeGlyph3`: strokes expanded, adjusted, then drawn
+one by one). Its contours are the polygons the engine draws for each adjusted stroke, not joined.
 
 `designs` lists one object per design: `id`, `name`, `style`, `chain` (font identifiers in
 coverage order; a glyph is taken from the first that draws it), and `members`, per font of the
@@ -205,6 +206,7 @@ A glyph:
 | `pieces` | The contour indices of each piece, ascending; pieces ordered by their first index. Every contour is in exactly one piece. |
 | `box` | The box of all contours. |
 | `advance` | The advance width in units. |
+| `strokes` | GlyphWiki glyphs only: per stroke in KAGE order, `type` (1–7) and the contour indices it drew. |
 
 `commands` is a string of pen commands. `points` holds x and y interleaved, in command order.
 
