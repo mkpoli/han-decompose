@@ -24,8 +24,9 @@ from.
 
 Code is under the MIT licence (`LICENSE`).
 
-Data files are outside it. Outline files keep the licence of their font; every other data file is
-under CC0-1.0. [docs/licensing.md](docs/licensing.md) says which terms reach which file.
+Data files are outside it. Each data file keeps the licence of the font its outlines come from and
+lists the terms of the description sources its labels were read from.
+[docs/licensing.md](docs/licensing.md) says which terms reach which file.
 
 ## Sources
 

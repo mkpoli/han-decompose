@@ -16,7 +16,7 @@ composition, a variant library of component and character forms, and a reviewed 
 testing cutters.
 
 Code is MIT. Label data is CC0-1.0. Outlines keep the licence of the font they came from, in files
-of their own. [`licensing.md`](licensing.md) says which file is under which terms.
+of their own. [`licensing-2.md`](licensing-2.md) says which file is under which terms.
 
 ## 1. Findings that shape the design
 
@@ -482,7 +482,7 @@ type and its ink. Two inputs give it.
   not been measured.
 
 A stroke cut at a seam is new geometry: it is written as an outline of its own beside the contour
-indices it came from, under the font's licence, in stroke files per font (`format.md` 4.5). The neck cut leaves
+indices it came from, under the font's licence, in stroke files per font (`format-2.md` 4.5). The neck cut leaves
 rounded blobs at joins and loses the shape of curves, so stroke cuts from font outlines are tier
 `machine` until reviewed, and each is scored against the GlyphWiki stroke of the same character
 and type where one exists.
@@ -495,7 +495,7 @@ verdict whose `sig` no longer matches the built cut is reported as stale and app
 
 ## 3. File format
 
-[`format.md`](format.md) defines the files and `schema/2/han-decompose.schema.json` will state the
+[`format-2.md`](format-2.md) defines the files and `schema/2/han-decompose.schema.json` will state the
 same structure for machines. What shaped them:
 
 - An outline file holds one font and carries that font's licence and copyright line. A cut file
@@ -722,7 +722,8 @@ chains; the viewer and its deployment.
 - 6.4 A corpus commit that han-decompose reads at a fixed digest.
 
 **Phase 7 — format 2 and its registries**
-- 7.1 `docs/format.md` as schema 2, golden files, the TypeScript types; schema 1 deleted.
+- 7.1 The format 2 writer, schema 2, golden files and the TypeScript types; `format-2.md` and
+  `licensing-2.md` replace `format.md` and `licensing.md`, with their parity tests; schema 1 deleted.
 - 7.2 `fonts.json` with `designs` and their evidence; Jigmo, Jigmo2 and Jigmo3 removed from the
   registry and the tests; `pins/sources.json` reduced to the inputs of 2.2.
 - 7.3 Outline files in format 2 for every pinned font.
