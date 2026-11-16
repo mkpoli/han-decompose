@@ -104,14 +104,11 @@ def test_a_glyph_with_fewer_pieces_than_operands_is_skipped() -> None:
 
 def test_the_stacks_on_shan_of_ids_input_reproduce() -> None:
     """ids-input's donor-parts.json: the 138 characters BabelStone describes as a stack standing on
-    山, read in Noto Sans, then Jigmo, Jigmo2 and Jigmo3; 114 close. Each row of the fixture is a
-    character, the font it was read in, the weakest agreement of its reading and how many pieces
-    each leaf took."""
+    山, read in Noto Sans CJK JP; 35 of them close there and 33 give ids-input's reading. Each row of
+    the fixture is a character, the weakest agreement of its reading and how many pieces each leaf
+    took."""
     table = cached_table()
-    drawings = [
-        Drawing(pinned_face(font))
-        for font in ("noto-sans-cjk-jp@2.004", "jigmo@20250912", "jigmo2@20250912", "jigmo3@20250912")
-    ]
+    drawings = [Drawing(pinned_face(FONT))]
     wanted = {}
     for line in STACKS.read_text(encoding="utf-8").splitlines()[1:]:
         char, font, score, numbers = line.split("\t")
@@ -146,24 +143,18 @@ def test_the_stacks_on_shan_of_ids_input_reproduce() -> None:
                 ]
                 found[char] = (drawing.id, reading["evidence"]["likeness"], pieces)
                 break
-    assert set(found) == set(wanted)
+    # 峃 and 峦 close, but ids-input held them against a Jigmo glyph that is no longer read.
+    assert set(wanted) <= set(found) and set(found) - set(wanted) == {"峃", "峦"}
     for char, (font, likeness, taken) in wanted.items():
         assert found[char][0] == font and abs(found[char][1] - likeness) < 0.0006 and found[char][2] == taken
 
 
-def jigmo() -> tuple[descriptions.Table, list[Drawing]]:
-    table = cached_table()
-    return table, [Drawing(pinned_face(font)) for font in ("jigmo2@20250912", "jigmo@20250912")]
-
-
 @pytest.mark.parametrize(
     ("char", "code"),
-    [("\U00021d4d", "unlike-element"), ("\U00021d87", "layout-mismatch"), ("偹", "too-few-pieces")],
+    [("倻", "unlike-element"), ("偰", "layout-mismatch"), ("偹", "too-few-pieces")],
 )
 def test_a_glyph_that_does_not_close_is_skipped_with_its_reason(char: str, code: str) -> None:
-    table, drawings = jigmo()
-    if char == "偹":
-        drawings = [Drawing(pinned_face(FONT))]
+    table, drawings = cached_table(), [Drawing(pinned_face(FONT))]
     glyph, description = drawings[0].glyph(f"U+{ord(char):04X}"), table.first(char)
     assert glyph is not None and description is not None
     with pytest.raises(deal.Skipped) as skipped:
@@ -193,7 +184,8 @@ def test_a_gate_decides_a_cut_and_names_what_its_limits_rest_on() -> None:
 
 
 def test_the_fonts_start_with_the_glyphs_own() -> None:
-    table, drawings = jigmo()
+    table = cached_table()
+    drawings = [Drawing(pinned_face("noto-serif-cjk-jp@2.003"))]
     glyph = Drawing(pinned_face(FONT)).glyph("U+4ED9")
     assert glyph is not None
     with pytest.raises(ValueError, match="start with the glyph's own"):

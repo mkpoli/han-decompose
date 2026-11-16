@@ -303,12 +303,11 @@
           ]
         },
         "chain": {
-          "description": "Font identifiers in coverage order: a glyph is taken from the first that draws it.",
+          "description": "Font identifiers in coverage order: a glyph is taken from the first that draws it. Empty while no font of the design is pinned.",
           "type": "array",
           "items": {
             "$ref": "#/$defs/fontId"
           },
-          "minItems": 1,
           "uniqueItems": true
         },
         "members": {

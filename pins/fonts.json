@@ -79,69 +79,6 @@
       "grain": "contour"
     },
     {
-      "id": "jigmo2@20250912",
-      "name": "Jigmo2",
-      "version": "20250912",
-      "nameVersion": "2025-09-12",
-      "file": "Jigmo-20250912-Jigmo2.ttf",
-      "url": "https://kamichikoichi.github.io/jigmo/Jigmo-20250912.zip",
-      "sha256": "5da3582efe77e22073b86b3b86b556d7111148a76b957cfb53318a91da2efff0",
-      "archive": {
-        "sha256": "5744c7386d129475d87607ca66d043c8793c65448adeaedc921b6931890e5d0b",
-        "member": "Jigmo2.ttf"
-      },
-      "upem": 1024,
-      "licence": "CC0-1.0",
-      "licenceEvidence": "LICENSE.txt in the archive",
-      "licenceFile": "CC0-1.0.txt",
-      "copyright": "Koichi Kamichi",
-      "style": "serif",
-      "design": "jigmo",
-      "grain": "piece"
-    },
-    {
-      "id": "jigmo3@20250912",
-      "name": "Jigmo3",
-      "version": "20250912",
-      "nameVersion": "2025-09-12",
-      "file": "Jigmo-20250912-Jigmo3.ttf",
-      "url": "https://kamichikoichi.github.io/jigmo/Jigmo-20250912.zip",
-      "sha256": "815b18c1c670103723fe743090559208fdea47dc587ecb057a5a4721ee8dfeff",
-      "archive": {
-        "sha256": "5744c7386d129475d87607ca66d043c8793c65448adeaedc921b6931890e5d0b",
-        "member": "Jigmo3.ttf"
-      },
-      "upem": 1024,
-      "licence": "CC0-1.0",
-      "licenceEvidence": "LICENSE.txt in the archive",
-      "licenceFile": "CC0-1.0.txt",
-      "copyright": "Koichi Kamichi",
-      "style": "serif",
-      "design": "jigmo",
-      "grain": "piece"
-    },
-    {
-      "id": "jigmo@20250912",
-      "name": "Jigmo",
-      "version": "20250912",
-      "nameVersion": "2025-09-12",
-      "file": "Jigmo-20250912-Jigmo.ttf",
-      "url": "https://kamichikoichi.github.io/jigmo/Jigmo-20250912.zip",
-      "sha256": "c8f295b9bd8f9f117a76b3a454aaaa1bb5b4babc18e254978c6deb88464e40cf",
-      "archive": {
-        "sha256": "5744c7386d129475d87607ca66d043c8793c65448adeaedc921b6931890e5d0b",
-        "member": "Jigmo.ttf"
-      },
-      "upem": 1024,
-      "licence": "CC0-1.0",
-      "licenceEvidence": "LICENSE.txt in the archive",
-      "licenceFile": "CC0-1.0.txt",
-      "copyright": "Koichi Kamichi",
-      "style": "serif",
-      "design": "jigmo",
-      "grain": "piece"
-    },
-    {
       "id": "babelstone-han-pua@1.472",
       "name": "BabelStone Han PUA",
       "version": "1.472",
@@ -170,7 +107,24 @@
       "chain": [
         "noto-sans-cjk-jp@2.004"
       ],
-      "members": []
+      "members": [
+        {
+          "font": "noto-sans-cjk-jp@2.004",
+          "evidence": "Pinned. Google: \"Adobe will release it as Source Han Sans\" (Google Developers Blog, \"Noto: A CJK Font That is Complete, Beautiful and Right for Your Language and Region\", Xiangye Xiao, Stuart Gill and Jungshik Shin, 2014-07-15, <https://developers.googleblog.com/en/noto-a-cjk-font-that-is-complete-beautiful-and-right-for-your-language-and-region/>, read 2026-11-16)."
+        },
+        {
+          "font": "Source Han Sans",
+          "evidence": "The same design under Adobe's name; Google: \"Adobe will release it as Source Han Sans\" (Google Developers Blog, \"Noto: A CJK Font That is Complete, Beautiful and Right for Your Language and Region\", Xiangye Xiao, Stuart Gill and Jungshik Shin, 2014-07-15, <https://developers.googleblog.com/en/noto-a-cjk-font-that-is-complete-beautiful-and-right-for-your-language-and-region/>, read 2026-11-16)."
+        },
+        {
+          "font": "GenZui Sans 0.105",
+          "evidence": "The same contours and points as Noto Sans CJK JP at `wght` 400 in all 8 glyphs compared (Measured 2026-11-16 with fontTools and Pillow on 社永東國示鬱龍飛: contours and points at 1000 units per em, and IoU of the glyphs rendered at 96 px and scaled to a common box; GenZui Serif 0.114 and GenZui Sans 0.105 (`GenZuiSans-Regular.woff2` of ids-input)); its README says \"Japanese sans-serif on Noto Sans JP\" (mkpoli/GenZui README at 96aa3a0 (2026-11-07), <https://github.com/mkpoli/GenZui>, read 2026-11-16)."
+        },
+        {
+          "font": "Sukima Gothic 11.41",
+          "evidence": "Built on Genshin Gothic Regular (Sukima Gothic's BOOTH page (shop oppekebekkanko), ver11.41 of 2026-10-03, <https://booth.pm/ja/items/2117070>, read 2026-11-16; the page states the base but not how the added kanji were made), which is Source Han Sans 1.002 converted to TrueType with M+ glyphs for what it lacks (自家製フォント工房, 源真ゴシック page, <http://jikasei.me/font/genshin/>, read 2026-11-16 over HTTP (its HTTPS certificate names another host)). Its own outlines were not compared: its download requires a signed-in BOOTH account. Its membership rests on its distribution page and is checked by the same comparison when it is pinned."
+        }
+      ]
     },
     {
       "id": "plangothic",
@@ -180,7 +134,16 @@
         "plangothic-p1@2.9.5795",
         "plangothic-p2@2.9.5795"
       ],
-      "members": []
+      "members": [
+        {
+          "font": "plangothic-p1@2.9.5795",
+          "evidence": "Pinned. Its README calls it a supplement to Source Han Sans in Mainland forms and leaves the characters both cover to Source Han Sans: \"如需显示基本区和扩展 A 区的表意文字，直接使用思源黑体即可。本项目中所包含的零星的基本区和扩展 A 区的表意文字均为在 Unicode 内有字形改动或者不符合本项目宗旨的表意文字\" (for the URO and Extension A use Source Han Sans; the few such ideographs here are ones whose glyph was changed), and warns that in some characters the joins between components look stiff (\"部分汉字的部件拼接会很生硬\") (Plangothic Project README, `main`, <https://github.com/Fitzgerald-Porthmouth-Koenigsegg/Plangothic-Project>, read 2026-11-16). Where both draw a character, the outlines differ: other point counts, box-normalised IoU 0.66–0.91 against Noto Sans CJK SC (Measured 2026-11-16 with fontTools and Pillow on twelve characters drawn by both Plangothic P1 and Noto Sans CJK SC, chosen with seed 1). Its own drawing in Source Han Sans's style: a separate design."
+        },
+        {
+          "font": "plangothic-p2@2.9.5795",
+          "evidence": "Pinned with P1, from the same project and release (Plangothic Project README, `main`, <https://github.com/Fitzgerald-Porthmouth-Koenigsegg/Plangothic-Project>, read 2026-11-16)."
+        }
+      ]
     },
     {
       "id": "source-han-serif",
@@ -189,18 +152,48 @@
       "chain": [
         "noto-serif-cjk-jp@2.003"
       ],
-      "members": []
+      "members": [
+        {
+          "font": "noto-serif-cjk-jp@2.003",
+          "evidence": "Pinned. Ken Lunde: \"all further references to Source Han Serif or Source Han Sans will apply to Noto Serif CJK\" (Ken Lunde, \"Source Han Serif / Noto Serif CJK History & Development\", CJK Type blog, 2017-04-03, <https://ccjktype.fonts.adobe.com/2017/04/source-han-serif-history-development.html>, read 2026-11-16)."
+        },
+        {
+          "font": "Source Han Serif",
+          "evidence": "The same design under Adobe's name; Ken Lunde: \"all further references to Source Han Serif or Source Han Sans will apply to Noto Serif CJK\" (Ken Lunde, \"Source Han Serif / Noto Serif CJK History & Development\", CJK Type blog, 2017-04-03, <https://ccjktype.fonts.adobe.com/2017/04/source-han-serif-history-development.html>, read 2026-11-16)."
+        },
+        {
+          "font": "GenZui Serif 0.114",
+          "evidence": "The same contours and points as Noto Serif CJK JP at `wght` 400 in all 8 glyphs compared (Measured 2026-11-16 with fontTools and Pillow on 社永東國示鬱龍飛: contours and points at 1000 units per em, and IoU of the glyphs rendered at 96 px and scaled to a common box; GenZui Serif 0.114 and GenZui Sans 0.105 (`GenZuiSans-Regular.woff2` of ids-input)); its README says \"Japanese serif on Noto Serif JP\" (mkpoli/GenZui README at 96aa3a0 (2026-11-07), <https://github.com/mkpoli/GenZui>, read 2026-11-16)."
+        }
+      ]
     },
     {
-      "id": "jigmo",
-      "name": "Jigmo",
+      "id": "glyphwiki",
+      "name": "GlyphWiki",
       "style": "serif",
-      "chain": [
-        "jigmo2@20250912",
-        "jigmo3@20250912",
-        "jigmo@20250912"
-      ],
-      "members": []
+      "chain": [],
+      "members": [
+        {
+          "font": "GlyphWiki dump, Mincho style",
+          "evidence": "GlyphWiki's glyphs drawn by the KAGE engine from the dump read at build time (GlyphWiki, <https://glyphwiki.org/>, its dump <https://glyphwiki.org/dump.tar.gz> (114,464,920 bytes, last modified 2026-11-15 17:01 GMT when checked on 2026-11-16), and the KAGE engine, <https://github.com/kamichikoichi/kage-engine>). Not pinned: the font row `glyphwiki@<date>` is written when the dump is fetched."
+        },
+        {
+          "font": "Jigmo 20250912",
+          "evidence": "A font of the same drawing, built from GlyphWiki by KAGE (Koichi Kamichi, Jigmo page <https://kamichikoichi.github.io/jigmo/> and `README.txt` in `Jigmo-20250912.zip` (SHA-256 `5744c738…`), read 2026-11-16); it is not read, since the dump is newer and keeps strokes and divisions."
+        }
+      ]
+    },
+    {
+      "id": "ipamj",
+      "name": "IPAmj Mincho",
+      "style": "serif",
+      "chain": [],
+      "members": [
+        {
+          "font": "IPAmj Mincho 006.01",
+          "evidence": "IPA's MJ glyph set, IPA Font License (文字情報技術促進協議会, IPAmj明朝フォント, <https://moji.or.jp/mojikiban/font/>, read 2026-11-16; `ipamjm00601.zip` (SHA-256 `35494e0f…`), name table \"Copyright(c) Information-technology Promotion Agency, Japan (IPA), 2011-2019\", version 006.01). Compared with GlyphWiki's drawing (as Jigmo 20250912 renders it), it has other contours (社 64 against 86 points) and a box-normalised IoU of 0.38–0.65, no closer than that drawing against Noto Serif CJK JP (0.41–0.58) (Measured 2026-11-16 with fontTools and Pillow on 社永東國示鬱龍飛, as above): a separate design. Not pinned."
+        }
+      ]
     },
     {
       "id": "babelstone-han",
@@ -209,7 +202,12 @@
       "chain": [
         "babelstone-han-pua@1.472"
       ],
-      "members": []
+      "members": [
+        {
+          "font": "babelstone-han-pua@1.472",
+          "evidence": "Pinned. BabelStone Han merges Arphic's AR PL Mingti2L Big5 and AR PL SungtiL GB; the PUA face holds what was moved out of it (Andrew West, BabelStone Han, <https://www.babelstone.co.uk/Fonts/Han.html>, read 2026-11-16); its copyright line names Arphic and Andrew West."
+        }
+      ]
     }
   ]
 }

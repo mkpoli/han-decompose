@@ -244,34 +244,41 @@ def test_stroke_files() -> None:
 
 def test_registry_files() -> None:
     font = {
-        "id": "jigmo2@20250912",
-        "name": "Jigmo2",
-        "version": "20250912",
-        "file": "Jigmo-20250912-Jigmo2.ttf",
-        "url": "https://kamichikoichi.github.io/jigmo/Jigmo-20250912.zip",
-        "sha256": "5da3582efe77e22073b86b3b86b556d7111148a76b957cfb53318a91da2efff0",
+        "id": "plangothic-p2@2.9.5795",
+        "name": "Plangothic P2",
+        "version": "2.9.5795",
+        "file": "PlangothicP2-Regular-2.9.5795.ttf",
+        "url": "https://github.com/Fitzgerald-Porthmouth-Koenigsegg/Plangothic-Project/releases/download/V2.9.5795/PlangothicP2-Regular.ttf",
+        "sha256": "681933370adfe0fc7253f77735275a82fea09fe4f8adba907bdeb46c110daf8f",
         "archive": {
             "sha256": "5744c7386d129475d87607ca66d043c8793c65448adeaedc921b6931890e5d0b",
-            "member": "Jigmo2.ttf",
+            "member": "PlangothicP2-Regular.ttf",
         },
-        "upem": 1024,
-        "licence": "CC0-1.0",
-        "copyright": "No rights reserved.",
-        "style": "serif",
-        "design": "jigmo",
+        "upem": 1000,
+        "licence": "OFL-1.1",
+        "copyright": "Copyright (c) 2024 by Fitzgerald P. Köeingsegg. All rights reserved.",
+        "style": "sans",
+        "design": "plangothic",
         "grain": "piece",
     }
-    design = {"id": "jigmo", "name": "Jigmo", "style": "serif", "chain": ["jigmo2@20250912"], "members": []}
+    design = {
+        "id": "plangothic",
+        "name": "Plangothic",
+        "style": "sans",
+        "chain": ["plangothic-p2@2.9.5795"],
+        "members": [{"font": "plangothic-p2@2.9.5795", "evidence": "Pinned."}],
+    }
     fonts = {"format": "han-decompose/fonts@2.0", "fonts": [font], "designs": [design]}
     validate("fonts", fonts)
     assert problems("fonts", {**fonts, "fonts": [{**font, "sha256": "5da3"}]})
-    assert problems("fonts", {**fonts, "designs": [{**design, "chain": []}]})
+    validate("fonts", {**fonts, "designs": [{**design, "chain": [], "members": []}]})
+    assert problems("fonts", {**fonts, "designs": [{**design, "chain": ["plangothic-p2@2.9.5795"] * 2}]})
     assert problems("fonts", {**fonts, "fonts": [{**font, "grain": "stroke"}]})
     assert problems("fonts", {"format": "han-decompose/fonts@2.0", "fonts": [font], "chains": {}})
     source = {
         "id": "babelstone",
         "name": "BabelStone IDS",
-        "role": "description",
+        "role": "candidates",
         "url": "https://www.babelstone.co.uk/CJK/IDS.TXT",
         "pin": "File Date 2025-06-27",
         "retrieved": "2026-11-15",

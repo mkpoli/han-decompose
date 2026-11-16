@@ -272,6 +272,26 @@
       "licenceFile": "OFL-1.1.txt",
       "attribution": "han-compose, data/numbered-forms.json, https://github.com/mkpoli/han-compose; Sans forms cut with han-compose bf13d98 from Noto Sans CJK JP 2.004 and Plangothic 2.9.5795",
       "weakness": "The file holds outlines without the host or the contours they were cut from, and does not say how each was cut. A form is imported only where its outline is whole contours of a host glyph at the same position; the Serif and Kaisho forms, which are PUA glyphs under the Arphic Public License, are not taken from it."
+    },
+    {
+      "id": "unihan",
+      "name": "Unihan database",
+      "role": "classes",
+      "url": "https://www.unicode.org/Public/18.0.0/ucd/Unihan.zip",
+      "pin": "Unicode 18.0.0, file date 2026-07-31",
+      "retrieved": "2026-11-16",
+      "files": [
+        {
+          "file": "Unihan.zip",
+          "url": "https://www.unicode.org/Public/18.0.0/ucd/Unihan.zip",
+          "sha256": "4c93ea9c1f636451729a840978f1667a53886af37ba854fdcce109721c63d43e"
+        }
+      ],
+      "licence": "Unicode-3.0",
+      "licenceEvidence": "https://www.unicode.org/license.txt (Unicode License V3, copyright 1991-2026 Unicode, Inc.), which the header of Unihan_RadicalStrokeCounts.txt in the archive points to as the terms of use",
+      "attribution": "Unihan database, Unicode 18.0.0, © 2026 Unicode, Inc.",
+      "weakness": "Only `kRSUnicode` is read, for the class rows whose basis is `radical-index`; a radical index says which radical a character is indexed under and not that two shapes are one component.",
+      "licenceFile": "Unicode-3.0.txt"
     }
   ]
 }

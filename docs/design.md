@@ -735,8 +735,9 @@ chains; the viewer and its deployment.
 - 7.1 The format 2 writer, schema 2, golden files and the TypeScript types; `format.md` and
   `licensing.md` state format 2, with their parity tests; schema 1 deleted.
 - 7.2 `fonts.json` with `designs` and their evidence; Jigmo, Jigmo2 and Jigmo3 removed from the
-  registry and the tests; `pins/sources.json` reduced to the inputs of 2.2.
-- 7.3 Outline files in format 2 for every pinned font.
+  registry and the tests; `pins/sources.json` holds every input of 2.2 with its digest, and the
+  tables the cutters still read stay pinned until phase 9 replaces them.
+- 7.3 Outline files in format 2 for every glyph of every pinned font.
 
 **Phase 8 — GlyphWiki as a glyph source**
 - 8.1 Fetch the latest dump, mirror it as a release asset with its digest, and draw every glyph

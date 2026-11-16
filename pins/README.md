@@ -45,33 +45,6 @@ from them by `han-decompose citations`.
 - Copyright: © 2017-2024 Adobe (http://www.adobe.com/).
 - Design: `source-han-serif`, grain contour; chain `source-han-serif` (1 of 1).
 
-### `jigmo2@20250912`
-
-- Font: Jigmo2 20250912, name-table version `2025-09-12`, 1024 units per em.
-- File: <https://kamichikoichi.github.io/jigmo/Jigmo-20250912.zip>, member `Jigmo2.ttf` of the archive
-- SHA-256: `5da3582efe77e22073b86b3b86b556d7111148a76b957cfb53318a91da2efff0`; archive `5744c7386d129475d87607ca66d043c8793c65448adeaedc921b6931890e5d0b`
-- Licence: CC0-1.0, stated in LICENSE.txt in the archive.
-- Copyright: Koichi Kamichi
-- Design: `jigmo`, grain piece; chain `jigmo` (1 of 3).
-
-### `jigmo3@20250912`
-
-- Font: Jigmo3 20250912, name-table version `2025-09-12`, 1024 units per em.
-- File: <https://kamichikoichi.github.io/jigmo/Jigmo-20250912.zip>, member `Jigmo3.ttf` of the archive
-- SHA-256: `815b18c1c670103723fe743090559208fdea47dc587ecb057a5a4721ee8dfeff`; archive `5744c7386d129475d87607ca66d043c8793c65448adeaedc921b6931890e5d0b`
-- Licence: CC0-1.0, stated in LICENSE.txt in the archive.
-- Copyright: Koichi Kamichi
-- Design: `jigmo`, grain piece; chain `jigmo` (2 of 3).
-
-### `jigmo@20250912`
-
-- Font: Jigmo 20250912, name-table version `2025-09-12`, 1024 units per em.
-- File: <https://kamichikoichi.github.io/jigmo/Jigmo-20250912.zip>, member `Jigmo.ttf` of the archive
-- SHA-256: `c8f295b9bd8f9f117a76b3a454aaaa1bb5b4babc18e254978c6deb88464e40cf`; archive `5744c7386d129475d87607ca66d043c8793c65448adeaedc921b6931890e5d0b`
-- Licence: CC0-1.0, stated in LICENSE.txt in the archive.
-- Copyright: Koichi Kamichi
-- Design: `jigmo`, grain piece; chain `jigmo` (3 of 3).
-
 ### `babelstone-han-pua@1.472`
 
 - Font: BabelStone Han PUA 1.472, name-table version `Version 1.472`, 1024 units per em.
@@ -216,3 +189,16 @@ from them by `han-decompose citations`.
 | File | SHA-256 | Address |
 |---|---|---|
 | `numbered-forms.json` | `af63ab13f110ade1696c0353b148f18a2683232660609ddba3af0cc619c9ad2b` | <https://raw.githubusercontent.com/mkpoli/han-compose/3587faa97f4e7672479133609b3b2d7c0aa3d4d2/data/numbered-forms.json> |
+
+### `unihan`
+
+- Source: Unihan database, <https://www.unicode.org/Public/18.0.0/ucd/Unihan.zip>
+- Role: classes
+- Pin: Unicode 18.0.0, file date 2026-07-31; retrieved 2026-11-16.
+- Licence: Unicode-3.0. https://www.unicode.org/license.txt (Unicode License V3, copyright 1991-2026 Unicode, Inc.), which the header of Unihan_RadicalStrokeCounts.txt in the archive points to as the terms of use
+- Attribution: Unihan database, Unicode 18.0.0, © 2026 Unicode, Inc.
+- Limits: Only `kRSUnicode` is read, for the class rows whose basis is `radical-index`; a radical index says which radical a character is indexed under and not that two shapes are one component.
+
+| File | SHA-256 | Address |
+|---|---|---|
+| `Unihan.zip` | `4c93ea9c1f636451729a840978f1667a53886af37ba854fdcce109721c63d43e` | <https://www.unicode.org/Public/18.0.0/ucd/Unihan.zip> |
