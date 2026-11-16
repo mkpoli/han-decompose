@@ -35,8 +35,8 @@ the place its terms are stated.
   data under MIT, BabelStone's note that its data is facts) relicense one another along a chain and
   are not carried into the data. Those tables are cited as inputs in the docs.
 - **KanjiVG.** A cut made along KanjiVG's stroke groups is a set of contours of the font; KanjiVG
-  says which contours go together and none of its data is copied into the cut. KanjiVG is cited in
-  the docs.
+  says which contours go together and none of its data is copied into the cut. Such cuts are label
+  data under CC0-1.0 like every other label, and KanjiVG is cited in the docs.
 - **BabelStone Han PUA.** Its glyph is the reference shape of a numbered component. Outlines taken
   from it stay under the Arphic Public License, in outline files of their own, each with a notice
   of how and when the font's data was changed and with the licence text in the release. The pinned

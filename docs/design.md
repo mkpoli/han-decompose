@@ -660,7 +660,7 @@ reader to npm.
 1. **Licences.** Label data is CC0-1.0 on the ground that how a character divides is a fact.
    The terms of the tables candidates come from (GPL for CHISE IDS, MIT for zi.tools) are not
    carried into the data, and none of their text is. KanjiVG-guided cuts take KanjiVG's grouping,
-   not its data. Outline files stay under each font's licence; Arphic-licensed PUA outlines ask a
+   not its data, and are CC0-1.0 like every other label. Outline files stay under each font's licence; Arphic-licensed PUA outlines ask a
    change notice, and Noto Sans CJK reserves the font name "Source".
 2. **Contour order.** Indices hold only for the exact file, instance and decomposition order. The
    parity check covers every pinned font as far as han-compose's exports hold a glyph. Variation
@@ -712,8 +712,8 @@ and the second after phase 0.
 
 Then:
 
-9. **KanjiVG.** It guides cuts and the data does not derive from it. Guided cuts ship, and
-   KanjiVG is cited in the docs.
+9. **KanjiVG.** It guides cuts and the data does not derive from it. Guided cuts ship under
+   CC0-1.0 like every other label, and KanjiVG is cited in the docs.
 10. **BabelStone Han PUA.** The reference shape of a numbered component, and its form in the serif
     and kaisho styles, under the Arphic Public License. The pinned file is mirrored as a release
     asset of this repository.
