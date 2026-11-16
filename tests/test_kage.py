@@ -161,3 +161,24 @@ def test_a_structure_with_more_operands_than_placements_is_skipped(dump: Path) -
 def test_a_description_that_does_not_read_or_names_no_identifier_is_skipped(dump: Path) -> None:
     outcome, _ = cut(dump, "u793e", ("社", "⿰礻"), ("社", "⿰{42}土"))
     assert reasons(outcome) == ["unreadable-description", "unnamed-component"]
+
+
+def test_a_glyph_with_one_placement_and_strokes_of_its_own_is_not_drawn_from_strokes_alone(dump: Path) -> None:
+    outcome, _ = cut(dump, "u51f6", ("凶", "⿻凵㐅"))
+    assert reasons(outcome) == ["unlike-division"]
+    assert "places 1 component" in outcome.skipped[0]["reason"]["text"]
+
+
+def test_an_overlay_is_matched_by_overlapping_ink(dump: Path) -> None:
+    outcome, _ = cut(dump, "u570b", ("國", "⿻囗或"))
+    assert [r["tree"] for r in outcome.readings] == ["⿻囗或"]
+    left = gw.Placement(0, "u4e00", None, 0, (0, 0, 50, 50), (0, 0, 50, 50), (0,), (0,))
+    right = gw.Placement(1, "u4e8c", None, 0, (150, 0, 200, 50), (150, 0, 200, 50), (1,), (1,))
+    assert kage._lies("⿻", [kage.Unit((left,)), kage.Unit((right,))]) == "u4e00 and u4e8c do not overlap"
+
+
+def test_an_operator_with_no_layout_to_check_is_a_layout_mismatch(dump: Path) -> None:
+    (drawing,) = gw.draw(["u793e"], dump)
+    assert isinstance(drawing, gw.Drawing)
+    unit = kage.Unit((drawing.placements[1],))
+    assert kage._lies("⿾", [unit]) == "⿾ has no layout to check"

@@ -82,6 +82,15 @@ def block_names(names: Sequence[str]) -> tuple[dict[str, list[str]], list[str]]:
     return out, unspelled
 
 
+def dump_names(dump: gw.Dump) -> list[str]:
+    """The Han names of the dump, and of the pinned versions glyph data places (`u4ebb-01@4`),
+    which the outline files hold so that a cut can cite the glyph it was placed as."""
+    names = gw.read_names(dump.path)
+    if dump.versions.exists():
+        names += gw.read_names(dump.versions)
+    return list(gw.cjk_names(names))
+
+
 def chunks(blocks: dict[str, list[str]], parts: int) -> list[list[str]]:
     """Runs of neighbouring blocks that hold about as many names, `parts` of them at most."""
     total = sum(len(names) for names in blocks.values())
@@ -206,7 +215,7 @@ def run(
 ) -> Iterator[tuple[str, Counts]]:
     """Every block of the dump's Han glyphs, each written under `out`. A block with a marker is
     left as it is."""
-    blocks, unspelled = block_names(list(gw.cjk_names(gw.read_names(dump.path))))
+    blocks, unspelled = block_names(dump_names(dump))
     out.mkdir(parents=True, exist_ok=True)
     (out / UNSPELLED).write_text("".join(f"{name}\n" for name in unspelled), encoding="utf-8")
     todo = {

@@ -24,6 +24,7 @@ from dataclasses import dataclass, replace
 from itertools import pairwise
 
 from .. import glyphwiki as gw
+from .. import glyphwiki_outlines as O
 from .. import identifiers as I
 from ..descriptions import Description, Table
 from ..glyphwiki import Drawing as Wiki
@@ -85,8 +86,10 @@ class Division:
     @property
     def blank(self) -> bool:
         """Whether the drawing places nothing, or places one glyph that draws strokes alone."""
-        placed, _ = self.level(None)
-        return not placed or (len(placed) == 1 and not self.children(placed[0].id))
+        placed, strokes = self.level(None)
+        if not placed:
+            return True
+        return len(placed) == 1 and not self.children(placed[0].id) and set(placed[0].strokes) == strokes
 
 
 @dataclass(frozen=True)
@@ -162,9 +165,14 @@ def _lies(operator: str | None, units: Sequence[Unit]) -> str | None:
                 return f"{first.names} and {second.names} do not follow each other {way}"
         return None
     sides = CLOSED.get(operator or "")
-    if sides and not wraps(real[0], real[1], sides):
-        return f"{units[0].names} does not enclose {units[1].names}"
-    return None
+    if sides:
+        return None if wraps(real[0], real[1], sides) else f"{units[0].names} does not enclose {units[1].names}"
+    if operator == "⿻":
+        for (first, a), (second, b) in pairwise(zip(units, real, strict=True)):
+            if a[0] > b[2] or b[0] > a[2] or a[1] > b[3] or b[1] > a[3]:
+                return f"{first.names} and {second.names} do not overlap"
+        return None
+    return f"{operator} has no layout to check"
 
 
 #: How many placements one level may hold and still be grouped into operands.
@@ -285,10 +293,10 @@ def style(font: str, placement: Placement) -> Json:
     assert info is not None
     member = f"{info.code_point:04X}" + (f".{info.selector:04X}" if info.selector else "")
     out: Json = {"member": I.component("u", member), "basis": "kage", "tier": "source"}
-    try:
-        out["glyph"] = I.glyph_id(font, I.name_selector(placement.glyph))
-    except ValueError:
-        pass
+    # Only a glyph the outline files hold is cited: Han names, filed as the writer files them.
+    selector = O.selector_of(placement.glyph) if gw.is_cjk(info.code_point) else None
+    if selector is not None:
+        out["glyph"] = I.glyph_id(font, selector)
     return out
 
 

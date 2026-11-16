@@ -47,3 +47,23 @@ def test_a_block_is_written_whole_with_its_marker(tmp_path: Path, dump: gw.Dump)
     assert [r["glyph"].split("/")[1] for r in cuts["readings"]] == ["U+793E", "name.u793e-j"]
     assert (tmp_path / "blocks" / "079.json").exists()
     assert kage_run.totals(tmp_path).readings == 2
+
+
+def test_every_cited_glyph_is_in_an_outline_file(tmp_path: Path, dump: gw.Dump) -> None:
+    tables = Table("babelstone", names=frozenset())
+    for char, text in [("社", "⿰礻土"), ("倁", "⿰亻知"), ("知", "⿰矢口"), ("\U000235b3", "⿰木䖍")]:
+        tables.add(char, text)
+    blocks, _ = kage_run.block_names(kage_run.dump_names(dump))
+    assert "name.u458d-j@3" in {f"name.{n}" for names in blocks.values() for n in names}
+    for block, names in blocks.items():
+        rows = list(gw.draw_rows(names, dump))
+        kage_run.write_one(block, rows, O.font_row(dump), [tables], tmp_path)
+    held: set[str] = set()
+    for path in (tmp_path / "outlines" / FONT).glob("*.json.gz"):
+        held.update(json.loads(gzip.decompress(path.read_bytes()))["glyphs"])
+    cited: set[str] = set()
+    for path in (tmp_path / "cuts" / FONT).glob("*.json.gz"):
+        for reading in json.loads(gzip.decompress(path.read_bytes()))["readings"]:
+            cited.update(c["style"]["glyph"].split("/")[1] for c in reading["cuts"] if "glyph" in c.get("style", {}))
+    assert {"name.u571f-j", "name.u793b-01", "name.u458d-j@3"} <= cited
+    assert cited <= held
