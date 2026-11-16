@@ -73,3 +73,11 @@ test("a placed glyph the dump lacks is reported and skipped", () => {
   expect(d.missing).toEqual(["u66f7-j"]);
   expect(d.placements.map((p) => p.glyph)).toEqual(["u8279-03"]);
 });
+
+test("glyphs that place each other are refused", () => {
+  const loop = new Map([
+    ["a", "99:0:0:0:0:200:200:b$1:0:0:1:1:2:2"],
+    ["b", "99:0:0:0:0:200:200:a$99:0:0:0:0:200:200:a"],
+  ]);
+  expect(() => drawGlyph(engine, loop, "a")).toThrow("a > b > a");
+});

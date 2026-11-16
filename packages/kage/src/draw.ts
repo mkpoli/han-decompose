@@ -37,14 +37,15 @@ export interface Drawn {
 
 export class DrawError extends Error {
   constructor(
-    readonly reason: "no-data" | "too-deep" | "no-ink" | "engine",
+    readonly reason: "no-data" | "cycle" | "too-large" | "no-ink" | "engine",
     message: string,
   ) {
     super(message);
   }
 }
 
-const MAX_DEPTH = 24;
+/** Placements expanded for one glyph; a glyph past it is refused, not drawn. */
+const MAX_PLACEMENTS = 4000;
 
 interface Node {
   glyph: string;
@@ -65,8 +66,17 @@ interface Expansion {
  * records the strokes each type-99 line expands to. Everything else (scaling, stretching)
  * is the engine's own `getEachStrokesOfBuhin`'s arithmetic, repeated here for the ranges.
  */
-function expand(kage: Kage, glyphs: Map<string, string>, data: string, depth: number, missing: Set<string>): Expansion {
-  if (depth > MAX_DEPTH) throw new DrawError("too-deep", "type-99 lines nest too deeply");
+interface Context {
+  kage: Kage;
+  glyphs: Map<string, string>;
+  missing: Set<string>;
+  /** Names being expanded, outermost first. */
+  stack: string[];
+  placed: number;
+}
+
+function expand(ctx: Context, data: string, depth: number): Expansion {
+  const { kage, glyphs, missing } = ctx;
   const strokes: number[][] = [];
   const nodes: Node[] = [];
   for (const line of data.split("$")) {
@@ -90,7 +100,11 @@ function expand(kage: Kage, glyphs: Map<string, string>, data: string, depth: nu
     let sx2 = Math.floor(Number(c[9]));
     let sy2 = Math.floor(Number(c[10]));
     const stretch: Node["stretch"] = sx !== 0 || sy !== 0 ? [sx, sy, sx2, sy2] : null;
-    const inner = expand(kage, glyphs, buhin, depth + 1, missing);
+    if (ctx.stack.includes(name)) throw new DrawError("cycle", `${ctx.stack.join(" > ")} > ${name}`);
+    if (++ctx.placed > MAX_PLACEMENTS) throw new DrawError("too-large", `more than ${MAX_PLACEMENTS} placements`);
+    ctx.stack.push(name);
+    const inner = expand(ctx, buhin, depth + 1);
+    ctx.stack.pop();
     const box = kage.getBox(inner.strokes);
     if (sx !== 0 || sy !== 0) {
       if (sx > 100) sx -= 200;
@@ -146,6 +160,10 @@ function shift(nodes: Node[], at: number, [x1, y1, x2, y2]: [number, number, num
   }));
 }
 
+function context(kage: Kage, glyphs: Map<string, string>, name: string): Context {
+  return { kage, glyphs, missing: new Set(), stack: [name], placed: 0 };
+}
+
 /** Follows lines that place one glyph over the whole frame, without stretch. */
 function aliasOf(glyphs: Map<string, string>, name: string): string | null {
   let at = name;
@@ -168,7 +186,7 @@ export function adjustedStrokes(engine: Engine, glyphs: Map<string, string>, nam
   const kage = engine.newKage();
   const data = glyphs.get(name);
   if (data === undefined || data === "") throw new DrawError("no-data", `${name} has no data`);
-  return kage.adjustStrokes(expand(kage, glyphs, data, 0, new Set()).strokes);
+  return kage.adjustStrokes(expand(context(kage, glyphs, name), data, 0).strokes);
 }
 
 /** Draws a glyph the way `makeGlyph3` does and keeps what each placed component produced. */
@@ -176,8 +194,9 @@ export function drawGlyph(engine: Engine, glyphs: Map<string, string>, name: str
   const data = glyphs.get(name);
   if (data === undefined || data === "") throw new DrawError("no-data", `${name} has no data`);
   const kage = engine.newKage();
-  const missing = new Set<string>();
-  const { strokes: raw, nodes } = expand(kage, glyphs, data, 0, missing);
+  const ctx = context(kage, glyphs, name);
+  const { missing } = ctx;
+  const { strokes: raw, nodes } = expand(ctx, data, 0);
   const adjusted: number[][] = kage.adjustStrokes(raw);
   const strokes: DrawnStroke[] = [];
   const polygonStart: number[] = [];
