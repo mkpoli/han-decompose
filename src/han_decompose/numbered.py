@@ -19,14 +19,26 @@ from .schema import Json
 FONT = PUA
 
 
-def rows(table: descriptions.Table) -> list[Json]:
+def unnamed(table: descriptions.Table, names: frozenset[str] | None) -> list[str]:
+    """The numbered components of note 6 that the corpus gives no identifier, as tokens."""
+    return [name for name in sorted(table.numbered, key=lambda name: int(name[5:-1])) if not _named(name, names)]
+
+
+def _named(name: str, names: frozenset[str] | None) -> bool:
+    return names is None or name[1:-1] in names
+
+
+def rows(table: descriptions.Table, names: frozenset[str] | None = None) -> list[Json]:
     """A row of the component table per numbered component: the component is the character at its
     code point in BabelStone Han PUA, by note 6. The code point holds for the pinned version of the
     font, which the row's basis names. A component note 6 gives no code point has a row that only
-    names it."""
+    names it. A component the corpus gives no identifier, `names` being the identifiers it holds, has
+    no row: `unnamed` lists them."""
     version = pins.font(FONT)["version"]
     out: list[Json] = []
     for name in sorted(table.numbered, key=lambda name: int(name[5:-1])):
+        if not _named(name, names):
+            continue
         row = table.numbered[name]
         base: Json = {"component": I.component_of(name), "kind": "numbered", "text": name}
         if row.pua:

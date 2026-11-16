@@ -103,6 +103,11 @@ character is that character, a ⿰ or ⿱ chain flattens, and every component is
 class's canonical member (section 5.3):
 `⿰礻土` and `⿰示土` are both the structure `⿰示土`, `s.0a1c0fdb`.
 
+Current rule: the cutters write the identifier of the description's text as the source wrote it
+(after its components are named, 2.4), with no class folding and no flattening of ⿰ and ⿱ chains.
+The canonical tree described above comes with the cutting run that builds classes, before any
+release; a structure identifier written now is then replaced.
+
 Eight hex digits do not keep every structure apart. A structure identifier is used together with
 its glyph or character, and the text stands beside it wherever it appears.
 

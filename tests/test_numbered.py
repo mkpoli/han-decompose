@@ -22,6 +22,9 @@ def test_a_numbered_component_is_the_character_at_its_private_use_code_point() -
         ("bsp:63", "", ""),
     ]
     assert [row["text"] for row in found] == ["&bsp:5;", "&bsp:42;", "&bsp:63;"]
+    names = frozenset({"bsp:5", "bsp:42"})
+    assert [row["component"] for row in numbered.rows(table, names)] == ["bsp:5", "bsp:42"]
+    assert numbered.unnamed(table, names) == ["&bsp:63;"] and numbered.unnamed(table, None) == []
     assert found[0]["basis"] == (
         "IDS.TXT note 6 gives the component (left of 叚) this code point in the BabelStone Han PUA font; "
         "version 1.472 of the font draws it there"
@@ -95,3 +98,7 @@ def test_outlines_of_the_private_use_font_say_how_they_were_changed() -> None:
     ((name, content),) = store.files()
     assert name == "outlines/babelstone-han-pua@1.472/0f2.json.gz" and content["licence"] == "Arphic-1999"
     assert "scaled from 1024 to 1000 units per em" in content["notice"] and problems("outlines", content) == []
+    assert "Every glyph this file holds" in content["notice"] and "manifest.json" in content["notice"]
+    store.stroke(numbered.FONT, "U+F2D4", {"cut": f"{numbered.FONT}/U+F2D4~0a1c0fdb-lift:-", "strokes": []})
+    strokes = dict(store.files())[f"strokes/{numbered.FONT}/0f2.json.gz"]
+    assert strokes["notice"] == content["notice"]
