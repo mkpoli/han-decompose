@@ -205,7 +205,8 @@ and the CHISE IDS files; ids-input adds to it before format 2 is built (phase 6)
 Every candidate is rewritten in the notation of 2.2 and reduced to its structure; each structure is
 tried once per glyph. Which table gave a candidate, its regions and its spelling are not carried
 into the data: a structure is published because a font's glyph divides that way, and the drawn IDS
-says how the font draws it. Cut files and tables are one per font.
+says how the font draws it. Cut files are one per font and block; the flat tables hold every
+font, one row per cut with its `font`.
 
 ### 2.5 Classes and styles
 
