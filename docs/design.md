@@ -492,12 +492,18 @@ same structure for machines. What shaped them:
 ```
 han-decompose/
   README.md  LICENSE
-  docs/            format.md (normative), design.md, licensing.md, parity.md
+  docs/            format.md (normative), design.md, licensing.md, parity.md, release.md,
+                   reproduction.md
   schema/2/        han-decompose.schema.json, the one definition both languages read
   pins/            fonts.json  sources.json  README.md (written from the two)
   src/han_decompose/   the Python package and the `han-decompose` command (uv)
     identifiers.py schema.py tsv.py pins.py outline.py pieces.py ids.py
-    corpus.py classes.py                        planned: candidates, structures, classes
+    geometry.py resources.py store.py cli.py    kept; store.py also writes stroke files
+    aj1.py                                      kept: `glyph-of` rows from aj17-kanji.txt
+    numbered.py                                 kept for the PUA reference glyphs; numbers read
+                                                through ids-input's ledger
+    corpus.py classes.py                        planned: candidates, structures, classes;
+                                                they replace descriptions.py
     cutters/  deal.py lift.py survey.py library.py reading.py
               kage.py layers.py                 planned
     styles.py drawn.py                          planned
@@ -510,6 +516,11 @@ han-decompose/
   packages/viewer/ the site
   tests/
 ```
+
+`descriptions.py`, which reads the three tables as each source writes them, is deleted when
+`corpus.py` lands (phase 9). `docs/release.md` is rewritten for format 2 in phase 9: archives per
+font, the flat tables and the GlyphWiki mirror. `docs/reproduction.md` stays the record of how the
+cutters reproduce ids-input's cuts and is rerun in phase 9.
 
 ### 5.2 Pipeline
 
