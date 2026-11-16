@@ -7,7 +7,8 @@ been decided.
 han-decompose maps the geometry of real fonts to IDS components, and later to strokes. For each
 character it covers as many ways of decomposing it as the pinned fonts support: every structure
 that some font's glyph divides into, and for each glyph which contours belong to which component.
-Every part is a set of contours the font already draws; no seam is invented. Outside descriptions
+Every component is a set of contours the font already draws; only the stroke layer cuts a
+contour at a seam, and marks each such stroke. Outside descriptions
 are candidate structures only; the release carries han-decompose's own descriptions,
 in one notation: per character the structures that fit some font, and per glyph a drawn IDS that
 names the shape each part has there. The same record serves three uses: a host library for
@@ -94,6 +95,7 @@ of their own. [`licensing.md`](licensing.md) says which file is under which term
 | alternative | One structure of a layer's component. A layer has as many as fit its contours. |
 | reading | One alternative applied to one layer: which of its contours go to which operands. |
 | cut | One node of a reading: a component, its path, its contour set, its evidence, checks and style. |
+| stroke | One stroke of a leaf cut, with its type: whole contours, or an outline cut at seams (2.10). |
 | drawn IDS | Per glyph: the accepted structure written with each node's style. 社 in Noto Sans CJK JP is `⿰礻土`. |
 | form | A cut seen as a drawing of its component. One per class, style and design is marked as chosen. |
 | library | For a class and a design, its cuts grouped by style and place. |
@@ -394,7 +396,33 @@ These are indexes over cuts and hold no geometry of their own.
 
 Layout features, host ranking and weight masters are left to han-compose (section 5).
 
-### 2.10 Verdicts
+### 2.10 Strokes
+
+Below the components lies a stroke layer: a leaf cut opened into its strokes, each with its stroke
+type and its ink. Two inputs give it.
+
+- **GlyphWiki.** Every line of a KAGE glyph whose type is 1 to 7 is one stroke; type 99 places a
+  component. Drawing each line alone gives that stroke's exact outline, and the placed components
+  say which component it belongs to. These strokes are tier `source` and are the reference the
+  other method is measured against.
+- **Font outlines.** KanjiVG's centrelines say which contours a stroke runs through: han-compose's
+  `Cutter.owners` and `groups` in `kanjivg_cuts.py` (han-compose PR #40, 2026-10-29) map each
+  contour to the strokes whose centrelines run inside it and mark contours two strokes share. A
+  stroke that owns whole contours is lifted as those contours, an index set like any cut. Contours
+  two or more strokes share are cut at their seams: by the notch-pair neck cut, the best of eight
+  methods tried on 25 donor glyphs (run 2026-11-02), which tiled all 2,220 山 instances into
+  ㇑㇄㇑ with area 1.0 and overlap 0; and by the scanline graft, which cuts a fused contour along a
+  scanline at the same places in both masters (ids-input `docs/enclosure-graft.md`, PR #512,
+  2026-11-05). The lab code is kept on this repository's branch `feat/stroke-lab` under
+  `lab/strokes/`.
+
+A stroke cut at a seam is new geometry: it is written as an outline of its own beside the contour
+indices it came from, under the font's licence, in stroke files per font. The neck cut leaves
+rounded blobs at joins and loses the shape of curves, so stroke cuts from font outlines are tier
+`machine` until reviewed, and each is scored against the GlyphWiki stroke of the same character
+and type where one exists.
+
+### 2.11 Verdicts
 
 `review/verdicts.tsv`, committed: `cut_id`, `sig`, `verdict` (`right`, `wrong`), `style` (the
 member a reviewer names, when the verdict is on the style), `note`, `reviewer`, `at`, `release`. A
@@ -422,7 +450,7 @@ same structure for machines. What shaped them:
 | GlyphWiki dump (KAGE data, type-99 component lines) | Outlines of the `glyphwiki` design, one contour per stroke; `kage` readings, cuts and styles | The KAGE renderer in the build. |
 | ids-input `data/donor-parts.json` (114 of 138 stacks on 山; BabelStone; Noto then Jigmo) | Complete readings, method `deal`, grain `piece`; `parts` → leaf cuts, `first`/`terminal`/`recursive` → inner nodes derived from leaves | Contour indices (paths are pathops output); node paths (leaves are told apart by label and counting); per-part scores (one `likeness` per character); description id. Its chain puts Jigmo's mincho under a sans face. |
 | `mountain-instances.json.gz`, `component-instances-口.json.gz` (山: 2,220 instances in 2,150 of 2,926 characters; 口: 5,033 in 4,731 of 26,446) | Readings with `tree`, `opened`, `depth`; `route` → `path`; `fit`, `disagreement`, `skeletonAway` and their `…Against` → evidence and checks; `skipped` → skipped rows; `shallower` and `closed` → the reading's depth and the reason the deeper one failed | Contour indices; the other operands' hands (dealt, then dropped); reason codes (free text carrying face and depth); calibration marker for 口; the 口 file still says `ids-input/mountain-instances`. Hand labels live apart in `analysis/mountain-fit/labels.json`, keyed `char#index`. |
-| `strokes` and `tiling` in the 山 file (`split_mountain_strokes.py`) | Out of scope: the neck cut draws seams the font does not | — |
+| `strokes` and `tiling` in the 山 file (`split_mountain_strokes.py`), the stroke lab (`feat/stroke-lab`, `lab/strokes/`) | The stroke layer (2.10): neck-cut strokes of 山, tier `machine` | Stroke types per contour set in the format; the neck cut's joins and curves. |
 | han-compose `js/src/component-forms.json` (hand cuts by IDS text and style, `positions`, `editorial`) | Pure contour selections → readings, method `hand`, component `ids:<text>`, `positions` → cuts with a named place note. Editorial compositions stay in han-compose | Host glyph per form (only `editorial.donors`); contour indices; description; evidence. Cut from static collection faces (SHA `b76b0433…`, `93069d8e…`), a different file from the variable fonts the other cutters pin, so indices have to be re-derived by matching outlines. |
 | `data/numbered-forms.json`, `numbered-sans-outlines.json.gz`, `numbered-five-context.json` | 69 numbered components (`{N}` an alias of each): the PUA glyph as a glyph of `babelstone-han-pua@1.472` (the reference shape, and the serif and kaisho form); the Sans cuts as `lift` cuts; `{5}` from 葭 as a cut at place `L` | Host and face of each Sans cut; scores; the `{N}`↔PUA map (keys are PUA characters); which nine fell back is listed, why is not. |
 | `data/custom-forms.json.gz` v2 (`forms`, `hosts`; Sans 446 entities and 7 chains, Serif 296 and 1; 353 and 189 host cuts) | Each form and each host entry → a `lift` cut in a reading of its host; `from`/`recipe`/`match`/`margin`/`agree`/`reference`/`single` → evidence and the form's basis; `hosts[style][text][place]` → library index | Contour indices (`c.p` is the simplified outline re-encoded, heavy delta zero); the face of a library entry (only `v`, first face or not); the description used; the lifted siblings as cuts of their own; failed hosts (only `tried`). `record.f`, `record.u`, `si`, `r`, `v`, `j` are composer fields and do not move. |
@@ -485,6 +513,8 @@ flowchart LR
   index --> out["release builder"]
   out --> check["check"]
   check --> release["GitHub Release"]
+  drawn --> strokes["stroke layer"]
+  strokes --> index
   release --> site["viewer"]
   release --> consumers["han-compose, ids-input"]
 ```
@@ -510,7 +540,8 @@ Stays and consumes:
   its own `entry_record`, `key_record`, `slot` and `shape`. `custom-forms.json.gz` format v2 and
   ids-input's writer into the han-compose checkout are deleted in the same change.
 - ids-input owns the corpus and its class rows, keeps `build_custom_components.mjs`, the `X-`
-  ledger, `build_custom_outlines.mjs` and `split_mountain_strokes.py`. It drops the cutters,
+  ledger and `build_custom_outlines.mjs`; `split_mountain_strokes.py` and the stroke lab move here
+  with the stroke layer. It drops the cutters,
   `donor-parts.json`, the instance files and their pages, and reads forms, drawn IDS and variants
   from a pinned han-decompose release.
 - IDS parsing: han-decompose has one Python parser that reads the candidates' notations and writes
@@ -651,8 +682,16 @@ chains; the viewer and its deployment.
   release.
 - 12.3 Composer export importer (`axis`, `kanjivg`).
 
+**Phase 13 — strokes**
+- 13.1 GlyphWiki strokes: each KAGE line drawn alone, assigned to its placed component.
+- 13.2 Contour ownership along KanjiVG centrelines (`Cutter.owners`, `groups`); whole-contour
+  strokes lifted.
+- 13.3 The neck cut and the scanline graft moved from `feat/stroke-lab` for shared contours;
+  stroke files in the format.
+- 13.4 Stroke cuts scored against GlyphWiki strokes; stroke review in the viewer.
+
 **Later** — dealing at contour grain inside fused pieces of the variable faces; hand forms;
-hosted verdicts; more designs (kaisho, fangsong); a stroke layer; publishing the JavaScript
+hosted verdicts; more designs (kaisho, fangsong); publishing the JavaScript
 reader to npm.
 
 ## 8. Risks
@@ -708,7 +747,8 @@ and the second after phase 0.
 5. Refused, reviewed-wrong and skipped rows ship, marked by status.
 6. Verdicts live in the repository as TSV.
 7. Coordinates are hundredths of a unit on a 1000-unit em.
-8. Strokes come after components: the component layer is built first.
+8. Strokes come after components: the stroke layer sits below the component layer and is built
+   after it.
 
 Then:
 
@@ -790,6 +830,13 @@ The tables the build reads. They are cited here and in `pins/sources.json`; the 
   row's parts and document the cutter" (2026-11-09), <https://github.com/mkpoli/ids-input/pull/848>;
   #850 "fix(scripts): keep row cuts on their side of the middle line" (2026-11-10),
   <https://github.com/mkpoli/ids-input/pull/850>.
+- han-decompose branch `feat/stroke-lab`, `lab/strokes/README.md`, read 2026-11-16: the eight
+  donor-stroke methods (run 2026-11-02 on 25 glyphs) and the 山 neck cut (2,220 instances).
+- han-compose PR #40 "feat(export): carry KanjiVG stroke groups in glyph records" (2026-10-29),
+  <https://github.com/mkpoli/han-compose/pull/40>, and `src/han_compose/kanjivg_cuts.py`
+  (`Cutter.owners`, `groups`).
+- ids-input PR #512 "feat(composer): join 巴's tail to the pressed ⿺电 enclosure" (2026-11-05),
+  <https://github.com/mkpoli/ids-input/pull/512>, and `docs/enclosure-graft.md`.
 - han-decompose release v0.1.0: `skipped.babelstone.tsv.gz`, `skipped.chise.tsv.gz`,
   `skipped.zi-tools.tsv.gz`, `cuts.babelstone.tsv.gz`, read 2026-11-16.
 - han-compose `main`: `js/src/component-forms.json`, `component-forms.js`, `custom-forms.js`;
