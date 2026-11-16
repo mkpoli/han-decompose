@@ -5,15 +5,13 @@ description of a subject in the source's order; the first is the one a reading t
 otherwise.
 """
 
-import gzip
-import json
 import re
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 from functools import cache
 from pathlib import Path
 
-from . import ids, pins
+from . import corpus, ids, pins
 
 SOURCES = ("babelstone", "chise", "zi-tools")
 
@@ -208,9 +206,7 @@ def zi_tools(path: Path, names: frozenset[str] | None = None) -> Table:
 @cache
 def corpus_names(cache_folder: Path | None = None) -> frozenset[str]:
     """The identifiers of the components the pinned corpus holds, `bsp:42` and `chise:CDP-8958`."""
-    paths = pins.source_paths(pins.source("ids-corpus"), cache_folder, fetch=False)
-    rows = json.loads(gzip.decompress(paths["ids-corpus.json.gz"].read_bytes()))["components"]["rows"]
-    return frozenset(row[0] for row in rows)
+    return corpus.read(cache_folder).names
 
 
 @cache

@@ -6,7 +6,7 @@ from typing import Annotated
 
 import typer
 
-from . import __version__, aj1, descriptions, numbered, pins, tsv
+from . import __version__, aj1, classes, descriptions, numbered, pins, tsv
 from . import identifiers as I
 from . import outlines as outline_files
 from .cutters import library as libraries
@@ -310,7 +310,10 @@ def release(
         built = Release(out, version)
         built.shards(run)
         built.indexes()
-        built.flat(component_rows(cache))
+        table = classes.pinned(cache)
+        for problem in table.problems():
+            typer.echo(f"classes: {problem}", err=True)
+        built.flat(component_rows(cache), table.table())
         manifest = built.finish(commit)
     except (pins.PinError, ValueError, KeyError, OSError) as error:
         typer.echo(str(error.args[0]) if isinstance(error, KeyError) else str(error), err=True)

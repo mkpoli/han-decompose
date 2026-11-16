@@ -40,10 +40,11 @@ packages = ["src/han_decompose"]
 [tool.hatch.build.targets.wheel.force-include]
 "schema" = "han_decompose/_schema"
 "pins" = "han_decompose/_pins"
+"review" = "han_decompose/_review"
 "LICENSES" = "han_decompose/_LICENSES"
 
 [tool.hatch.build.targets.sdist]
-include = ["/src", "/schema", "/pins", "/LICENSES", "/tests", "/README.md", "/LICENSE"]
+include = ["/src", "/schema", "/pins", "/review", "/LICENSES", "/tests", "/README.md", "/LICENSE"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

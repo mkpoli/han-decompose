@@ -436,15 +436,17 @@ distinct form levels it takes, separated by spaces.
 |---|---|
 | `member` | Component reference. |
 | `target` | The component the row resolves it to. |
-| `canonical` | Where the rows lead: the class's canonical member. |
+| `canonical` | Where the rows lead from `member` at the row's place: the class's canonical member. Rows with a place do not count where `place` is empty. |
 | `place` | The place the row applies at (4.3), or empty for every place. |
 | `basis` | `radical-form` (a radical's own code point and its unified ideograph), `positional-form` (the form a component takes at the place the row names), `unifiable-variant` (shapes the IRG lists as unifiable at level 1), `radical-index` (indexed as the radical with no further strokes), `alignment` (written for one another in descriptions of one character) or `editorial`. |
 | `tier` | `source` (a table states it), `derived` (inferred from a table) or `editorial` (the project's own reviewed row). |
 | `note` | For an editorial row, the reviewer's reason and date: `示 drawn without its first 一; 2026-11-16`. |
 
-A member resolves by following its rows to a component that is no member of anything. A row with a
-place applies only there. A member that resolves to two canonical members at one place is in no
-class. Components without a row are compared as themselves.
+A member resolves by following its rows to a component that is no member of anything at that
+place. A row with a place applies only there: 礻 is 示 at `L`, so ⺭ (a member of 礻 everywhere) leads
+to 示 at `L` and to 礻 elsewhere. A member that resolves to two canonical members at one place, or
+leads back to itself, is in no class and has no row. A corpus row whose place no operand stands in
+(`partial`) is left out. Components without a row are compared as themselves.
 
 ### 5.4 `skipped`
 

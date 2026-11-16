@@ -1,4 +1,4 @@
-"""Where the files that ship with the package are: `schema/` and `pins/`."""
+"""Where the files that ship with the package are: `schema/`, `pins/` and `review/`."""
 
 from pathlib import Path
 
