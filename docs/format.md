@@ -301,7 +301,7 @@ A cut:
 | `path` | yes | Operand indices into the reading's structure. |
 | `place` | yes | Where the node stands in its parent: `L`, `C`, `R` under `⿰` and `⿲`; `T`, `M`, `B` under `⿱` and `⿳`; otherwise the operator and the operand index, as `⿸0`. Empty for the root. |
 | `class` | yes | Component reference of the node as the structure writes it: a class's canonical member, or a component in no class. |
-| `style` | | `member` (the component reference of the form the drawing matched: a class member, an IVD sequence of one, or a UCV form; the component itself when it is in no class), `basis` (`kage`, `match`, `cluster` or `hand`), `likeness`, `tier` (`source`, `machine` or `reviewed`). A layer opened from the cut is read with the member's structures. |
+| `style` | | `member` (the component reference of the form the drawing matched: a class member, an IVD sequence of one, or a UCV form; the component itself when it is in no class), `basis` (`kage`, `match`, `cluster` or `hand`), `likeness`, `glyph` (a `kage` cut's placed glyph, as `glyphwiki@20261115/name.u793b-01`, whose suffix is the form's own name), `tier` (`source`, `machine` or `reviewed`). A layer opened from the cut is read with the member's structures. |
 | `contours` | yes | Contour indices, ascending. |
 | `box` | yes | Box of the cut's contours. |
 | `frame` | | Box of the parent node's ink. |

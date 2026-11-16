@@ -778,6 +778,10 @@
             "likeness": {
               "type": "number"
             },
+            "glyph": {
+              "description": "The glyph a kage cut was placed as, by its name.",
+              "$ref": "#/$defs/glyphId"
+            },
             "tier": {
               "$ref": "#/$defs/tier"
             }

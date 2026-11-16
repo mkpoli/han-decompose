@@ -78,6 +78,8 @@ export interface CutStyle {
   member: string;
   basis: "kage" | "match" | "cluster" | "hand";
   likeness?: number;
+  /** The glyph a `kage` cut was placed as, by its name: `glyphwiki@20261115/name.u793b-01`. */
+  glyph?: string;
   tier: Tier;
 }
 
