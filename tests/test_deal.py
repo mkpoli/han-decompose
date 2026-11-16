@@ -146,13 +146,8 @@ def test_the_stacks_on_shan_of_ids_input_reproduce() -> None:
                 ]
                 found[char] = (drawing.id, reading["evidence"]["likeness"], pieces)
                 break
-    # Four of the 114 that ids-input closed are described with a component no ledger names, which
-    # the format has no reference for.
-    missing = set(wanted) - set(found)
-    assert set(found) <= set(wanted) and missing == {"㞪", "𡶓", "𰎨", "𡸸"}
+    assert set(found) == set(wanted)
     for char, (font, likeness, taken) in wanted.items():
-        if char in missing:
-            continue
         assert found[char][0] == font and abs(found[char][1] - likeness) < 0.0006 and found[char][2] == taken
 
 

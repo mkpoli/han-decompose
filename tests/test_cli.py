@@ -19,6 +19,6 @@ def test_the_component_table_is_written(tmp_path: Path) -> None:
     except pins.PinError:
         pytest.skip("The pinned tables are not in the cache; run `han-decompose fetch`.")
     result = CliRunner().invoke(app, ["components", str(tmp_path)])
-    assert result.exit_code == 0 and result.stdout.splitlines() == ["components.tsv\t164"]
+    assert result.exit_code == 0 and result.stdout.splitlines() == ["components.tsv\t286"]
     name, _, rows = tsv.read_table((tmp_path / "components.tsv").read_text(encoding="utf-8"))
-    assert name == "components" and {row["relation"] for row in rows} == {"glyph-of"}
+    assert name == "components" and {row["relation"] for row in rows} == {"glyph-of", "equivalent", ""}

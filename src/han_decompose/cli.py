@@ -1,16 +1,19 @@
 """The `han-decompose` command."""
 
+from concurrent.futures.process import BrokenProcessPool
 from pathlib import Path
 from typing import Annotated
 
 import typer
 
-from . import __version__, aj1, pins, tsv
+from . import __version__, aj1, descriptions, numbered, pins, tsv
 from . import identifiers as I
 from .cutters import library as libraries
+from .cutters import lift as lifts
 from .cutters import survey as surveys
-from .importers import composer_export
-from .outline import Chain
+from .importers import composer_export, numbered_forms
+from .outline import Chain, Face
+from .pieces import Drawing
 from .release import Release, pack
 from .schema import Json
 from .store import Store
@@ -147,6 +150,71 @@ def survey(
 
 
 @app.command()
+def lift(
+    design: Annotated[
+        list[str] | None, typer.Option(help="A design whose fonts the glyphs are read in, in order of preference.")
+    ] = None,
+    out: Annotated[Path | None, typer.Option(help="A folder to write the files into.")] = None,
+    workers: Annotated[int, typer.Option(help="How many processes cut at once.")] = 4,
+    cache: Annotated[Path | None, typer.Option(help="The cache folder the pinned files are in.")] = None,
+) -> None:
+    """Lift every CHISE entity and numbered component of the component registry that the corpus
+    names out of the characters written with it, and count the forms that stand, by kind, and the
+    cuts in their libraries. Forms and libraries are filed under the first design. Stroke chains
+    and entities the corpus has no identifier for are counted and left out. The glyph BabelStone Han
+    PUA draws for a numbered component is written with the outlines where a cut was held against
+    it."""
+    if out is not None and out.exists() and any(out.iterdir()):
+        typer.echo(f"{out} is not empty.", err=True)
+        raise typer.Exit(1)
+    designs = design or DESIGNS
+    store = Store()
+    tried: dict[str, int] = {}
+    held: set[str] = set()
+    stand: dict[str, int] = {}
+    hosts = readings = skipped = 0
+    try:
+        for outcome in lifts.run(designs, workers, cache):
+            tried[outcome.kind] = tried.get(outcome.kind, 0) + 1
+            for glyph, record in outcome.glyphs.items():
+                store.record(*I.split_glyph_id(glyph), record)
+            for row in outcome.readings:
+                store.reading(row)
+                held.update(
+                    cut["evidence"]["referenceGlyph"]
+                    for cut in row["cuts"]
+                    if cut.get("evidence", {}).get("referenceGlyph", "").startswith(numbered.FONT)
+                )
+            for row, font in outcome.skipped:
+                store.skip(row, font)
+            readings += len(outcome.readings)
+            skipped += len(outcome.skipped)
+            if outcome.form is not None:
+                stand[outcome.kind] = stand.get(outcome.kind, 0) + 1
+                hosts += sum(len(cuts) for cuts in outcome.library.values())
+                store.form(designs[0], outcome.component, outcome.component, outcome.form, outcome.library)
+        # The glyphs BabelStone Han PUA draws for the numbered components that were lifted.
+        for reference in numbered.glyphs(descriptions.table("babelstone", cache), cache).values():
+            if I.glyph_id(reference.font, reference.selector) in held:
+                store.glyph(reference)
+        left = lifts.registry(cache)[1]
+    except BrokenProcessPool as error:
+        typer.echo("A process could not start: run `han-decompose fetch` and check the cache.", err=True)
+        raise typer.Exit(1) from error
+    except (pins.PinError, KeyError, OSError) as error:
+        typer.echo(str(error.args[0]) if isinstance(error, KeyError) else str(error), err=True)
+        raise typer.Exit(1) from error
+    for kind in sorted(tried):
+        typer.echo(f"forms: {kind}\t{stand.get(kind, 0)}\tof {tried[kind]}")
+    typer.echo(f"library cuts\t{hosts}")
+    typer.echo(f"hosts read\t{readings}")
+    typer.echo(f"hosts skipped\t{skipped}")
+    typer.echo(f"unnamed-component: left out\t{len(left)}")
+    if out is not None:
+        typer.echo(f"files\t{len(store.write(out))}\t{out}")
+
+
+@app.command()
 def read(
     out: Annotated[Path, typer.Argument(help="A folder to write the outline and cut files into.")],
     design: Annotated[
@@ -180,8 +248,9 @@ def read(
 
 
 def component_rows(cache: Path | None) -> list[Json]:
-    """The rows of the component table: the Adobe-Japan1 glyphs that descriptions name."""
-    return aj1.pinned(cache)
+    """The rows of the component table: the Adobe-Japan1 glyphs that descriptions name, and the
+    numbered components with their code points in BabelStone Han PUA."""
+    return [*aj1.pinned(cache), *numbered.rows(descriptions.table("babelstone", cache))]
 
 
 @app.command()
@@ -232,7 +301,8 @@ def components(
     cache: Annotated[Path | None, typer.Option(help="The cache folder the pinned files are in.")] = None,
 ) -> None:
     """Write the component table: each Adobe-Japan1 glyph that descriptions name, with the
-    character Adobe's kanji table makes it a glyph of."""
+    character Adobe's kanji table makes it a glyph of, and BabelStone's numbered components with
+    their code points in BabelStone Han PUA."""
     try:
         rows = component_rows(cache)
     except (pins.PinError, ValueError, KeyError, OSError) as error:
@@ -241,3 +311,39 @@ def components(
     out.mkdir(parents=True, exist_ok=True)
     (out / "components.tsv").write_text(tsv.write_table("components", rows), encoding="utf-8")
     typer.echo(f"components.tsv\t{len(rows)}")
+
+
+@app.command("import-numbered")
+def import_numbered(
+    out: Annotated[Path, typer.Argument(help="An empty folder to write the files into.")],
+    cache: Annotated[Path | None, typer.Option(help="The cache folder the pinned files are in.")] = None,
+) -> None:
+    """Take over the numbered components han-compose cut for its Sans style: each form that is
+    whole contours of a host glyph becomes a reading of that host and the component's form."""
+    if out.exists() and any(out.iterdir()):
+        typer.echo(f"{out} is not empty.", err=True)
+        raise typer.Exit(1)
+    store = Store()
+    found = 0
+    try:
+        file, registry = numbered_forms.pinned(cache)
+        table = descriptions.table("babelstone", cache)
+        with Chain.pinned(numbered_forms.DESIGNS, cache) as chain:
+            drawings = [Drawing(face) for face in chain.faces]
+            references = lifts.numbered(table, Drawing(Face.pinned(numbered.FONT, cache)))
+            for outcome in numbered_forms.imports(file, table, registry, drawings, references):
+                found += 1
+                for glyph, record in outcome.glyphs.items():
+                    store.record(*I.split_glyph_id(glyph), record)
+                for row in outcome.readings:
+                    store.reading(row)
+                assert outcome.form is not None
+                store.form(
+                    numbered_forms.DESIGNS[0], outcome.component, outcome.component, outcome.form, outcome.library
+                )
+            total = len(numbered_forms.forms(file, table))
+    except (pins.PinError, KeyError, OSError) as error:
+        typer.echo(str(error.args[0]) if isinstance(error, KeyError) else str(error), err=True)
+        raise typer.Exit(1) from error
+    typer.echo(f"forms imported\t{found}\tof {total} cut from a host")
+    typer.echo(f"files\t{len(store.write(out))}\t{out}")
