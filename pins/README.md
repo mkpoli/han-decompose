@@ -189,3 +189,16 @@ from them by `han-decompose citations`.
 | File | SHA-256 | Address |
 |---|---|---|
 | `numbered-forms.json` | `af63ab13f110ade1696c0353b148f18a2683232660609ddba3af0cc619c9ad2b` | <https://raw.githubusercontent.com/mkpoli/han-compose/3587faa97f4e7672479133609b3b2d7c0aa3d4d2/data/numbered-forms.json> |
+
+### `unihan`
+
+- Source: Unihan database, <https://www.unicode.org/Public/18.0.0/ucd/Unihan.zip>
+- Role: classes
+- Pin: Unicode 18.0.0, file date 2026-07-31; retrieved 2026-11-16.
+- Licence: Unicode-3.0. https://www.unicode.org/license.txt (Unicode License V3, copyright 1991-2026 Unicode, Inc.), which the header of Unihan_RadicalStrokeCounts.txt in the archive points to as the terms of use
+- Attribution: Unihan database, Unicode 18.0.0, © 2026 Unicode, Inc.
+- Limits: Only `kRSUnicode` is read, for the class rows whose basis is `radical-index`; a radical index says which radical a character is indexed under and not that two shapes are one component.
+
+| File | SHA-256 | Address |
+|---|---|---|
+| `Unihan.zip` | `4c93ea9c1f636451729a840978f1667a53886af37ba854fdcce109721c63d43e` | <https://www.unicode.org/Public/18.0.0/ucd/Unihan.zip> |

@@ -253,7 +253,7 @@ def test_unknown_names() -> None:
     with pytest.raises(KeyError):
         pins.font("noto-sans-cjk-jp@9")
     with pytest.raises(KeyError):
-        pins.source("babelstone")
+        pins.source("oracle")
     with pytest.raises(KeyError):
         pins.chain("kaisho")
     with pytest.raises(KeyError):

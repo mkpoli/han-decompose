@@ -5,6 +5,7 @@ The texts of the licences the pinned fonts and sources are under, named by the i
 
 | File | From |
 |---|---|
+| `Unicode-3.0.txt` | <https://www.unicode.org/license.txt>, the Unicode License V3, read 2026-11-16. |
 | `OFL-1.1.txt`, `CC0-1.0.txt`, `GPL-2.0-or-later.txt`, `CC-BY-SA-3.0.txt` | SPDX license list 3.25.0, <https://github.com/spdx/license-list-data>. |
 | `Arphic-1999.txt` | <http://ftp.gnu.org/non-gnu/chinese-fonts-truetype/LICENSE>, the address BabelStone Han PUA's name table gives; unaltered. |
 | `MIT.txt` | The `LICENSE` of <https://github.com/yi-bai/ids> at `da1e9f8a09e2ec8faaf176bac99203f978282041`, with its copyright line. |

@@ -286,7 +286,7 @@ def test_registry_files() -> None:
         "attribution": "BabelStone IDS by Andrew West",
     }
     validate("sources", {"format": "han-decompose/sources@2.0", "sources": [source]})
-    assert problems("sources", {"format": "han-decompose/sources@2.0", "sources": [{**source, "role": "description"}]})
+    assert problems("sources", {"format": "han-decompose/sources@2.0", "sources": [{**source, "role": "oracle"}]})
 
 
 def test_forms_libraries_and_the_manifest() -> None:
