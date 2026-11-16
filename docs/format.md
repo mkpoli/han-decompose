@@ -345,6 +345,7 @@ A skipped attempt holds `subject`, `glyph` when a font draws the subject, `layer
 | `unlike-whole` | The operands, each drawn where its pieces sit, do not come out as the glyph. |
 | `unreadable-description` | The candidate does not read as a tree. |
 | `unlike-division` | GlyphWiki's placed components do not match the structure's operands. |
+| `no-division` | GlyphWiki draws the glyph from strokes alone, so it places no component to divide it by. |
 | `unnamed-component` | The description names a component the corpus gives no identifier: a stroke chain, or an entity it does not hold. |
 
 ### 4.4 Form and library files

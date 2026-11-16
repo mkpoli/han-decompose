@@ -373,7 +373,7 @@ derived is presented as attested.
 Attempts that closed no reading are kept in `skipped`, one row per glyph, layer and structure,
 with a reason code (`too-few-pieces`, `unlike-element`, `layout-mismatch`, `ambiguous`,
 `does-not-tile`, `no-reference-glyph`, `no-enclosure`, `no-face`, `too-many-pieces`, `no-ink`,
-`unlike-whole`, `unreadable-description`, `unlike-division`, `unnamed-component`) and the builder's sentence.
+`unlike-whole`, `unreadable-description`, `unlike-division`, `no-division`, `unnamed-component`) and the builder's sentence.
 
 ### 2.7 Drawn IDS
 

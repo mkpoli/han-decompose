@@ -1026,6 +1026,7 @@
                 "unlike-whole",
                 "unreadable-description",
                 "unlike-division",
+                "no-division",
                 "unnamed-component"
               ]
             },
