@@ -982,7 +982,6 @@
       "required": [
         "subject",
         "layer",
-        "structure",
         "text",
         "reason"
       ],
@@ -998,7 +997,8 @@
           "$ref": "#/$defs/layer"
         },
         "structure": {
-          "$ref": "#/$defs/structureId"
+          "$ref": "#/$defs/structureId",
+          "description": "Absent where the text starts with no operator and so is no structure."
         },
         "text": {
           "type": "string",

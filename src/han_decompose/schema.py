@@ -10,7 +10,7 @@ from typing import Any
 from jsonschema import Draft202012Validator
 
 from . import identifiers as I
-from .ids import parse, walk
+from .ids import parse, place, walk
 from .resources import resource
 
 Json = dict[str, Any]
@@ -147,9 +147,15 @@ def cut_problems(cuts: Json, outlines: Json | None = None) -> list[str]:
                 out.append(f"{where}: the glyph is not of {font}.")
             if outlines is not None and selector not in outlines["glyphs"]:
                 out.append(f"{where}: the outline file does not hold the glyph.")
-        if row["structure"] != I.structure_id(row["text"]):
-            out.append(f"{where}: {row['structure']} does not name {row['text']}.")
+        if "structure" in row:
+            if row["structure"] != I.structure_id(row["text"]):
+                out.append(f"{where}: {row['structure']} does not name {row['text']}.")
+        elif row["text"][:1] in I.OPERATORS:
+            out.append(f"{where}: {row['text']} is a structure and has its identifier.")
     seen_methods: set[tuple[str, tuple[str, ...], str, str]] = set()
+    layers: dict[tuple[str, tuple[str, ...]], list[Json]] = {}
+    for reading in cuts["readings"]:
+        layers.setdefault((reading["glyph"], tuple(reading["layer"])), []).append(reading)
     chosen: dict[tuple[str, tuple[str, ...], str], list[tuple[bool, bool]]] = {}
     held: dict[str, set[int]] = {}
     for reading in cuts["readings"]:
@@ -192,6 +198,12 @@ def cut_problems(cuts: Json, outlines: Json | None = None) -> list[str]:
         seen: dict[tuple[int, ...], set[int]] = {}
         for cut in reading["cuts"]:
             path, contours = tuple(cut["path"]), cut["contours"]
+            out += _precision(cut)
+            if path in nodes:
+                if cut["place"] != place_of(nodes, path):
+                    out.append(
+                        f"{cut['id']}: the place is {cut['place']!r}, the node stands at {place_of(nodes, path)!r}."
+                    )
             if cut["id"] != I.cut_id(glyph, [*layer, I.step(reading["text"], method, path)]):
                 out.append(f"{cut['id']}: the identifier does not name its glyph, layers, structure, method and path.")
             if path not in nodes:
@@ -226,14 +238,94 @@ def cut_problems(cuts: Json, outlines: Json | None = None) -> list[str]:
                 elif mine & theirs:
                     out.append(f"{cut['id']}: contours {sorted(mine & theirs)} are also at {I.path_text(other)}.")
             seen[path] = mine
+        for node in reading.get("opened", ()):
+            if node["structure"] != I.structure_id(node["text"]):
+                out.append(f"{glyph}: {node['structure']} does not name {node['text']}.")
+            below = (*layer, I.step(reading["text"], method, tuple(node["path"])))
+            found = layers.get((glyph, below), [])
+            if not found:
+                out.append(f"{glyph}: the opened node at {I.path_text(node['path'])} has no reading of its layer.")
+            elif any(row["subject"] != node["member"] or row["structure"] != node["structure"] for row in found):
+                out.append(
+                    f"{glyph}: the layer of the opened node at {I.path_text(node['path'])} is not read as it says."
+                )
+        if drawn is not None:
+            for cut in reading["cuts"]:
+                if "frame" not in cut:
+                    continue
+                path = tuple(cut["path"])
+                under = sorted(
+                    {
+                        i
+                        for other in reading["cuts"]
+                        if tuple(other["path"])[: len(path) - 1] == path[:-1]
+                        for i in other["contours"]
+                    }
+                )
+                if under and under[-1] < len(drawn["contours"]) and cut["frame"] != box(drawn["contours"], under):
+                    spans = box(drawn["contours"], under)
+                    out.append(f"{cut['id']}: the frame is {cut['frame']}, the parent's ink spans {spans}.")
         if universe is not None and reading["complete"]:
             claimed = set().union(*seen.values()) if seen else set()
             if claimed != universe:
                 out.append(f"{glyph}: marked complete with contours unclaimed.")
+    for selector, entries in cuts["drawn"].items():
+        out += _drawn_problems(font, selector, entries, layers)
     for (glyph, _, structure), flags in chosen.items():
         picked = [good for is_chosen, good in flags if is_chosen]
         if len(picked) != (1 if any(good for _, good in flags) else 0) or not all(picked):
             out.append(f"{glyph}: exactly one accepted reading of {structure} is chosen, and none else.")
+    return out
+
+
+def place_of(nodes: dict[tuple[int, ...], Any], path: tuple[int, ...]) -> str:
+    """The place the node at `path` stands in its parent."""
+    return place(nodes[path[:-1]].operator or "", path[-1]) if path else ""
+
+
+def _fine(value: float, digits: int) -> bool:
+    return round(value, digits) == value
+
+
+def _precision(cut: Json) -> list[str]:
+    """Where a cut holds a number with more decimals than the format allows: two for boxes, lengths
+    and areas, four for scores."""
+    out = []
+    for key in ("box", "frame"):
+        if key in cut and not all(_fine(value, 2) for value in cut[key]):
+            out.append(f"{cut['id']}: the {key} has more than two decimals.")
+    for key in ("gap", "area", "ink"):
+        if key in cut and not _fine(cut[key], 2):
+            out.append(f"{cut['id']}: the {key} has more than two decimals.")
+    scores = [value for value in cut.get("evidence", {}).values() if isinstance(value, float)]
+    scores += [cut["style"]["likeness"]] if "likeness" in cut.get("style", {}) else []
+    scores += [check[key] for check in cut.get("checks", {}).values() for key in ("value", "limit")]
+    if not all(_fine(value, 4) for value in scores):
+        out.append(f"{cut['id']}: a score has more than four decimals.")
+    return out
+
+
+def _drawn_problems(
+    font: str, selector: str, entries: list[Json], layers: dict[tuple[str, tuple[str, ...]], list[Json]]
+) -> list[str]:
+    """Where the drawn IDS of one glyph break the format: each names its structure by hash, rests
+    on readings that exist, and exactly one is first."""
+    out = []
+    glyph = I.glyph_id(font, selector)
+    if sum(entry["first"] for entry in entries) != 1:
+        out.append(f"{selector}: exactly one drawn IDS is marked first.")
+    if len({entry["structure"] for entry in entries}) != len(entries):
+        out.append(f"{selector}: a structure has more than one drawn IDS.")
+    for entry in entries:
+        if entry["structure"] != I.structure_id(entry["text"]):
+            out.append(f"{selector}: {entry['structure']} does not name {entry['text']}.")
+        if not any(row["structure"] == entry["structure"] for row in layers.get((glyph, ()), [])):
+            out.append(f"{selector}: no reading of {entry['structure']} on the glyph itself.")
+        for layer in entry["readings"]:
+            if (glyph, tuple(layer)) not in layers:
+                out.append(
+                    f"{selector}: the drawn IDS names the layer {'~'.join(layer) or '-'}, which no reading holds."
+                )
     return out
 
 

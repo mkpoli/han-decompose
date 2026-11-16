@@ -124,6 +124,31 @@ CUT_FAULTS: list[tuple[str, Callable[[Json], None]]] = [
         "exactly one accepted reading of s.9d9dea39 is chosen",
         _another_chosen,
     ),
+    ("does not name ⿰亻崔", lambda c: c["drawn"]["U+50AC"][0].update(structure="s.00000000")),
+    ("exactly one drawn IDS is marked first", lambda c: c["drawn"]["U+50AC"][0].update(first=False)),
+    ("exactly one drawn IDS is marked first", lambda c: c["drawn"]["U+50AC"].append({**c["drawn"]["U+50AC"][0]})),
+    (
+        "no reading of s.a674f7d6 on the glyph itself",
+        lambda c: c["drawn"]["U+50AC"][0].update(structure="s.a674f7d6", text="⿱山隹"),
+    ),
+    ("which no reading holds", lambda c: c["drawn"]["U+50AC"][0]["readings"].append(["9d9dea39-hand:7"])),
+    ("s.00000000 does not name ⿱山隹", lambda c: _reading(c)["opened"][0].update(structure="s.00000000")),
+    ("has no reading of its layer", lambda c: _reading(c)["opened"][0].update(path=[0])),
+    ("is not read as it says", lambda c: _reading(c)["opened"][0].update(member="u:5C71")),
+    ("the place is 'T'", lambda c: _reading(c)["cuts"][0].update(place="T")),
+    ("the node stands at ''", lambda c: _reading(c)["cuts"][0].update(place="L", path=[])),
+    ("the frame is [0, 0, 1, 1]", lambda c: _reading(c)["cuts"][0].update(frame=[0, 0, 1, 1])),
+    (
+        "the box has more than two decimals",
+        lambda c: _reading(c)["cuts"][0].update(box=[15.981, -78.14, 335.21, 836.36]),
+    ),
+    (
+        "the frame has more than two decimals",
+        lambda c: _reading(c)["cuts"][0].update(frame=[15.98, -78.14, 954.091, 836.36]),
+    ),
+    ("the gap has more than two decimals", lambda c: _reading(c)["cuts"][0].update(gap=1.234)),
+    ("a score has more than four decimals", lambda c: _reading(c)["cuts"][0].update(evidence={"fit": 0.91234})),
+    ("is a structure and has its identifier", lambda c: c["skipped"][0].pop("structure")),
     ("U+50AD: the outline file does not hold the glyph", lambda c: _retarget(c, "U+50AD", "u:50AD")),
     ("U+507A: the outline file does not hold the glyph", lambda c: c["skipped"][0].update(glyph=c["font"] + "/U+507A")),
     ("U+50AD: the outline file does not hold the glyph", lambda c: c["drawn"].update({"U+50AD": c["drawn"]["U+50AC"]})),
@@ -145,6 +170,13 @@ def test_a_faulty_cut_file_is_refused(outlines: Json, cuts: Json, expected: str,
 def test_an_opened_node_is_a_cut_of_the_layer_above(cuts: Json) -> None:
     assert _reading(cuts, 1)["layer"] == [LAYER]
     assert _reading(cuts)["cuts"][1]["id"].endswith("~" + LAYER)
+
+
+def test_a_text_that_is_no_structure_is_skipped_without_one(outlines: Json, cuts: Json) -> None:
+    row = cuts["skipped"][0]
+    row.pop("structure")
+    row["text"] = "&chise:U-i001+2FF1;千北"
+    validate("cuts", cuts, outlines)
 
 
 def test_a_style_names_how_a_cut_is_drawn(outlines: Json, cuts: Json) -> None:
