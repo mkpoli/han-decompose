@@ -317,7 +317,7 @@ A skipped attempt holds `subject`, `glyph` when a font draws the subject, `layer
 | `no-face` | No font of the design draws the subject. |
 | `no-ink` | The glyph draws nothing. |
 | `unlike-whole` | The operands, each drawn where its pieces sit, do not come out as the glyph. |
-| `unreadable-structure` | The candidate does not read as a tree. |
+| `unreadable-description` | The candidate does not read as a tree. |
 | `unlike-division` | GlyphWiki's placed components do not match the structure's operands. |
 
 ### 4.4 Form and library files

@@ -341,8 +341,8 @@ derived is presented as attested.
 
 Attempts that closed no reading are kept in `skipped`, one row per glyph, layer and structure,
 with a reason code (`too-few-pieces`, `unlike-element`, `layout-mismatch`, `ambiguous`,
-`does-not-tile`, `no-reference-glyph`, `no-enclosure`, `no-face`, `too-many-pieces`,
-`unlike-division`) and the builder's sentence.
+`does-not-tile`, `no-reference-glyph`, `no-enclosure`, `no-face`, `too-many-pieces`, `no-ink`,
+`unlike-whole`, `unreadable-description`, `unlike-division`) and the builder's sentence.
 
 ### 2.7 Drawn IDS
 
@@ -412,7 +412,7 @@ These are indexes over cuts and hold no geometry of their own.
   (mean box, spread, count) per place. A cut enters when its status is `accepted` or
   `reviewed-right`.
 - `forms/<design>.json.gz`: class → style → the chosen cut and its basis (`reference`, `agree`,
-  `single`, `kage`, `hand`), following the rule `build_custom_cuts.py` uses today.
+  `single`, `kage`, `imported`, `hand`), following the rule `build_custom_cuts.py` uses today.
 - Variants: a character page lists the character's own glyph in each design, every cut whose
   component is that character or in its class (the character as drawn inside others, by style),
   and every cut of a component related to it in `components.tsv` (`glyph-of`, `equivalent`), each
