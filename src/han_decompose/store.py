@@ -46,11 +46,15 @@ def dumps(value: Json) -> str:
     return _encode(value) + "\n"
 
 
+def compressed(text: str) -> bytes:
+    """A file's text as gzip with its modification time at 0."""
+    return gzip.compress(text.encode("utf-8"), 9, mtime=0)
+
+
 def write(path: Path, text: str) -> None:
     """Write a file's text; a `.gz` name is gzip with its modification time at 0."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    data = text.encode("utf-8")
-    path.write_bytes(gzip.compress(data, 9, mtime=0) if path.suffix == ".gz" else data)
+    path.write_bytes(compressed(text) if path.suffix == ".gz" else text.encode("utf-8"))
 
 
 def _selector(row: Json) -> str | None:
@@ -78,10 +82,11 @@ def change_notice(row: Json) -> str | None:
     )
 
 
-def outline_head(font: str) -> Json:
+def outline_head(font: str, row: Json | None = None) -> Json:
     """An outline file without its glyphs: the font, its licence and copyright line, and, for a
-    font whose licence asks that a changed copy say how it was changed, that notice."""
-    row = pins.font(font)
+    font whose licence asks that a changed copy say how it was changed, that notice. `row` is the
+    font's registry row, read from the registry where not given."""
+    row = row or pins.font(font)
     head: Json = {"format": OUTLINES, "font": font, "licence": row["licence"], "copyright": row["copyright"]}
     if notice := change_notice(row):
         head["notice"] = notice
