@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Donor stroke cuts side by side</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff; --fg: #1a1a1a; --muted: #5f6368; --line: #e3e3e3;
+    --head: #f6f7f8; --row: #ffffff; --row-alt: #fafbfc; --accent: #2f6db5;
+    --ok: #127a37; --bad: #b3261e; --chip: #eef1f4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a; --fg: #e8eaed; --muted: #9aa0a6; --line: #2a2e34;
+      --head: #1b1f24; --row: #14161a; --row-alt: #181c21; --accent: #8ab4f8;
+      --ok: #81c995; --bad: #f28b82; --chip: #23272d;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #ffffff; --fg: #1a1a1a; --muted: #5f6368; --line: #e3e3e3;
+    --head: #f6f7f8; --row: #ffffff; --row-alt: #fafbfc; --accent: #2f6db5;
+    --ok: #127a37; --bad: #b3261e; --chip: #eef1f4;
+  }
+  :root[data-theme="dark"] {
+    --bg: #14161a; --fg: #e8eaed; --muted: #9aa0a6; --line: #2a2e34;
+    --head: #1b1f24; --row: #14161a; --row-alt: #181c21; --accent: #8ab4f8;
+    --ok: #81c995; --bad: #f28b82; --chip: #23272d;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { background: var(--bg); border-bottom: 1px solid var(--line); padding: 16px 24px 12px; }
+  .bar { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+  h1 { font-size: 20px; margin: 0; }
+  .meta { color: var(--muted); font-size: 13px; }
+  .intro { color: var(--muted); font-size: 13px; margin: 8px 0 0; max-width: 100ch; }
+  .credit { color: var(--muted); font-size: 12px; margin: 6px 0 0; }
+  .credit a { color: var(--accent); }
+  .controls { display: flex; gap: 8px; align-items: center; margin-left: auto; }
+  button { font: inherit; color: var(--fg); background: var(--chip); border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+  main { padding: 0 24px 64px; }
+  table { border-collapse: separate; border-spacing: 0; }
+  thead th { position: sticky; top: 0; z-index: 1; background: var(--head); color: var(--fg);
+    text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; width: 168px; }
+  thead th:first-child { width: 96px; }
+  thead th:last-child { width: 220px; }
+  th .name { font-size: 13px; font-weight: 600; }
+  th .note { font-size: 11px; font-weight: 400; color: var(--muted); line-height: 1.35; }
+  tbody td { padding: 10px; border-bottom: 1px solid var(--line); vertical-align: top; background: var(--row); }
+  tbody tr:nth-child(even) td { background: var(--row-alt); }
+  td.char { font-size: 26px; line-height: 1.1; }
+  td.char .ids { font-size: 12px; color: var(--muted); word-break: break-all; }
+  td.fig { text-align: center; }
+  td.fig svg { display: block; margin: 2px auto 0; }
+  .cap { font-size: 11px; color: var(--muted); line-height: 1.35; }
+  .cap b { color: var(--fg); font-weight: 600; }
+  .tile.ok { color: var(--ok); }
+  .tile.bad { color: var(--bad); }
+  textarea { width: 100%; min-height: 96px; font: 12px/1.45 system-ui, sans-serif; color: var(--fg);
+    background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 6px; resize: vertical; }
+  textarea:focus { outline: none; border-color: var(--accent); }
+  .saved { font-size: 11px; color: var(--muted); height: 14px; }
+</style>
+<header>
+  <div class="bar">
+    <h1>Donor stroke cuts side by side</h1>
+    <span class="meta" id="meta"></span>
+    <div class="controls">
+      <button id="theme" type="button" title="Switch theme">Theme: auto</button>
+      <button id="gaps" type="button" aria-pressed="false" title="Draw a hairline in the page colour along every region boundary">Cut lines</button>
+      <button id="clear" type="button" title="Forget the verdicts stored in this browser">Clear notes</button>
+    </div>
+  </div>
+  <p class="intro">Each row is one donor character, cut by every method in the table. Every figure is the glyph's own ink: a method only decides which stroke each piece of ink belongs to, and each region is then clipped to the real outline, so they all carry the same silhouette and differ only in where the cut falls. Colours run in KanjiVG's stroke order, the same colour for the same stroke across the row. Each figure says how many strokes came out and how exactly they tile the ink.</p>
+  <div id="summary" class="meta"></div>
+  <p class="credit">Stroke guides from <a href="https://kanjivg.tagaini.net/">KanjiVG</a> (Ulrich Apel, CC BY-SA 3.0); the character shapes come from Noto Sans CJK JP 2.004.</p>
+</header>
+<main>
+  <table>
+    <thead><tr id="head"></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+</main>
+<script type="module">
+const data = await (await fetch('./donor-strokes-lab.json', { cache: 'no-store' })).json()
+// ?size=320 blows the figures up for a close look at one row.
+const SIZE = Number(new URLSearchParams(location.search).get('size')) || 150
+const STORE = 'donor-strokes-lab-notes'
+
+// A path arrives as a contour list of command lists; emit SVG path data.
+const d = list => list.flat().map(cmd => cmd[0] + cmd.slice(1).join(' ')).join(' ')
+
+// Stroke colours: the golden angle around the hue circle, so neighbouring strokes
+// in the same glyph never land on neighbouring hues.
+const colour = index => {
+  const hue = (index * 137.508) % 360
+  const light = index % 2 ? 62 : 46
+  return `hsl(${hue.toFixed(1)} 62% ${light}%)`
+}
+
+const notes = JSON.parse(localStorage.getItem(STORE) ?? '{}')
+
+document.getElementById('meta').textContent =
+  `${data.entries.length} characters · ${data.methods.length} methods · ${data.face} · ${data.raster} px raster`
+
+const head = document.getElementById('head')
+head.innerHTML = '<th>Character</th>'
+  + data.methods.map(method =>
+      `<th><div class="name">${method.name}</div><div class="note">${method.note}</div></th>`).join('')
+  + '<th>Verdict</th>'
+
+const named = Object.fromEntries(data.methods.map(method => [method.key, method]))
+
+const figure = (entry, method) => {
+  const name = named[method.key].name
+  let index = 0
+  const shapes = []
+  for (const part of method.parts) {
+    for (const stroke of part.strokes) {
+      // Even-odd, so a region that encloses a counter keeps its hole.
+      shapes.push(`<path d="${d(stroke.path)}" fill="${colour(index++)}" fill-rule="evenodd"`
+        + ` class="region"><title>${part.leaf} ${stroke.type}</title></path>`)
+    }
+  }
+  const tiling = method.tiling
+  const clean = Math.abs(tiling.area - 1) <= 0.01 && tiling.overlap <= 0.001
+    && tiling.outside <= 0.001 && !tiling.nan
+  return `<div class="cap"><b>${name}</b><br>${method.count} strokes ·
+      <span class="tile ${clean ? 'ok' : 'bad'}">tiles ${tiling.area.toFixed(3)}</span></div>
+    <svg width="${SIZE}" height="${SIZE}" viewBox="0 0 1000 1000" aria-label="${entry.char} by ${name}">
+      <g transform="translate(0 900) scale(0.8 -0.8)">${shapes.join('')}</g>
+    </svg>`
+}
+
+const rows = document.getElementById('rows')
+for (const entry of data.entries) {
+  const tr = document.createElement('tr')
+  tr.innerHTML = `<td class="char">${entry.char}<div class="ids">${entry.ids}</div></td>`
+    + entry.methods.map(method => `<td class="fig">${figure(entry, method)}</td>`).join('')
+    + `<td><textarea data-char="${entry.char}" placeholder="which cut reads best, and why"></textarea>
+        <div class="saved"></div></td>`
+  const box = tr.querySelector('textarea')
+  box.value = notes[entry.char] ?? ''
+  box.addEventListener('input', () => {
+    notes[entry.char] = box.value
+    localStorage.setItem(STORE, JSON.stringify(notes))
+    tr.querySelector('.saved').textContent = 'saved'
+  })
+  rows.append(tr)
+}
+
+// Worst tiling over the whole set, per method: the page's own check that nothing drifted.
+const worst = data.methods.map((method, column) => {
+  const all = data.entries.map(entry => entry.methods[column].tiling)
+  return {
+    name: method.name,
+    area: Math.min(...all.map(t => t.area)),
+    overlap: Math.max(...all.map(t => t.overlap)),
+    outside: Math.max(...all.map(t => t.outside)),
+    nan: all.some(t => t.nan),
+  }
+})
+document.getElementById('summary').textContent = 'worst tiling: '
+  + worst.map(w => `${w.name} ${w.area.toFixed(3)}`
+    + (w.overlap > 0.001 || w.outside > 0.001 || w.nan ? ' ⚠' : '')).join(' · ')
+
+const themeButton = document.getElementById('theme')
+const applyTheme = value => {
+  if (value === 'auto') document.documentElement.removeAttribute('data-theme')
+  else document.documentElement.dataset.theme = value
+  themeButton.textContent = `Theme: ${value}`
+  themeButton.dataset.value = value
+}
+applyTheme(localStorage.getItem('donor-strokes-lab-theme') ?? 'auto')
+themeButton.addEventListener('click', () => {
+  const next = { auto: 'light', light: 'dark', dark: 'auto' }[themeButton.dataset.value]
+  localStorage.setItem('donor-strokes-lab-theme', next)
+  applyTheme(next)
+})
+
+// Cut lines: a hairline in the page colour along every region's edge, so a boundary
+// inside the ink is visible even where two colours are hard to tell apart.
+const gaps = document.getElementById('gaps')
+gaps.addEventListener('click', () => {
+  const on = gaps.getAttribute('aria-pressed') !== 'true'
+  gaps.setAttribute('aria-pressed', String(on))
+  for (const region of document.querySelectorAll('.region')) {
+    region.setAttribute('stroke', on ? 'var(--bg)' : 'none')
+    region.setAttribute('stroke-width', on ? '7' : '0')
+  }
+})
+
+document.getElementById('clear').addEventListener('click', () => {
+  localStorage.removeItem(STORE)
+  for (const box of document.querySelectorAll('textarea')) box.value = ''
+})
+</script>
+</html>

@@ -1,0 +1,47 @@
+diff --git a/scripts/build_donor_parts.py b/scripts/build_donor_parts.py
+index 10447b2f0..f70c18958 100644
+--- a/scripts/build_donor_parts.py
++++ b/scripts/build_donor_parts.py
+@@ -279,13 +279,14 @@ class Face:
+         return self.prints[char]
+ 
+ 
+-def load_faces(explicit: list[Path], cache: Path, refresh: bool) -> list[Face]:
++def load_faces(explicit: list[Path], cache: Path, refresh: bool,
++               files: tuple[str, ...] = FACE_FILES) -> list[Face]:
+     """The pinned faces, best first, from given paths, the cache, or their URLs.
+ 
+-    Noto Sans CJK JP draws the common characters of the family; the Jigmo faces
+-    draw the extension-block ones, which Noto does not cover. A character and
+-    the elements it is recognised by always come from the same face, so no
+-    entry mixes two drawings of one shape.
++    `files` names the chain, in order of preference; a build that needs other
++    shapes than this one passes its own. A character and the elements it is
++    recognised by always come from the same face, so no entry mixes two
++    drawings of one shape.
+     """
+     pins = {f["file"]: f for f in json.loads(FONT_LOCK.read_text(encoding="utf-8"))["fonts"]}
+     given = {}
+@@ -296,7 +297,7 @@ def load_faces(explicit: list[Path], cache: Path, refresh: bool) -> list[Face]:
+             raise SystemExit(f"{path} is not one of the faces pinned in {FONT_LOCK.name}.")
+         given[match["file"]] = path
+     faces = []
+-    for name in FACE_FILES:
++    for name in files:
+         pin = pins[name]
+         path = given.get(name) or find_face(pin, cache, refresh)
+         faces.append(Face(path, pin))
+@@ -309,9 +310,10 @@ def find_face(pin: dict, cache: Path, refresh: bool) -> Path:
+     def good(path: Path) -> bool:
+         return path.is_file() and hashlib.sha256(path.read_bytes()).hexdigest() == pin["sha256"]
+ 
+-    # The upstream file names differ from the pinned ones: the Noto release ships
+-    # the variable font unversioned, and the Jigmo faces arrive inside one zip.
+-    plain = pin["file"].split("-")[-1] if pin["file"].startswith("Jigmo") else "NotoSansCJKjp-VF.ttf"
++    # The pinned names carry a release; the upstream files do not. The Jigmo
++    # faces arrive inside one zip, under the name the pin ends with.
++    plain = (pin["file"].split("-")[-1] if pin["file"].startswith("Jigmo")
++             else pin["url"].rsplit("/", 1)[-1])
+     for candidate in [cache / pin["file"], cache / plain,
+                       Path.home() / ".cache/ids-input/fontsrc" / plain,
+                       Path.home() / ".cache/ids-input-fonts" / plain]:
