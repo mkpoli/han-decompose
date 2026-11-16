@@ -337,7 +337,11 @@ engine's `makeGlyph3` does (`kage.js` at kage-engine commit `49232bac`, 2026-02-
 and cut ends in the Mincho style) and keeps their number and order, and each adjusted stroke is
 drawn into its own polygons. The polygons are not joined; each becomes a contour, and the contours
 of one stroke are kept as a group. A line drawn alone would miss the adjustment, so it is never
-used as the glyph's stroke. The build records the dump's date and SHA-256 in the font row and
+used as the glyph's stroke. A type-99 line may name a glyph at a fixed version (`u571f@3`), which
+`dump_newest_only.txt` does not hold; those versions, and the versions they name in turn, are read
+from `dump_all_versions.txt`. The engine is GPL-3.0 and runs as a build tool: it is cloned at the
+pinned commit and checked file by file, never copied into this repository or a release, and the
+polygons it draws are glyph data under GlyphWiki's terms. The build records the dump's date and SHA-256 in the font row and
 the release manifest. Each release mirrors the dump it read as a release asset of this repository,
 as it mirrors BabelStone Han PUA, and a rebuild reads that mirror. A glyph whose data is a list
 of type-99 lines places one component glyph per line in a box; the placed glyph's name gives the
