@@ -243,6 +243,9 @@ class Placement:
     parent: int | None
     depth: int
     box: tuple[float, float, float, float]
+    """The placed glyph's cell, stretched as the engine stretches it; see `ink` for what was drawn."""
+    ink: tuple[float, float, float, float] | None
+    """Extent of the polygons the placement drew: min x, min y, max x, max y."""
     strokes: tuple[int, ...]
     contours: tuple[int, ...]
 
@@ -292,7 +295,16 @@ def parse_drawing(row: Json) -> Drawing:
         a, b = p["strokes"]
         c, d = p["polygons"]
         placements.append(
-            Placement(pid, p["glyph"], p["parent"], p["depth"], tuple(p["box"]), tuple(range(a, b)), tuple(range(c, d)))
+            Placement(
+                pid,
+                p["glyph"],
+                p["parent"],
+                p["depth"],
+                tuple(p["box"]),
+                tuple(p["ink"]) if p["ink"] else None,
+                tuple(range(a, b)),
+                tuple(range(c, d)),
+            )
         )
         for k in range(c, d):
             owners.setdefault(k, []).append(pid)

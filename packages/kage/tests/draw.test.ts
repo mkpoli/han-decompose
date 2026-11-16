@@ -9,7 +9,7 @@ const glyphs = await readDump(new URL("../../../tests/fixtures/glyphwiki/dump.tx
 test("reads name to data and skips header, rule and count", () => {
   expect(glyphs.get("u793e-j")).toBe("99:0:0:0:0:180:200:u793b-01$99:0:0:64:0:197:200:u571f-j");
   expect(glyphs.has("name")).toBe(false);
-  expect(glyphs.size).toBe(15);
+  expect(glyphs.size).toBe(20);
 });
 
 test("社 resolves through its alias to the placements of 礻 and 土", () => {
@@ -80,4 +80,19 @@ test("glyphs that place each other are refused", () => {
     ["b", "99:0:0:0:0:200:200:a$99:0:0:0:0:200:200:a"],
   ]);
   expect(() => drawGlyph(engine, loop, "a")).toThrow("a > b > a");
+});
+
+test("a stretched placement's box follows the engine's stretch and holds its ink", () => {
+  // u5001-j places 知 with stretch columns (160, 0, …, -35, 0); the engine squeezes its left edge
+  const d = drawGlyph(engine, glyphs, "u5001-j");
+  const child = d.placements.find((p) => p.glyph === "u77e2-08");
+  const [x1, , x2] = child?.box ?? [0, 0, 0, 0];
+  expect(x1).toBeCloseTo(55.41, 1);
+  expect(x2).toBeCloseTo(173.57, 1);
+  const ink = child?.ink;
+  expect(ink).not.toBeNull();
+  expect(ink?.[0] as number).toBeGreaterThan(x1 - 4);
+  expect(ink?.[2] as number).toBeLessThan(x2);
+  expect(ink?.[0]).toBeCloseTo(52.7, 1);
+  expect(ink?.[2]).toBeCloseTo(125, 0);
 });

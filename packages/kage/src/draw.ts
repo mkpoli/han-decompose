@@ -8,8 +8,14 @@ export interface Placement {
   parent: number | null;
   /** 0 for a line of the drawn glyph's own data. */
   depth: number;
-  /** The line's box as placed in the drawn glyph's frame: x1, y1, x2, y2. */
+  /**
+   * The line's box as placed in the drawn glyph's frame: x1, y1, x2, y2, after the engine's
+   * stretch. It is the placed glyph's whole cell, so it is wider than the ink of a glyph whose
+   * strokes do not fill the 200 frame.
+   */
   box: [number, number, number, number];
+  /** Extent of the polygons the placement drew: minX, minY, maxX, maxY; null when it drew none. */
+  ink: [number, number, number, number] | null;
   /** The line's stretch columns (sx, sy, sx2, sy2) when it has any. */
   stretch: [number, number, number, number] | null;
   /** First and one-past-last stroke the placement expands to. */
@@ -138,25 +144,37 @@ function expand(ctx: Context, data: string, depth: number): Expansion {
       box: [x1, y1, x2, y2],
       stretch,
       range: [at, strokes.length],
-      children: shift(inner.nodes, at, [x1, y1, x2, y2]),
+      children: shift(
+        inner.nodes,
+        at,
+        [x1, y1, x2, y2],
+        stretch ? (x) => kage.stretch(sx, sx2, x, box.minX, box.maxX) : (x) => x,
+        stretch ? (y) => kage.stretch(sy, sy2, y, box.minY, box.maxY) : (y) => y,
+      ),
     });
   }
   return { strokes, nodes };
 }
 
-/** Moves a placed glyph's nodes into the frame and stroke numbering of the glyph that holds it. */
-function shift(nodes: Node[], at: number, [x1, y1, x2, y2]: [number, number, number, number]): Node[] {
+/**
+ * Moves a placed glyph's nodes into the frame and stroke numbering of the glyph that holds it:
+ * the engine's stretch first (as for the strokes), then the line's box.
+ */
+function shift(
+  nodes: Node[],
+  at: number,
+  [x1, y1, x2, y2]: [number, number, number, number],
+  fx: (x: number) => number,
+  fy: (y: number) => number,
+): Node[] {
+  const x = (v: number) => x1 + (fx(v) * (x2 - x1)) / 200;
+  const y = (v: number) => y1 + (fy(v) * (y2 - y1)) / 200;
   return nodes.map((n) => ({
     glyph: n.glyph,
     stretch: n.stretch,
-    box: [
-      x1 + (n.box[0] * (x2 - x1)) / 200,
-      y1 + (n.box[1] * (y2 - y1)) / 200,
-      x1 + (n.box[2] * (x2 - x1)) / 200,
-      y1 + (n.box[3] * (y2 - y1)) / 200,
-    ],
+    box: [x(n.box[0]), y(n.box[1]), x(n.box[2]), y(n.box[3])],
     range: [n.range[0] + at, n.range[1] + at],
-    children: shift(n.children, at, [x1, y1, x2, y2]),
+    children: shift(n.children, at, [x1, y1, x2, y2], fx, fy),
   }));
 }
 
@@ -216,11 +234,19 @@ export function drawGlyph(engine: Engine, glyphs: Map<string, string>, name: str
     strokes.push({ type: s[0] as number, polygons: rounded });
   }
   polygonStart.push(count);
+  const flat = strokes.flatMap((st) => st.polygons);
   const placements: Placement[] = [];
   const walk = (list: Node[], parent: number | null, depth: number) => {
     for (const n of list) {
       const id = placements.length;
+      let ink: Placement["ink"] = null;
+      for (let k = polygonStart[n.range[0]] as number; k < (polygonStart[n.range[1]] as number); k++) {
+        for (const [px, py] of flat[k] ?? []) {
+          ink = ink ? [Math.min(ink[0], px), Math.min(ink[1], py), Math.max(ink[2], px), Math.max(ink[3], py)] : [px, py, px, py];
+        }
+      }
       placements.push({
+        ink,
         glyph: n.glyph,
         parent,
         depth,

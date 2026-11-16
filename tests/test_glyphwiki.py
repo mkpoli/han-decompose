@@ -10,7 +10,7 @@ DUMP = FIXTURES / "dump.txt"
 
 def test_dump_is_read_as_name_to_data() -> None:
     glyphs = gw.read_dump(DUMP)
-    assert len(glyphs) == 15
+    assert len(glyphs) == 20
     assert glyphs["u793e-j"] == "99:0:0:0:0:180:200:u793b-01$99:0:0:64:0:197:200:u571f-j"
     assert "name" not in glyphs
 
