@@ -1,5 +1,5 @@
 /** The one module that fetches a release: files, caching and shard addressing. */
-import type { Counts, CutsFile, FontEntry, FontsFile, FormsFile, Glyph, LibraryFile, Manifest, OutlineFile, SourceEntry, SourcesFile, VerdictRow } from "han-decompose";
+import type { Counts, CutsFile, FontEntry, FontsFile, FormsFile, Glyph, LibraryFile, Manifest, OutlineFile, SourceEntry, SourcesFile, VerdictRow } from "./format1";
 import { blockOf, blockOfRef, componentsTablePath, cutsPath, cutsTablePath, formsPath, libraryPath, outlinePath, skippedTablePath, urlPath } from "./addressing.ts";
 import { gunzipIfNeeded, streamLines } from "./codec.ts";
 import { BoundedHeap } from "./heap.ts";
@@ -156,8 +156,8 @@ export async function drawn(rel: Release, selector: string): Promise<Drawn | nul
 }
 
 export interface ResolvedCut {
-  cut: import("han-decompose").Cut;
-  reading: import("han-decompose").Reading;
+  cut: import("./format1").Cut;
+  reading: import("./format1").Reading;
   glyph: Glyph | null;
   font: string;
   selector: string;

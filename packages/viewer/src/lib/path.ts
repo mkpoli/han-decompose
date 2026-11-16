@@ -1,5 +1,5 @@
 /** Drawing outlines: pen commands to SVG paths, in units with y flipped. */
-import type { Box, Contour, Glyph } from "han-decompose";
+import type { Box, Contour, Glyph } from "./format1";
 
 const TOKEN = /M|L|C|Q(\d+)(\*?)/g;
 

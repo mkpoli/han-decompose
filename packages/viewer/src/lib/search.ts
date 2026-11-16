@@ -1,5 +1,5 @@
 /** The search field of the home page: what a piece of text names. */
-import type { FontEntry } from "han-decompose";
+import type { FontEntry } from "./format1";
 import { componentRef, componentText, parseSelector, selectorOfChar, selectorText } from "./ids.ts";
 
 export type Hit =

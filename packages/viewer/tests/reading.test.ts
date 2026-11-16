@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import type { Cut } from "han-decompose";
+import type { Cut } from "../src/lib/format1";
 import { contourOwner, layers, nodeColour, nodeIndex, score, size } from "../src/lib/reading.ts";
 
 const cut = (id: string, path: number[], contours: number[], extra: Partial<Cut> = {}): Cut =>

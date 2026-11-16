@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import type { Glyph } from "han-decompose";
+import type { Glyph } from "../src/lib/format1";
 import { boxViewBox, contourPath, contoursPath } from "../src/lib/path.ts";
 
 test("a polygon is drawn in units with y flipped", () => {

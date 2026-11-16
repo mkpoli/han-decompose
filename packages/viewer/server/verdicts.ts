@@ -1,5 +1,5 @@
 /** The verdict table of the repository: validating a verdict and writing its row (docs/format.md 5.4). */
-import type { VerdictRow } from "han-decompose";
+import type { VerdictRow } from "../src/lib/format1";
 import { isCutId } from "../src/lib/ids.ts";
 import { cell } from "../src/lib/tsv.ts";
 

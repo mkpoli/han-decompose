@@ -4,7 +4,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFil
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { dirname, extname, join, normalize, resolve, sep } from "node:path";
 import type { Plugin } from "vite";
-import type { VerdictRow } from "han-decompose";
+import type { VerdictRow } from "../src/lib/format1";
 import { parseTable } from "../src/lib/tsv.ts";
 import { allowedRequest, readVerdict, stamp, VERDICT_HEADER, verdictLine } from "./verdicts.ts";
 
