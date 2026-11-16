@@ -132,8 +132,9 @@ the release data names none of them.
 
 **Notation.** Structures and drawn IDS are Unicode IDS: ideographic description characters, the
 variation indicator `〾`, and components written as characters. A component no code point names is
-written as its own IDS where any input gives one (`⿸⿹丅丿丨`), and otherwise as `&X-00777;`, its
-identifier in ids-input's component ledger. The names inputs give such a component (`{42}`,
+one token between `&` and `;`, so it never reads as inner nodes: its own IDS where any input gives
+one (`&⿸⿹丅丿丨;`), and otherwise its identifier in ids-input's component ledger (`&X-00777;`).
+`⿰&⿸⿹丅丿丨;土` is a two-operand structure whose left leaf is that shape. The names inputs give such a component (`{42}`,
 `&CDP-8958;`, `#(丿𠃊)`) are aliases in `components.tsv`, so a search by any of them finds it.
 
 **Component** — a typed reference, written compactly:
@@ -141,7 +142,7 @@ identifier in ids-input's component ledger. The names inputs give such a compone
 | Kind | Reference | Written as | Value |
 |---|---|---|---|
 | character | `u:5C71`, `u:845B.E0100` | 山 | Hex code point, optional variation selector. |
-| subtree | `ids:⿸⿹丅丿丨` | `⿸⿹丅丿丨` | A node that no code point names, as its IDS. |
+| subtree | `ids:⿸⿹丅丿丨` | `&⿸⿹丅丿丨;` | A component no code point names, as its IDS. |
 | ledger | `x:X-00777` | `&X-00777;` | An unencoded component with no IDS of its own. |
 | Adobe-Japan1 CID | `aj1:1815` | — | A glyph variant reached through `glyph-of`. |
 
@@ -233,7 +234,7 @@ table. The bases:
 | `ucv` | IRG N2978 (UCV and NUCV lists, version 2026-10-20), via ids-input `ucv.json` | `source` | entry 362: 示 and 礻 unifiable, criterion JIS 161 and HYDCD 19 |
 | `radical-stroke` | Unihan `kRSUnicode` with no residual strokes | `derived` | 𱍐 (U+31350) is `113.0`: radical 示 itself |
 | `alignment` | the corpus's own alignment, one source writing the member where another writes the target for the same character | `derived` | the 62 existing number–entity pairs |
-| `editorial` | `review/classes.tsv`, a reviewer's row with name, date and note | `editorial` | `⿸⿹丅丿丨` → 示, reviewed 2026-11-16: 示 drawn without its first 一 |
+| `editorial` | `review/classes.tsv`, a reviewer's row with name, date and note | `editorial` | `&⿸⿹丅丿丨;` → 示, reviewed 2026-11-16: 示 drawn without its first 一 |
 
 The build rule: a member resolves by following its rows to a target that is no member of anything,
 the class's canonical member (⺭ → 礻 → 示). A row with a place applies only at that place: 阝 is

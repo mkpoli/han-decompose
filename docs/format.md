@@ -64,9 +64,10 @@ have no leading zero.
 
 Structures and drawn IDS are written in one notation: ideographic description characters
 (U+2FF0–U+2FFF, U+31EF), the variation indicator `〾` (U+303E) before a variant form of its one
-operand, and components. A component is written as its character; a component no code point names
-is written as its own IDS where one is known, else as `&X-NNNNN;`, its identifier in ids-input's
-component ledger.
+operand, and components. A component is written as its character. A component no code point
+names is one token between `&` and `;`: its own IDS where one is known (`&⿸⿹丅丿丨;`), else its
+identifier in ids-input's component ledger (`&X-00777;`). Inside the token the IDS is one leaf, so
+`⿰&⿸⿹丅丿丨;土` has two operands, and the token is what structure texts and hashes contain.
 
 ### 2.5 Component
 
@@ -75,7 +76,7 @@ component ledger.
 | Kind | Reference | Written as | Value |
 |---|---|---|---|
 | character | `u:5C71`, `u:845B.E0100` | 山 | Code point in hex, with a variation selector after a dot. |
-| subtree | `ids:⿸⿹丅丿丨` | `⿸⿹丅丿丨` | The node's IDS, starting with its operator. |
+| subtree | `ids:⿸⿹丅丿丨` | `&⿸⿹丅丿丨;` | The component's IDS, starting with its operator. |
 | ledger | `x:X-00777` | `&X-00777;` | The ledger identifier. |
 | Adobe-Japan1 glyph | `aj1:1815` | — | The CID. |
 
