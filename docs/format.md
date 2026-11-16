@@ -1,34 +1,29 @@
-# Data format 2
+# Data format 1
 
-This document defines the files of a han-decompose release. `schema/2/han-decompose.schema.json`
+This document defines the files of a han-decompose release. `schema/1/han-decompose.schema.json`
 states the same structure for machines; where the two differ, this text governs.
 
-The schema describes a file of version 2.0 exactly and refuses any other property. A reader
+The schema describes a file of version 1.0 exactly and refuses any other property. A reader
 ignores properties it does not know, so that a file of a later minor version still reads.
 
-No string in any file holds a control character (U+0000–U+001F, U+007F). Text is not Unicode
-normalised.
+No string in any file holds a control character (U+0000–U+001F, U+007F). Text is kept as its
+source writes it, without Unicode normalisation.
 
 ## 1. Terms
 
 | Term | Meaning |
 |---|---|
 | font | One pinned font file at one named instance (`wght` 400 for a variable font). |
-| design | Fonts that draw with the same outlines, original or rebuilt from them. |
-| chain | A design's fonts in coverage order. |
 | glyph | One glyph of a font, selected by code point, variation sequence or glyph index. |
 | contour | One closed contour of a glyph, in the font's own order. Contours may overlap. |
-| piece | The contours that draw one boundary of the glyph's merged outline and the counters directly inside it. A boundary enclosed by an even number of others starts a piece, so an island inside a counter is a piece of its own. A contour belongs to the smallest piece whose boundary encloses it, else to the piece it shares most ink with; pieces one contour runs through, meeting at a point, are one piece. |
-| class | Components that are one thing in different shapes, under a canonical member. |
-| structure | An operator tree whose components are written as their classes' canonical members. |
-| style | The class member a cut is drawn as. |
-| layer | A contour set with its component: a glyph, or a cut opened into its parts. |
-| reading | One structure applied to one layer: which contours go to which nodes. |
-| cut | One node of a reading: a class, the member drawn, its path and its contour set. |
-| drawn IDS | One accepted structure of a glyph at three levels, `structure`, `form` and `stroke`; a glyph has one per structure it fits. |
-| verdict | A reviewer's right or wrong on one cut with one exact contour set, or a style named for it. |
+| piece | A maximal set of contours whose ink overlaps or runs along a shared edge, with the counters inside it. Contours that only meet at a point are apart, unless one contour runs through both. |
+| description | One IDS a source gives for a subject. |
+| component | What a node of a description names. |
+| reading | One labelling of one glyph by one description: which contours go to which nodes. |
+| cut | One node of a reading: a component, its path in the tree and its contour set. |
+| verdict | A reviewer's right or wrong on one cut with one exact contour set. |
 
-## 2. Identifiers and notation
+## 2. Identifiers
 
 Identifiers are strings. An identifier stays the same across rebuilds while the inputs it names
 are unchanged.
@@ -39,11 +34,7 @@ are unchanged.
 digits joined by hyphens; the version is ASCII letters and digits joined by dots. A new version of
 a font is a new font. Each face of a collection is a font with a slug of its own.
 
-### 2.2 Design
-
-A slug as for a font, without a version: `source-han-sans`.
-
-### 2.3 Glyph
+### 2.2 Glyph
 
 `<font>/<selector>`. A selector is one of:
 
@@ -52,69 +43,67 @@ A slug as for a font, without a version: `source-han-sans`.
 | `U+50AC` | The glyph the font maps the code point to. |
 | `U+845B.E0100` | The glyph the font maps the variation sequence to. |
 | `gid.1234` | The glyph at that index, for a glyph no code point reaches. |
-| `name.u793e-j` | The GlyphWiki glyph of that name. |
 
 A code point has one spelling: upper-case hex of at least four digits with no further leading zero
-(`U+50AC`, `U+20B36`), surrogates excluded. A code point selects GlyphWiki's glyph `u` plus the
-code point in lower-case hex (`u793e`), GlyphWiki's alias glyphs followed. The second code point of a sequence is a variation
+(`U+50AC`, `U+20B36`), surrogates excluded. The second code point of a sequence is a variation
 selector, U+FE00–U+FE0F or U+E0100–U+E01EF. Decimal numbers, here and in every other identifier,
 have no leading zero.
 
-### 2.4 Notation
+### 2.3 Description
 
-Structures and drawn IDS are written in ids-input's IDS extension: the grammar of ids-input's
-`data/baishi-ids.ebnf` (zi.tools' notation) with a variation selector allowed after a component
-character and an entity token `&…;` allowed as a component. A component is written as its
-character. A component no code point names is one token between `&` and `;`: its own IDS where one
-is known (`&⿸⿹丅丿丨;`), else its identifier in ids-input's component ledger (`&X-00777;`).
-Inside the token the IDS is one leaf, so `⿰&⿸⿹丅丿丨;土` has two operands.
+`<source>.<h8>`. `<source>` is a source identifier (`babelstone`, `chise`, `zi-tools`). `<h8>` is
+the first eight hex digits of the SHA-256 of the description's text in UTF-8.
 
-Each level of a drawn IDS uses part of the notation:
+The text is the IDS as the source writes it, without what the source attaches to it:
 
-| Level | Constructs |
-|---|---|
-| `structure` | Ideographic description characters (U+2FF0–U+2FFF, U+31EF), the index bracket after ⿴ ⿵ ⿶ ⿷ ⿼ ㇯, characters, `&…;` tokens. No variation selector, variant identifier, stroke letter, overlap bracket or stroke chain. |
-| `form` | The structure level's, plus a variation selector after a character and a UCV identifier after a component (`q008a2`). |
-| `stroke` | All of the grammar: also per-part stroke letters, the ⿻ slice or crossing matrix, stroke chains `#(…)` and the variation indicator `〾`. |
+| Source | Text | Attached, kept as `tags` |
+|---|---|---|
+| `babelstone` | What stands between `^` and `$`. | The region letters in the parentheses that follow. |
+| `chise` | The third field of a line. The value of an `@apparent=` field is a description of its own. | `apparent` for an `@apparent=` description. |
+| `zi-tools` | One alternative of a field, fields being split at `;`. | — |
 
-A variation selector a level writes stays in its text, its hash and its tree.
+`⿰亻崔` gives `9d9dea39`, so BabelStone's description of 催 is `babelstone.9d9dea39`.
 
-### 2.5 Component
+A text a source gives twice for one subject is one description; the tags of each occurrence are
+joined by a space.
+
+Eight hex digits do not keep every text of a source apart. A description identifier is used
+together with its subject or its glyph, and the text itself (`ids`) stands beside it wherever it
+appears.
+
+### 2.4 Component
 
 `<kind>:<value>`.
 
-| Kind | Reference | Written as | Value |
+| Kind | Reference | Written in a description as | Value |
 |---|---|---|---|
 | character | `u:5C71`, `u:845B.E0100` | 山 | Code point in hex, with a variation selector after a dot. |
-| subtree | `ids:⿸⿹丅丿丨` | `&⿸⿹丅丿丨;` | The component's IDS, starting with its operator. |
-| ledger | `x:X-00777` | `&X-00777;` | The ledger identifier. |
-| UCV form | `ucv:8a.2` | `烕q008a2` | The IRG UCV entry and the form's position in it. |
+| BabelStone numbered component | `bs:42` | `{42}` | The number. |
+| CHISE entity | `chise:CDP-8958` | `&CDP-8958;` | The entity's name. |
 | Adobe-Japan1 glyph | `aj1:1815` | — | The CID. |
+| zi.tools stroke chain | `zi:#(丿𠃊)` | `#(丿𠃊)` | The chain as written. |
+| subtree | `ids:⿱𰀪亻` | `⿱𰀪亻` | The node's own IDS, starting with its operator, for a node no source names. |
 
-### 2.6 Structure
+An operator is an ideographic description character (U+2FF0–U+2FFF, U+31EF) or the variation
+indicator `〾` (U+303E), which BabelStone writes before a variant form of its one operand.
 
-`s.<h8>`, `<h8>` being the first eight hex digits of the SHA-256 of the structure's text in
-UTF-8. The text is the canonical tree of glyph-atlas's decision 0012: a part that spells a
-character is that character, a ⿰ or ⿱ chain flattens, and every component is written as its
-class's canonical member (section 5.3):
-`⿰礻土` and `⿰示土` are both the structure `⿰示土`, `s.0a1c0fdb`.
+### 2.5 Path
 
-Eight hex digits do not keep every structure apart. A structure identifier is used together with
-its glyph or character, and the text stands beside it wherever it appears.
+A node's place in the tree of a reading: the operand indices from the root, counted from 0. As
+text the indices are joined by dots (`1.0`) and the root is `-`.
 
-### 2.7 Path and cut
+### 2.6 Cut and signature
 
-A path is a node's place in one reading's tree: the operand indices from the root, counted from 0,
-joined by dots (`1.0`). The root is `-`.
+A cut is `<glyph>~<description>~<path>`:
+`noto-sans-cjk-jp@2.004/U+50AC~babelstone.9d9dea39~1.0`.
 
-A cut is `<glyph>~<step>…`, one step per layer from the glyph down, each `<h8>-<method>:<path>`
-with the `h8` of the structure that layer was read as and the reading's method name:
-`noto-sans-cjk-jp@2.004/U+793E~0a1c0fdb-deal:0` is the left part of 社 dealt under `⿰示土`.
+A release holds at most one reading of a glyph under a description, so the identifier names one
+cut.
 
-Its signature `sig` is the first eight hex digits of the SHA-256 of its class reference and
+Its signature `sig` is the first eight hex digits of the SHA-256 of its component reference and
 its contour indices, ascending, in decimal, all joined by single spaces. 山 at contours `[0, 2]`
 hashes the text `u:5C71 0 2` and gives `785ad39d`. A verdict binds to the identifier and the
-signature together, so it stops applying when the class or the contour set changes.
+signature together, so it stops applying when the component or the contour set changes.
 
 ## 3. Coordinates and numbers
 
@@ -130,21 +119,22 @@ signature together, so it stops applying when the class or the contour set chang
 A release is laid out as:
 
 ```
-manifest.json  fonts.json
-components.tsv  classes.tsv
+manifest.json
+fonts.json  sources.json
+components.<source>.tsv
 outlines/<font>/<block>.json.gz
-strokes/<font>/<block>.json.gz
-cuts/<font>/<block>.json.gz
-library/<design>.json.gz  forms/<design>.json.gz
-cuts.tsv.gz  drawn.tsv.gz  structures.tsv.gz  skipped.tsv.gz  verdicts.tsv
+cuts/<font>/<source>/<block>.json.gz
+library/<chain>.json.gz  forms/<chain>.json.gz
+references/<source>.json.gz
+cuts.<source>.tsv.gz  skipped.<source>.tsv.gz  verdicts.tsv
 LICENSES/  README.md  SHA256SUMS
 ```
 
 `<block>` is the glyph's code point divided by 256, in lower-case hex of at least three digits:
 `050` holds U+5000–U+50FF and `20b` holds U+20B00–U+20BFF. A variation sequence goes by its base.
-Glyphs selected by index are in `gid`, glyphs selected by name in `name`. A skipped attempt without a glyph (no font draws
+Glyphs selected by index are in `gid`. A skipped attempt without a glyph (no font draws
 the subject, or the glyph has no ink) is filed by the subject's code point, in the files of the
-design's first font; a subject that is no character, in `gid`.
+chain's first font; a subject that is no character, in `gid`.
 
 Every JSON file is UTF-8 on one line, with sorted keys, the separators `,` and `:`, and characters
 outside ASCII written as themselves. A number without a fractional part is written without one
@@ -154,18 +144,20 @@ same value. A `.gz` file is gzip with its modification time set to 0. No file ho
 Every JSON file names its format: `han-decompose/<kind>@<major>.<minor>`. A minor version adds
 properties; a major version changes or removes them.
 
-`manifest.json`, `format` `han-decompose/manifest@2.0`, holds the `release` name; the `tool` that
-built it (`name`, `version`, `commit`); the pinned `fonts` with their digests; `counts` per font
-(`readings`, `skipped`, `cuts` by status, `structures`, `classes` with an accepted cut); and
-`files`, every file but itself and `SHA256SUMS` with its `path`, `bytes` and `sha256`.
-`SHA256SUMS` lists the same digests and the manifest's.
+The `references` files are reserved in this version.
 
-`README.md` names every font of the release with its licence and copyright line, states that every
-other file is under CC0-1.0, and `LICENSES/` holds the licence texts.
+`manifest.json`, `format` `han-decompose/manifest@1.0`, holds the `release` name; the `tool` that
+built it (`name`, `version`, `commit`); the pinned `fonts` and `sources` with their digests;
+`counts` per font and source (`readings`, `skipped`, `cuts` by status, `components` with an
+accepted cut); and `files`, every file but itself and `SHA256SUMS` with its `path`, `bytes` and
+`sha256`. `SHA256SUMS` lists the same digests and the manifest's.
+
+`README.md` names every font and source of the release with its licence and attribution, and
+`LICENSES/` holds the licence texts.
 
 ### 4.1 `fonts.json`
 
-`format` is `han-decompose/fonts@2.0`.
+`format` is `han-decompose/fonts@1.0`.
 
 `fonts` lists one object per font:
 
@@ -180,7 +172,7 @@ other file is under CC0-1.0, and `LICENSES/` holds the licence texts.
 | `sha256` | yes | Digest of the font file. |
 | `archive` | | `{sha256, member}`: digest of the archive that `url` and the mirrors serve, and the member that is the font. |
 | `index` | | The face's index when the file is a collection. |
-| `instance` | | Axis values the outlines are read at: `{"wght": 400}`. Required for a variable font, whose fvar default (100 in Noto Sans CJK JP, 200 in Noto Serif CJK JP) is not read. |
+| `instance` | | Axis values the outlines are read at: `{"wght": 400}`. |
 | `upem` | yes | The font's units per em. |
 | `licence` | yes | SPDX expression. |
 | `licenceEvidence` | | Where the font states its terms. |
@@ -188,23 +180,31 @@ other file is under CC0-1.0, and `LICENSES/` holds the licence texts.
 | `copyright` | yes | The font's copyright line. |
 | `reservedNames` | | Reserved Font Names. |
 | `style` | yes | `sans`, `serif`, `kaisho`, `fangsong` or `other`. |
-| `design` | yes | Design identifier. |
-| `grain` | yes | `contour` when the cutters assign single contours (a variable font, GlyphWiki), `piece` when they assign pieces (a font with its overlaps merged). |
 
-GlyphWiki is one font, `glyphwiki@<YYYYMMDD>` after the date of the dump read: its `url` and
-`sha256` are the dump's, `mirrors` names the copy this repository keeps as a release asset,
-`file` its cache name, `upem` 200, `licence` `LicenseRef-GlyphWiki`, and `renderer` names the KAGE
-engine's commit, style (`mincho`) and route (`makeGlyph3`: strokes expanded, adjusted, then drawn
-one by one). Its contours are the polygons the engine draws for each adjusted stroke, not joined.
+`chains` maps a chain name to font identifiers in order. A chain is one design spread over
+several fonts; a glyph is taken from the first font of the chain that draws it.
 
-`designs` lists one object per design: `id`, `name`, `style`, `chain` (font identifiers in
-coverage order; a glyph is taken from the first that draws it), and `members`, per font of the
-design that is or was considered for it, `font` (an identifier, or a name for a font not pinned)
-and `evidence`, the sentences and measurements that place it.
+### 4.2 `sources.json`
 
-### 4.2 Outline files
+`format` is `han-decompose/sources@1.0`. `sources` lists one object per source:
 
-One file holds glyphs of one font and of one block. `format` is `han-decompose/outlines@2.0`.
+| Property | Required | Value |
+|---|---|---|
+| `id`, `name` | yes | Source identifier and title. |
+| `role` | yes | `description` (its IDS label the cuts), `guide` (cuts follow its groups), `reference` (cuts are compared with its glyphs), `identity` (it relates components) or `cuts` (cuts made elsewhere are imported from it). |
+| `url` | yes | The source's home. |
+| `pin` | yes | A release, a commit or a file date. |
+| `retrieved` | yes | `YYYY-MM-DD`. |
+| `files` | | Per file: `file` (a name as for a font), `url`, `sha256`, and `mirrors` serving the same bytes. |
+| `licence` | yes | SPDX expression. Terms SPDX does not list are `LicenseRef-<name>`. |
+| `licenceEvidence` | | Where the source states its terms. |
+| `licenceFile` | | The licence text under `LICENSES/`. |
+| `attribution` | yes | The line to credit the source with. |
+| `weakness` | | What limits the source's authority. |
+
+### 4.3 Outline files
+
+One file holds glyphs of one font and of one block. `format` is `han-decompose/outlines@1.0`.
 
 | Property | Value |
 |---|---|
@@ -222,7 +222,6 @@ A glyph:
 | `pieces` | The contour indices of each piece, ascending; pieces ordered by their first index. Every contour is in exactly one piece. |
 | `box` | The box of all contours. |
 | `advance` | The advance width in units. |
-| `strokes` | GlyphWiki glyphs only: per stroke in KAGE order, `type` (1–7) and the contour indices it drew. |
 
 `commands` is a string of pen commands. `points` holds x and y interleaved, in command order.
 
@@ -239,44 +238,31 @@ with a curve, that curve's end point repeats the first point. Curves are kept as
 
 Only glyphs that a reading, a skipped attempt or a reference names are written.
 
-### 4.3 Cut files
+### 4.4 Cut files
 
-One file holds the readings and drawn IDS of one font's glyphs, by the block of the glyph. It
-holds indices and labels and no outline. `format` is `han-decompose/cuts@2.0`.
+One file holds the readings of one font's glyphs under one description source, by the block of
+the glyph. It holds indices and labels and no outline. `format` is `han-decompose/cuts@1.0`.
 
 | Property | Value |
 |---|---|
-| `font` | Font identifier. |
-| `design` | Its design. |
-| `drawn` | Glyph selector → its drawn IDS, one per structure with a chosen accepted root reading, the first one marked `first`. |
+| `font`, `source` | Font and source identifiers. |
+| `terms` | `outline`: the font's licence. `description`: the source's. `guide`: the guide's, when cuts follow one. `notices`: the copyright and attribution lines of the font and the sources. |
 | `readings` | Readings. |
 | `skipped` | Attempts that closed no reading. |
-
-A drawn IDS:
-
-| Property | Required | Value |
-|---|---|---|
-| `structure` | yes | Structure identifier and `text`, the canonical tree (2.6): `⿰示土`. |
-| `form` | yes | The structure with each component written as the form its cut's style names, opened layers in place: `⿰礻土`. |
-| `stroke` | | The form with every stroke-level difference the stroke layer shows, and `strokeTier` (`machine` or `reviewed`). Absent where the glyph has no stroke layer. |
-| `readings` | yes | The readings it is written from, as their layer steps. |
-| `tier` | yes | Of the form level: `machine`, or `reviewed` when every style in it is. |
-| `first` | yes | Whether the viewer shows it first for the glyph: the reviewer's pick, else the best evidence. |
 
 A reading:
 
 | Property | Required | Value |
 |---|---|---|
 | `glyph` | yes | Glyph identifier. |
-| `subject` | yes | The component the layer stands for. |
-| `layer` | yes | The steps (2.7) from the glyph to the cut this reading divides; empty for the glyph. |
-| `structure` | yes | Structure identifier. |
-| `text` | yes | The structure's text. |
-| `tree` | yes | The structure spelled out as far as the cut went: 催 `⿰亻崔` becomes `⿰亻⿱山隹`. |
-| `opened` | | The nodes of `tree` read as layers below: `path`, `member` (whose structures the layer was read with), `structure` and its `text`. |
-| `method` | yes | `name`: `deal`, `lift`, `kage`, `axis`, `kanjivg` or `hand`. `tool`, with `version` and `commit`. `grain`: `piece` when whole pieces were assigned, `contour` when single contours were. |
-| `complete` | yes | Whether every contour of the layer is in a cut and every leaf of `tree` has one. |
-| `chosen` | yes | Whether this is the reading its layer and structure use. |
+| `subject` | yes | The component the description is of. |
+| `description` | yes | Description identifier. |
+| `ids` | yes | The description's text (2.3). |
+| `tags` | | What the source attaches to the description, as written. |
+| `tree` | yes | The description spelled out as far as the cut went: 催 `⿰亻崔` becomes `⿰亻⿱山隹`. |
+| `opened` | | The nodes of `tree` that came from a component's own description: `path`, `component`, `description` and its text `ids`. The root is never one. |
+| `method` | yes | `name`: `deal`, `lift`, `axis`, `kanjivg` or `hand`. `tool`, with `version` and `commit`. `grain`: `piece` when whole pieces were assigned, `contour` when single contours were. `guide`: a source identifier. |
+| `complete` | yes | Whether every contour of the glyph is in a cut and every leaf of `tree` has one. |
 | `evidence` | | Scores of the reading as a whole. |
 | `cuts` | yes | One cut per labelled node. |
 
@@ -286,94 +272,75 @@ A cut:
 
 | Property | Required | Value |
 |---|---|---|
-| `id`, `sig` | yes | 2.7. |
-| `path` | yes | Operand indices into the reading's structure. |
+| `id`, `sig` | yes | 2.6. |
+| `path` | yes | Operand indices into `tree`. |
 | `place` | yes | Where the node stands in its parent: `L`, `C`, `R` under `⿰` and `⿲`; `T`, `M`, `B` under `⿱` and `⿳`; otherwise the operator and the operand index, as `⿸0`. Empty for the root. |
-| `class` | yes | Component reference of the node as the structure writes it: a class's canonical member, or a component in no class. |
-| `style` | | `member` (the component reference of the form the drawing matched: a class member, an IVD sequence of one, or a UCV form; the component itself when it is in no class), `basis` (`kage`, `match`, `cluster` or `hand`), `likeness`, `tier` (`source`, `machine` or `reviewed`). A layer opened from the cut is read with the member's structures. |
+| `component` | yes | Component reference. |
+| `text` | yes | The node as the description writes it. |
 | `contours` | yes | Contour indices, ascending. |
 | `box` | yes | Box of the cut's contours. |
 | `frame` | | Box of the parent node's ink. |
 | `gap`, `area`, `ink` | | Distance to the nearest sibling ink, filled area, and summed length of the contours' polygons. |
-| `evidence` | | Scores of the cut: `fit` or `match`, `margin`, `agree`, `reference`, and `referenceGlyph`, the glyph `reference` was measured against. |
-| `checks` | | Per check: `value`, `limit`, `pass`, and `against`, the glyph compared with. A dealt cut has `filled`, `skeleton`, `windows` and `likeness`, the last per class member; a lifted component has the one that decided it, `reference`, `agree` or `single`. |
+| `evidence` | | Scores of the cut: `fit` or `match`, `margin`, `agree`, `reference`, and `referenceGlyph`, the glyph `reference` was measured against; `importedFrom`, the source a cut made elsewhere was taken from. |
+| `checks` | | Per check: `value`, `limit`, `pass`, and `against`, the glyph compared with. A dealt cut has `filled`, `skeleton` and `windows`; a lifted component has the one that decided it, `reference`, `agree` or `single`. |
 | `calibrated` | | The component whose reviewed labels set the checks' limits, or `false`. |
-| `division` | yes | `source` for a `kage` division, `machine`, `reviewed` or `hand`. |
 | `status` | yes | `accepted`, `refused` (a check failed), `reviewed-right` or `reviewed-wrong`. |
+| `licence` | yes | `outline` and `description` as in the file's `terms`; `guide`, as in the terms, exactly when the reading's method names a guide. |
 
-Within a file, a layer has at most one reading per method under a structure. Of the readings of
-one structure on one layer, exactly one that is accepted, if any is, has `chosen` true: the one a
-reviewer picked, else the one with the best evidence. Drawn IDS, libraries and opened layers
-use the chosen reading. A subject that is a character
+Within a file, a glyph has at most one reading under a description. A subject that is a character
 is read on the glyph of its own code point.
 
 Within a reading:
 
 - no path is labelled twice;
-- a cut's contours are a subset of the contours of every cut above it on its path, and of the
-  layer;
+- a cut's contours are a subset of the contours of every cut above it on its path;
 - cuts on different branches share no contour;
-- a cut's `class` is the reference of its node in `text` (2.5);
-- a `style.member` is in the cut's class.
+- a cut's `component` is the reference of its `text` (2.4).
 
-A skipped attempt holds `subject`, `glyph` when a font draws the subject, `layer`, `structure`,
-`text`, and `reason`: a `code` and a sentence `text`.
+A skipped attempt holds `subject`, `glyph` when a font draws the subject, `description`, `ids`,
+`tags`, and `reason`: a `code` and a sentence `text`.
 
 | Code | Meaning |
 |---|---|
 | `too-few-pieces` | Fewer pieces than operands. |
 | `too-many-pieces` | More pieces than the cutter divides. |
-| `unlike-element` | A node is unlike every member of its component's class. |
+| `unlike-element` | No division resembles the operands. |
 | `layout-mismatch` | The pieces do not lie as the operator says. |
 | `ambiguous` | Two divisions score alike. |
 | `does-not-tile` | The pieces do not add up to the glyph. |
 | `no-reference-glyph` | No font draws an operand to compare with. |
 | `no-enclosure` | No enclosing part was found. |
-| `no-face` | No font of the design draws the subject. |
+| `no-face` | No font of the chain draws the subject. |
 | `no-ink` | The glyph draws nothing. |
 | `unlike-whole` | The operands, each drawn where its pieces sit, do not come out as the glyph. |
-| `unreadable-description` | The candidate does not read as a tree. |
-| `unlike-division` | GlyphWiki's placed components do not match the structure's operands. |
+| `unreadable-description` | The description does not read as a tree. |
 
-### 4.4 Form and library files
+### 4.5 Form and library files
 
-Both are indexes over cuts and hold no geometry. One file covers one design.
+Both are indexes over cuts and hold no geometry. One file covers one chain.
 
-`forms/<design>.json.gz`, `format` `han-decompose/forms@2.0`: `design`, and `forms`, class →
-style → the cut chosen as that style's form in that design:
+`forms/<chain>.json.gz`, `format` `han-decompose/forms@1.0`: `chain`, and `forms`, component
+reference → the cut chosen as the component's form in that chain:
 
 | Property | Required | Value |
 |---|---|---|
-| `cut`, `sig` | yes | The cut and its signature (2.7). |
-| `basis` | yes | What the choice rests on: `reference` (a reference glyph), `agree` (other hosts leave the same shape), `single` (one host whose parts lift away unmistakably), `kage` (a GlyphWiki division), `imported` (the form another project chose, taken over with its cut) or `hand`. |
-| `hosts` | | How many hosts gave a cut of the style. |
+| `cut`, `sig` | yes | The cut and its signature (2.6). |
+| `basis` | yes | What the choice rests on: `reference` (a reference glyph), `agree` (other hosts leave the same shape), `single` (one host whose parts lift away unmistakably), `imported` (the form another project chose, taken over with its cut) or `hand`. |
+| `hosts` | | How many hosts gave a cut of the component. |
 
-`library/<design>.json.gz`, `format` `han-decompose/library@2.0`: `design`, and `library`, class
-→ style → place (4.3) → cut identifiers, best first. A cut is listed when it confirms the form.
+`library/<chain>.json.gz`, `format` `han-decompose/library@1.0`: `chain`, and `library`,
+component reference → place (4.4) → cut identifiers, best first. A cut is listed when it
+confirms the component's form.
 
-A component that has no character can be read on a host glyph under a structure of its own:
+A component that has no character can be read on a host glyph under a description of its own:
 `㇯冐⺜`, 冐 without ⺜, is read on the glyph of 冐. The reading's one cut is the root, which
-holds what is left of the host, and its `class` is the structure as a subtree. A
+holds what is left of the host, and its `component` is the description as a subtree. A
 subtraction that several components share is read once, under the first of them.
-
-### 4.5 Stroke files
-
-`strokes/<font>/<block>.json.gz`, `format` `han-decompose/strokes@2.0`: `font`, `licence` and
-`copyright` as in the outline file, and `glyphs`, selector → the strokes of each leaf cut.
-
-| Property | Required | Value |
-|---|---|---|
-| `cut` | yes | The leaf cut the strokes divide. |
-| `strokes` | yes | In writing order, each with `type` (a CJK stroke character such as ㇑, or the KAGE line type for a GlyphWiki glyph), `method` (`kage`, `lift`, `neck` or `graft`), `contours` (the indices it covers) and `tier` (`source` for `kage`, else `machine` or `reviewed`). |
-| `outline` | | Per stroke cut at a seam: its own contours, `[commands, points]` as in 4.2. |
-
-A stroke file holds outline geometry wherever a stroke is cut at a seam, so it is under the font's
-licence, as the outline files are.
 
 ## 5. Tables
 
 A table is UTF-8 text with tab-separated fields and lines ending in a line feed. Its first line
-is `# format=han-decompose/<name>-tsv@2.0`, followed by ` release=<version>` in a release; a
+is `# format=han-decompose/<name>-tsv@1.0`, followed by ` release=<version>` in a release; a
 release name holds ASCII letters, digits, `.`, `_`, `+` and `-`. The second line names the columns,
 in the order given below. An absent value is empty.
 
@@ -381,20 +348,20 @@ Numbers are written as in the JSON files (section 4).
 
 ### 5.1 `cuts`
 
-One row per cut, `cuts.tsv.gz`. Each row stands alone.
+One row per cut. Each row stands alone. A release writes one table per description source,
+`cuts.<source>.tsv.gz`.
 
 | Column | Value |
 |---|---|
-| `cut_id`, `sig` | 2.7. |
-| `font`, `design`, `glyph` | Font, design and glyph selector. |
+| `cut_id`, `sig` | 2.6. |
+| `font`, `glyph` | Font identifier and glyph selector. |
 | `char` | The subject, when it is a character. |
-| `layer`, `structure`, `text`, `tree` | As in the reading. |
-| `path` | Path as text (2.7). |
+| `source`, `description`, `ids`, `tree` | As in the reading. |
+| `path` | Path as text (2.5). |
 | `place` | As in the cut. |
-| `depth` | 1 for a node of the glyph's own reading, one more for each layer above it. |
+| `level` | 1 for a node of the subject's own description, one more for each opened node above it. |
 | `whole` | `1` when the node's parent is the root, else `0`. |
-| `class` | As in the cut. |
-| `member`, `style_basis`, `style_tier` | From the cut's style. |
+| `component`, `text` | As in the cut. |
 | `contours` | Indices separated by spaces. |
 | `grain` | From the reading's method. |
 | `box`, `frame` | Four numbers separated by spaces. |
@@ -402,77 +369,50 @@ One row per cut, `cuts.tsv.gz`. Each row stands alone.
 | `fit`, `margin`, `agree`, `reference` | From the cut's evidence; `fit` takes `match` where the cut has no `fit`. |
 | `filled`, `skeleton` | The checks' values. |
 | `calibrated` | A component reference, or `0` for `false`. |
-| `division`, `status` | As in the cut. |
+| `status` | As in the cut. |
+| `licence_outline`, `licence_description`, `licence_guide` | From the cut's `licence`. |
 
 The table holds no outline. A reader joins `font`, `glyph` and `contours` to the outline files.
 
-### 5.2 `drawn` and `structures`
+### 5.2 `skipped`
 
-`drawn.tsv.gz`, one row per glyph and structure: `font`, `design`, `glyph`, `char`, `structure`,
-`text`, `form`, `tier`, `stroke` (empty where absent), `stroke_tier`, `first` (`1` or `0`).
+One table per description source, `skipped.<source>.tsv.gz`.
 
-`structures.tsv.gz`, one row per character and structure that fits at least one font: `char`,
-`structure`, `text`, `fonts` (font identifiers separated by spaces), `designs`, and `forms`, the
-distinct form levels it takes, separated by spaces.
+`font`, `glyph`, `char`, `source`, `description`, `ids`, `reason_code`, `reason`.
 
-### 5.3 `classes`
+### 5.3 `components`
 
-`classes.tsv`, one row per member.
+One table per source, `components.<source>.tsv`.
 
-| Column | Value |
-|---|---|
-| `member` | Component reference. |
-| `target` | The component the row resolves it to. |
-| `canonical` | Where the rows lead: the class's canonical member. |
-| `place` | The place the row applies at (4.3), or empty for every place. |
-| `basis` | `radical-form` (a radical's own code point and its unified ideograph), `positional-form` (the form a component takes at the place the row names), `unifiable-variant` (shapes the IRG lists as unifiable at level 1), `radical-index` (indexed as the radical with no further strokes), `alignment` (written for one another in descriptions of one character) or `editorial`. |
-| `tier` | `source` (a table states it), `derived` (inferred from a table) or `editorial` (the project's own reviewed row). |
-| `note` | For an editorial row, the reviewer's reason and date: `示 drawn without its first 一; 2026-11-16`. |
-
-A member resolves by following its rows to a component that is no member of anything. A row with a
-place applies only there. A member that resolves to two canonical members at one place is in no
-class. Components without a row are compared as themselves.
-
-### 5.4 `skipped`
-
-`skipped.tsv.gz`: `font`, `glyph`, `char`, `layer`, `structure`, `text`, `reason_code`, `reason`.
-
-### 5.5 `components`
-
-`components.tsv`, one row per component, or per relation between two.
+One row per component, or per relation between two.
 
 | Column | Value |
 |---|---|
 | `component` | Component reference. |
-| `kind` | By the reference's kind: `character` (`u`), `subtree` (`ids`), `ledger` (`x`) or `adobe-japan1` (`aj1`). |
+| `kind` | By the reference's kind: `character` (`u`), `babelstone` (`bs`), `chise`, `adobe-japan1` (`aj1`), `zi-tools` (`zi`) or `subtree` (`ids`). |
 | `text` | The component as written (2.4); empty for an Adobe-Japan1 glyph. |
-| `relation` | `glyph-of` (a glyph of a character) or `equivalent` (the same shape under another reference). |
+| `relation` | `same` (two names of one thing), `glyph-of` (a glyph of a character) or `equivalent` (the same shape in another notation). |
 | `target` | The other component. |
 | `basis` | What the relation rests on. |
-| `tier` | `source` when a table states the relation, `derived` when it is inferred. |
+| `tier` | `source` when a source states the relation, `derived` when it is inferred. |
+| `source` | The source identifier. |
 
 `relation`, `target` and `tier` are filled together or all empty.
 
-### 5.6 `verdicts`
+### 5.4 `verdicts`
 
 | Column | Value |
 |---|---|
 | `cut_id`, `sig` | The cut and the contour set judged. |
-| `verdict` | `right`, `wrong`, or empty where only a style is named. |
-| `style` | The member a reviewer names for the cut, or empty. |
+| `verdict` | `right` or `wrong`. |
 | `note`, `reviewer` | Free text. |
 | `at` | `YYYY-MM-DDThh:mm:ssZ`. |
 | `release` | The release the cut was seen in. |
 
 A verdict whose `sig` differs from the built cut's applies to nothing.
 
-## 6. Licences
+## 6. Tiers
 
-Outline and stroke files are under the licence of their font, stated in the file; GlyphWiki's
-under GlyphWiki's licence. Every other file is under CC0-1.0.
-
-## 7. Tiers
-
-The outline is the font's. A division is `source` (GlyphWiki's), `machine`, `reviewed` or `hand`;
-a style is `source`, `machine` or `reviewed`; a class row is `source`, `derived` or `editorial`; a
-relation is `source` or `derived`. Nothing derived is presented as attested.
+The outline is the font's. A cut's label is the builder's unless its status says a reviewer judged
+it. A relation between components is `source` or `derived`. Nothing derived is presented as
+attested.
