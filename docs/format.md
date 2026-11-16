@@ -388,8 +388,9 @@ distinct drawn IDS it takes, separated by spaces.
 | `target` | The component the row resolves it to. |
 | `canonical` | Where the rows lead: the class's canonical member. |
 | `place` | The place the row applies at (4.3), or empty for every place. |
-| `basis` | `unicode-equivalent`, `radical-variant`, `ucv`, `radical-stroke`, `alignment` or `reviewed`. |
-| `tier` | `source`, `derived` or `reviewed`. |
+| `basis` | `unicode-equivalent`, `radical-variant`, `ucv`, `radical-stroke`, `alignment` or `editorial`. |
+| `tier` | `source` (a table states it), `derived` (inferred from a table) or `editorial` (the project's own reviewed row). |
+| `note` | For an editorial row, the reviewer's reason and date: `示 drawn without its first 一; 2026-11-16`. |
 
 A member resolves by following its rows to a component that is no member of anything. A row with a
 place applies only there. A member that resolves to two canonical members at one place is in no
@@ -436,5 +437,5 @@ under GlyphWiki's licence. Every other file is under CC0-1.0.
 ## 7. Tiers
 
 The outline is the font's. A division is `source` (GlyphWiki's), `machine`, `reviewed` or `hand`;
-a style is `source`, `machine` or `reviewed`; a class row or relation is `source`, `derived` or
-`reviewed`. Nothing derived is presented as attested.
+a style is `source`, `machine` or `reviewed`; a class row is `source`, `derived` or `editorial`; a
+relation is `source` or `derived`. Nothing derived is presented as attested.

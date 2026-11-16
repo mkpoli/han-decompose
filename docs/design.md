@@ -212,9 +212,11 @@ font may draw either shape. So the cutter accepts a reading when the structure f
 compares each node with every member of its component's class, and records which member it looks
 like as the cut's style. `unlike-element` remains for a node unlike every member.
 
-**Membership is sourced.** A class row is `member` → `target`, with a basis, an optional place and
-a tier. ids-input keeps them in the corpus's `equivalences` table under the new kind
-`class-member`, beside the existing alignment rows. The bases:
+**Membership is stated.** A class row is `member` → `target`, with a basis, an optional place and
+a tier. Rows read from tables live in ids-input's corpus `equivalences` table under the new kind
+`class-member`, beside the existing alignment rows. The project's own rows live in
+`review/classes.tsv`, each with its reviewer, date and note; a reviewed pair needs no outside
+table. The bases:
 
 | Basis | From | Tier | Examples |
 |---|---|---|---|
@@ -223,13 +225,13 @@ a tier. ids-input keeps them in the corpus's `equivalences` table under the new 
 | `ucv` | IRG N2978 (UCV and NUCV lists, version 2026-10-20), via ids-input `ucv.json` | `source` | entry 362: 示 and 礻 unifiable, criterion JIS 161 and HYDCD 19 |
 | `radical-stroke` | Unihan `kRSUnicode` with no residual strokes | `derived` | 𱍐 (U+31350) is `113.0`: radical 示 itself |
 | `alignment` | the corpus's own alignment, one source writing the member where another writes the target for the same character | `derived` | the 62 existing number–entity pairs |
-| `reviewed` | a reviewer's row, with name and date | `reviewed` | a shape written as IDS, such as `⿸⿹丅丿丨` |
+| `editorial` | `review/classes.tsv`, a reviewer's row with name, date and note | `editorial` | `⿸⿹丅丿丨` → 示, reviewed 2026-11-16: 示 drawn without its first 一 |
 
 The build rule: a member resolves by following its rows to a target that is no member of anything,
 the class's canonical member (⺭ → 礻 → 示). A row with a place applies only at that place: 阝 is
 邑's on the right, and outside that place it is itself. A member that resolves to two canonicals
-at one place joins neither, and the build reports it. An unsourced pair is never merged: without a
-row, two components stay apart, and a node drawn in the other shape is refused as
+at one place joins neither, and the build reports it. A pair with no row, from a table or
+editorial, is never merged: the two components stay apart, and a node drawn in the other shape is refused as
 `unlike-element` as before.
 
 **Styles.** Each cut of a class member gets a `style`: the member its drawing matches, named by
@@ -309,7 +311,8 @@ the match to the structure is `machine`. Limits:
   check of the outline cutters, and its strokes are the first stroke layer.
 
 Tiers are explicit. The outline is the font's. A division is `source` (`kage`), `machine`,
-`reviewed` or `hand`. A class row or a relation is `source`, `derived` or `reviewed`. Nothing
+`reviewed` or `hand`. A class row is `source`, `derived` or `editorial`; a relation is `source` or
+`derived`. Nothing
 derived is presented as attested.
 
 Attempts that closed no reading are kept in `skipped`, one row per glyph, layer and structure,
@@ -607,7 +610,7 @@ chains; the viewer and its deployment.
 - 6.2 ids-input's own rows: `ids-project.tsv`, `custom-ids.tsv`, the computed character-first
   descriptions.
 - 6.3 `class-member` rows from `component-forms.tsv`, `ucv.json` and Unihan `kRSUnicode`, with the
-  conflict report.
+  conflict report; `review/classes.tsv` in han-decompose with its first editorial row.
 - 6.4 A corpus commit that han-decompose reads at a fixed digest.
 
 **Phase 7 — GlyphWiki as a glyph source**
@@ -672,7 +675,7 @@ reader to npm.
    (示 and 𱍐). A machine style is marked so, and the drawn IDS carries the lowest tier of its
    styles.
 6. **Wrong classes.** A class row from a table can join components a font keeps apart. Rows carry
-   their basis and place; a reviewer can withhold one.
+   their basis and place; an editorial row can withhold one.
 7. **Review capacity.** Most machine cuts and styles will never be seen by a person. Status,
    tier and calibration are shown on every cut so unreviewed data is never mistaken for checked
    data.
@@ -743,8 +746,7 @@ On 2026-11-16:
     keep their font's licence in files of their own.
 
 Open: a hosted verdict store and whether the reviewer's handle is recorded; the site's domain and
-whether shards are served as assets or from object storage; whether `⿸⿹丅丿丨` joins class 示 (no
-table states it; 𡉹, written `⿰⿸⿹丅丿丨土` by BabelStone for G, has `kRSUnicode` 32.4 under 土).
+whether shards are served as assets or from object storage.
 
 ## Inputs
 
