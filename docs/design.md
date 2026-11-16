@@ -86,7 +86,7 @@ of their own. [`licensing.md`](licensing.md) says which file is under which term
 | chain | The fonts of one design in coverage order: a glyph is taken from the first that draws it. |
 | glyph | One glyph of a font, selected by code point, variation sequence or glyph id. |
 | contour | One closed contour of the glyph, in the font's own order. Contours may overlap. |
-| piece | A maximal set of contours whose ink touches or overlaps, with the counters inside it. Derived, stored per glyph. |
+| piece | A boundary of the merged outline with the counters directly inside it, as the contours that draw it (2.3). Derived, stored per glyph. |
 | candidate | An IDS an outside table gives for a character, read only as a structure to try (section 2.4). |
 | class | Components that are one thing in different shapes, under a canonical member: 示 for 示, 礻, ⺬, ⺭, 𱍐. |
 | structure | An operator tree in one notation, every component written as its class's canonical member. Candidates with one structure are cut once. A character's published descriptions are the structures that fit some font. |
@@ -183,9 +183,12 @@ One record per glyph, in files that hold a single font:
   a font whose em is not 1000 (BabelStone Han PUA, 1024) is rounded by at most 0.005 unit.
   GlyphWiki's 200-unit square scales by 5 exactly.
 - `pieces`: the piece partition as lists of contour indices, so no consumer needs boolean
-  operations. Rule: two ink contours join when their fills intersect with area above 1 unit²; a
-  counter joins the smallest contour of opposite winding whose box holds it (han-compose's
-  `_units` rule).
+  operations. Rule, as `pieces.py` implements it: the contours are merged into one outline; each
+  boundary that an even number of others enclose is a piece, with the counters directly inside it
+  cut out, so an island inside a counter (回) is a piece of its own. A contour belongs to the
+  smallest piece whose boundary encloses it, else to the piece it shares most ink with. Pieces
+  that one contour runs through, meeting only at a point, are joined into one, since no set of
+  whole contours tells them apart.
 - `box`, `advance`.
 
 Only glyphs that a reading, a skipped attempt or a reference names are written. Whole-font dumps are a non-goal.

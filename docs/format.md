@@ -18,7 +18,7 @@ normalised.
 | chain | A design's fonts in coverage order. |
 | glyph | One glyph of a font, selected by code point, variation sequence or glyph index. |
 | contour | One closed contour of a glyph, in the font's own order. Contours may overlap. |
-| piece | A maximal set of contours whose ink overlaps or runs along a shared edge, with the counters inside it. Contours that only meet at a point are apart, unless one contour runs through both. |
+| piece | The contours that draw one boundary of the glyph's merged outline and the counters directly inside it. A boundary enclosed by an even number of others starts a piece, so an island inside a counter is a piece of its own. A contour belongs to the smallest piece whose boundary encloses it, else to the piece it shares most ink with; pieces one contour runs through, meeting at a point, are one piece. |
 | class | Components that are one thing in different shapes, under a canonical member. |
 | structure | An operator tree whose components are written as their classes' canonical members. |
 | style | The class member a cut is drawn as. |
