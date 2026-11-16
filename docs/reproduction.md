@@ -93,8 +93,8 @@ leaves), 1,816 `layout-mismatch`, 1,480 `unlike-element`, 532 `ambiguous`, 121
 han-compose `data/custom-forms.json.gz` (format 2), written by ids-input's
 `scripts/build_custom_cuts.py`: the form of each CHISE entity and zi.tools chain that stands, and
 its library of host cuts, in the `sans` chain (Noto Sans CJK JP, Plangothic P1 and P2) and the
-`serif` chain (Noto Serif CJK JP, Jigmo2, Jigmo3, Jigmo). `tests/fixtures/lift/` holds it without
-its outlines.
+`serif` chain (Noto Serif CJK JP, Jigmo2, Jigmo3, Jigmo). The lift cutter and its fixture were
+removed with format 2 (phase 7.1 of `design.md`); this section records what they reproduced.
 
 | | Sans: entities | chains | library cuts | Serif: entities | chains | library cuts |
 |---|---|---|---|---|---|---|
