@@ -148,9 +148,12 @@ class Chain:
         self.faces = list(faces)
 
     @classmethod
-    def pinned(cls, name: str, cache: Path | None = None, fetch: bool = False) -> "Chain":
-        """The pinned chain `name` from the cache, each font's digest checked."""
-        return cls(name, [Face(row, pins.font_path(row, cache, fetch)) for row in pins.chain(name)])
+    def pinned(cls, designs: str | Sequence[str], cache: Path | None = None, fetch: bool = False) -> "Chain":
+        """The fonts of the pinned design, or of several in order, from the cache, each font's digest
+        checked."""
+        names = [designs] if isinstance(designs, str) else list(designs)
+        rows = [row for name in names for row in pins.chain(name)]
+        return cls("+".join(names), [Face(row, pins.font_path(row, cache, fetch)) for row in rows])
 
     def __enter__(self) -> "Chain":
         return self

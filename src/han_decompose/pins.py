@@ -67,11 +67,17 @@ def source(identifier: str) -> Json:
     raise KeyError(f"{identifier} is not a pinned source.")
 
 
-def chain(name: str) -> list[Json]:
-    """The fonts of a chain, in the order a glyph is looked for."""
-    if name not in fonts()["chains"]:
-        raise KeyError(f"{name} is not a font chain.")
-    return [font(identifier) for identifier in fonts()["chains"][name]]
+def design(identifier: str) -> Json:
+    """The registry row of a design."""
+    for row in fonts()["designs"]:
+        if row["id"] == identifier:
+            return dict(row)
+    raise KeyError(f"{identifier} is not a design.")
+
+
+def chain(identifier: str) -> list[Json]:
+    """The fonts of a design in coverage order: a glyph is taken from the first that draws it."""
+    return [font(member) for member in design(identifier)["chain"]]
 
 
 class DownloadError(OSError):
@@ -215,12 +221,12 @@ def citations(font_registry: Json | None = None, source_registry: Json | None = 
         "",
         "## Fonts",
     ]
-    chains = font_registry["chains"]
+    designs = font_registry["designs"]
     for row in font_registry["fonts"]:
         places = [
-            f"`{name}` ({members.index(row['id']) + 1} of {len(members)})"
-            for name, members in chains.items()
-            if row["id"] in members
+            f"`{design['id']}` ({design['chain'].index(row['id']) + 1} of {len(design['chain'])})"
+            for design in designs
+            if row["id"] in design["chain"]
         ]
         about = [f"{row['name']} {row['version']}"]
         if "nameVersion" in row:
@@ -243,9 +249,7 @@ def citations(font_registry: Json | None = None, source_registry: Json | None = 
         ]
         if row.get("reservedNames"):
             lines.append("- Reserved Font Names: " + ", ".join(row["reservedNames"]))
-        lines.append(
-            "- Chain: " + (", ".join(places) if places else "none; a reference for components no chain font draws.")
-        )
+        lines.append(f"- Design: `{row['design']}`, grain {row['grain']}; chain " + (", ".join(places) or "none") + ".")
     lines += ["", "## Sources"]
     for row in source_registry["sources"]:
         lines += [

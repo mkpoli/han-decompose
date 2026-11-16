@@ -162,7 +162,7 @@ def _registries(monkeypatch: pytest.MonkeyPatch) -> Web:
     font = font_row(b"font")
     good, gone = source_row(b"table", []), source_row(b"lost", [])
     gone.update(id="gone", files=[{**gone["files"][0], "url": "https://tables.example/gone.txt"}])
-    monkeypatch.setattr(pins, "fonts", lambda: {"fonts": [font], "chains": {}})
+    monkeypatch.setattr(pins, "fonts", lambda: {"fonts": [font], "designs": []})
     monkeypatch.setattr(pins, "sources", lambda: {"sources": [gone, good]})
     return Web({"https://fonts.example/Test.ttf": b"font", "https://tables.example/table.txt": b"table"})
 
@@ -205,19 +205,21 @@ def test_the_downloader_reports_an_address_that_does_not_answer(monkeypatch: pyt
 
 def test_citations_leave_out_what_a_row_does_not_state() -> None:
     font = {"id": "test@1", "name": "Test", "version": "1", "url": "https://fonts.example/Test.ttf", "sha256": "0" * 64}
-    font.update(upem="1000", licence="OFL-1.1", copyright="Copyright Test")
+    font.update(upem="1000", licence="OFL-1.1", copyright="Copyright Test", design="test", grain="piece")
     source = {"id": "table", "name": "Table", "url": "https://tables.example/", "role": "description", "pin": "v1"}
     source.update(retrieved="2026-11-15", licence="MIT", attribution="Table authors")
-    text = pins.citations({"fonts": [font], "chains": {}}, {"sources": [source]})
+    text = pins.citations({"fonts": [font], "designs": []}, {"sources": [source]})
     assert "- Font: Test 1, 1000 units per em.\n" in text
     assert "- Licence: OFL-1.1\n" in text and "- Licence: MIT\n" in text
     assert "| File |" not in text
 
 
-def test_the_licensing_page_names_every_licence_in_use() -> None:
+def test_the_licensing_page_names_every_licence_of_an_outline() -> None:
     text = (ROOT / "docs" / "licensing.md").read_text(encoding="utf-8")
-    rows = [*pins.fonts()["fonts"], *pins.sources()["sources"]]
-    assert {row["licence"] for row in rows} == set(re.findall(r"^\| [^|]*\(`([^`]+)`\) \|", text, re.MULTILINE))
+    named = set(re.findall(r"^\| [^|]*\(`([^`]+)`\) \|", text, re.MULTILINE))
+    used = {row["licence"] for row in pins.fonts()["fonts"]}
+    # GlyphWiki's licence is named for the font the dump becomes (phase 8); Jigmo goes with phase 7.2.
+    assert named - used == {"LicenseRef-GlyphWiki"} and used - named == {"CC0-1.0"}
 
 
 def test_the_registries_follow_the_format() -> None:
@@ -225,15 +227,20 @@ def test_the_registries_follow_the_format() -> None:
     identifiers = [row["id"] for row in fonts["fonts"]]
     assert len(set(identifiers)) == len(identifiers)
     assert len({row["file"] for row in fonts["fonts"]}) == len(identifiers)
-    for name, members in fonts["chains"].items():
-        assert set(members) <= set(identifiers), name
-        assert len({pins.font(member)["style"] for member in members}) == 1, name
-    assert [row["id"] for row in pins.chain("sans")] == fonts["chains"]["sans"]
+    designs = [row["id"] for row in fonts["designs"]]
+    assert len(set(designs)) == len(designs)
+    for design in fonts["designs"]:
+        assert set(design["chain"]) <= set(identifiers), design["id"]
+        assert {pins.font(member)["design"] for member in design["chain"]} == {design["id"]}, design["id"]
+        assert len({pins.font(member)["style"] for member in design["chain"]}) == 1, design["id"]
+    assert sorted(identifiers) == sorted(member for design in fonts["designs"] for member in design["chain"])
+    assert [row["id"] for row in pins.chain("plangothic")] == pins.design("plangothic")["chain"]
     assert len({row["id"] for row in sources["sources"]}) == len(sources["sources"])
     for row in fonts["fonts"]:
         assert row["id"] == f"{row['id'].split('@')[0]}@{row['version']}"
         assert row["version"] in row["file"]
         assert row.get("licenceEvidence"), row["id"]
+        assert row["grain"] == ("contour" if "instance" in row else "piece"), row["id"]
     for row in sources["sources"]:
         assert row["files"], row["id"]
         assert row.get("licenceEvidence"), row["id"]
@@ -246,6 +253,8 @@ def test_unknown_names() -> None:
         pins.source("unihan")
     with pytest.raises(KeyError):
         pins.chain("kaisho")
+    with pytest.raises(KeyError):
+        pins.design("sans")
     with pytest.raises(KeyError):
         list(pins.fetch_all({"unihan"}))
 

@@ -16,7 +16,7 @@ from them by `han-decompose citations`.
 - Licence: OFL-1.1, stated in the font's name table, record 13 (licence description).
 - Copyright: © 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'.
 - Reserved Font Names: Source
-- Chain: `sans` (1 of 3)
+- Design: `source-han-sans`, grain contour; chain `source-han-sans` (1 of 1).
 
 ### `plangothic-p1@2.9.5795`
 
@@ -25,7 +25,7 @@ from them by `han-decompose citations`.
 - SHA-256: `550b5d0775b15405946b18f4843df439a51e69508d7e6778d94c1f7a53dc5ad6`
 - Licence: OFL-1.1, stated in the font's name table, record 13 (licence description).
 - Copyright: Copyright (c) 2024 by Fitzgerald P. Köeingsegg. All rights reserved.
-- Chain: `sans` (2 of 3)
+- Design: `plangothic`, grain piece; chain `plangothic` (1 of 2).
 
 ### `plangothic-p2@2.9.5795`
 
@@ -34,7 +34,7 @@ from them by `han-decompose citations`.
 - SHA-256: `681933370adfe0fc7253f77735275a82fea09fe4f8adba907bdeb46c110daf8f`
 - Licence: OFL-1.1, stated in the font's name table, record 13 (licence description).
 - Copyright: Copyright (c) 2024 by Fitzgerald P. Köeingsegg. All rights reserved.
-- Chain: `sans` (3 of 3)
+- Design: `plangothic`, grain piece; chain `plangothic` (2 of 2).
 
 ### `noto-serif-cjk-jp@2.003`
 
@@ -43,7 +43,7 @@ from them by `han-decompose citations`.
 - SHA-256: `c2ff7cffb6ef75193d4406b030eab5aa6503c48004acec6b040327e2fe1e9e51`
 - Licence: OFL-1.1, stated in the font's name table, record 13 (licence description).
 - Copyright: © 2017-2024 Adobe (http://www.adobe.com/).
-- Chain: `serif` (1 of 4)
+- Design: `source-han-serif`, grain contour; chain `source-han-serif` (1 of 1).
 
 ### `jigmo2@20250912`
 
@@ -52,7 +52,7 @@ from them by `han-decompose citations`.
 - SHA-256: `5da3582efe77e22073b86b3b86b556d7111148a76b957cfb53318a91da2efff0`; archive `5744c7386d129475d87607ca66d043c8793c65448adeaedc921b6931890e5d0b`
 - Licence: CC0-1.0, stated in LICENSE.txt in the archive.
 - Copyright: Koichi Kamichi
-- Chain: `serif` (2 of 4)
+- Design: `jigmo`, grain piece; chain `jigmo` (1 of 3).
 
 ### `jigmo3@20250912`
 
@@ -61,7 +61,7 @@ from them by `han-decompose citations`.
 - SHA-256: `815b18c1c670103723fe743090559208fdea47dc587ecb057a5a4721ee8dfeff`; archive `5744c7386d129475d87607ca66d043c8793c65448adeaedc921b6931890e5d0b`
 - Licence: CC0-1.0, stated in LICENSE.txt in the archive.
 - Copyright: Koichi Kamichi
-- Chain: `serif` (3 of 4)
+- Design: `jigmo`, grain piece; chain `jigmo` (2 of 3).
 
 ### `jigmo@20250912`
 
@@ -70,7 +70,7 @@ from them by `han-decompose citations`.
 - SHA-256: `c8f295b9bd8f9f117a76b3a454aaaa1bb5b4babc18e254978c6deb88464e40cf`; archive `5744c7386d129475d87607ca66d043c8793c65448adeaedc921b6931890e5d0b`
 - Licence: CC0-1.0, stated in LICENSE.txt in the archive.
 - Copyright: Koichi Kamichi
-- Chain: `serif` (4 of 4)
+- Design: `jigmo`, grain piece; chain `jigmo` (3 of 3).
 
 ### `babelstone-han-pua@1.472`
 
@@ -79,7 +79,7 @@ from them by `han-decompose citations`.
 - SHA-256: `92e7155bd28f5570449f4dc71e9bb6fa919f67ef0120d4f83b58c61bed3ed4dc`
 - Licence: Arphic-1999, stated in the font's name table, record 13 (licence description).
 - Copyright: (c) Copyright 1994-1999, Arphic Technology Co., Ltd.; (c) Copyright 2009-2025, Andrew West.
-- Chain: none; a reference for components no chain font draws.
+- Design: `babelstone-han`, grain piece; chain `babelstone-han` (1 of 1).
 
 ## Sources
 

@@ -1,5 +1,5 @@
 {
-  "format": "han-decompose/sources@1.0",
+  "format": "han-decompose/sources@2.0",
   "sources": [
     {
       "id": "babelstone",
