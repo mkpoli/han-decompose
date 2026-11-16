@@ -13,6 +13,10 @@
       "name": "han-decompose",
       "version": "0.0.1",
     },
+    "packages/kage": {
+      "name": "han-decompose-kage",
+      "version": "0.0.1",
+    },
     "packages/viewer": {
       "name": "han-decompose-viewer",
       "version": "0.0.1",
@@ -123,6 +127,8 @@
     "fsevents": ["fsevents@2.3.3", "", { "os": "darwin" }, "sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw=="],
 
     "han-decompose": ["han-decompose@workspace:packages/format"],
+
+    "han-decompose-kage": ["han-decompose-kage@workspace:packages/kage"],
 
     "han-decompose-viewer": ["han-decompose-viewer@workspace:packages/viewer"],
 
