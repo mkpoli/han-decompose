@@ -64,9 +64,9 @@ of their own. [`licensing.md`](licensing.md) says which file is under which term
    sources, 1,836 skipped rows are `unlike-element` on a description that starts with `⿰示`.
    The structure was right; the template compared was 示 where the glyph draws 礻.
 8. **The same text recurs across tables.** ids-input's corpus (`data/ids-corpus.json.gz`,
-   SHA-256 `b6a3cac5…`) holds 211,319 description rows; 78,580 subject-and-text pairs occur more
-   than once (社 `⿰示土` once from BabelStone's K and P line and once from CHISE). Cutting per
-   source cuts each of those again.
+   SHA-256 `cf089a1c…`) holds 438,656 description rows; 社 `⿰示土` is written by BabelStone's K and P
+   line, by CHISE and by zi.tools. Cutting per source cuts each of those again, and in the file
+   one row carries every source that attests a text (114,295 rows have more than one).
 9. **One drawing ships under several names.** Noto Sans CJK and Source Han Sans are one design;
    GenZui takes its ideographs point for point from Noto; Sukima Gothic is built on Source Han
    Sans; Plangothic supplements Source Han Sans with glyphs of its own. The `sans` and `serif` chains of format 1 mix designs (Noto Serif CJK JP then
@@ -519,7 +519,7 @@ same structure for machines. What shaped them:
 
 | Source | Becomes | Lacks today |
 |---|---|---|
-| ids-input `data/ids-corpus.json.gz` (BabelStone and CHISE, 211,319 rows) | Candidate structures, read at build time; its `equivalences` the class rows | zi.tools rows, ids-input's own rows, class rows. |
+| ids-input `data/ids-corpus.json.gz` (BabelStone, CHISE, zi.tools and ids-input's own rows, 438,656 rows) | Candidate structures, read at build time; its `equivalences` the class rows | Nothing. |
 | GlyphWiki dump (KAGE data, type-99 component lines) | Outlines of the `glyphwiki` design, contours grouped per stroke; `kage` readings, cuts and styles | The KAGE renderer in the build. |
 | ids-input `data/donor-parts.json` (114 of 138 stacks on 山; BabelStone; Noto then Jigmo) | Complete readings, method `deal`, grain `piece`; `parts` → leaf cuts, `first`/`terminal`/`recursive` → inner nodes derived from leaves | Contour indices (paths are pathops output); node paths (leaves are told apart by label and counting); per-part scores (one `likeness` per character); description id. Its chain puts Jigmo's mincho under a sans face. |
 | `mountain-instances.json.gz`, `component-instances-口.json.gz` (山: 2,220 instances in 2,150 of 2,926 characters; 口: 5,033 in 4,731 of 26,446) | Readings with `tree`, `opened`, `depth`; `route` → `path`; `fit`, `disagreement`, `skeletonAway` and their `…Against` → evidence and checks; `skipped` → skipped rows; `shallower` and `closed` → the reading's depth and the reason the deeper one failed | Contour indices; the other operands' hands (dealt, then dropped); reason codes (free text carrying face and depth); calibration marker for 口; the 口 file still says `ids-input/mountain-instances`. Hand labels live apart in `analysis/mountain-fit/labels.json`, keyed `char#index`. |
@@ -918,8 +918,8 @@ The tables the build reads. They are cited here and in `pins/sources.json`; the 
 - ids-input `main`: `data/README.md`, `custom-components.json.gz`, `chise-sources.json`,
   `custom-outlines.json.gz`, `ids-components.tsv`, `zi-tools-chains.tsv.gz`,
   `scripts/build_custom_cuts.py`.
-- ids-input `main` at `f6dd3df48` (2026-11-16): `docs/ids-corpus.md`, `docs/part-cutting.md`,
-  `data/ids-corpus.json.gz` (SHA-256 `b6a3cac59ca6809ee5feb1a895525222fdfdd6ba71e374dadeb4b94b53578361`),
+- ids-input `main` at `ea2691e0c` (2026-11-16, the merge of PR #985): `docs/ids-corpus.md`,
+  `docs/part-cutting.md`, `data/ids-corpus.json.gz` (SHA-256 `cf089a1c6c0b0785feeaba05a2296dafeb42da05b92881a395c42f4e89a4a305`),
   `data/component-forms.tsv`, `data/ucv.json`, `data/ids-project.tsv`, `data/babelstone-ids.tsv.gz`,
   `src/adapter/babelstone.js` (`structure()`), `demo/ui/BaishiEntry.svelte`,
   `demo/ui/LayerDialog.svelte`.

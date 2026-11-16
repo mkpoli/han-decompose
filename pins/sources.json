@@ -6,20 +6,20 @@
       "name": "ids-input IDS corpus (data/ids-corpus.json.gz)",
       "role": "candidates",
       "url": "https://github.com/mkpoli/ids-input",
-      "pin": "commit f6dd3df481dacd870379075e8f8f739cef62c6ac (2026-11-15)",
+      "pin": "commit ea2691e0c1ac37f27b858b2ee1353bd83536d3ed (2026-11-16)",
       "retrieved": "2026-11-16",
       "files": [
         {
           "file": "ids-corpus.json.gz",
-          "url": "https://raw.githubusercontent.com/mkpoli/ids-input/f6dd3df481dacd870379075e8f8f739cef62c6ac/data/ids-corpus.json.gz",
-          "sha256": "b6a3cac59ca6809ee5feb1a895525222fdfdd6ba71e374dadeb4b94b53578361"
+          "url": "https://raw.githubusercontent.com/mkpoli/ids-input/ea2691e0c1ac37f27b858b2ee1353bd83536d3ed/data/ids-corpus.json.gz",
+          "sha256": "cf089a1c6c0b0785feeaba05a2296dafeb42da05b92881a395c42f4e89a4a305"
         }
       ],
       "licence": "GPL-2.0-or-later",
-      "licenceEvidence": "https://github.com/mkpoli/ids-input/blob/f6dd3df481dacd870379075e8f8f739cef62c6ac/docs/ids-corpus.md: the artifact is GPL-2.0-or-later because CHISE's IDS rows are inside it",
+      "licenceEvidence": "https://github.com/mkpoli/ids-input/blob/ea2691e0c1ac37f27b858b2ee1353bd83536d3ed/docs/ids-corpus.md: the artifact is GPL-2.0-or-later because CHISE's IDS rows are inside it",
       "licenceFile": "GPL-2.0-or-later.txt",
-      "attribution": "ids-input data/ids-corpus.json.gz, merging BabelStone IDS by Andrew West (魏安), File Date 2025-06-27, and CHISE IDS by the CHISE project; read as candidate structures only, never bundled or redistributed.",
-      "weakness": "Phase 6 of docs/design.md adds zi.tools rows, ids-input's own rows and class rows; the pin moves to the commit that does."
+      "attribution": "ids-input data/ids-corpus.json.gz, merging BabelStone IDS by Andrew West (魏安), File Date 2025-06-27, CHISE IDS by the CHISE project, Yi Bai's IDS data (MIT, zi.tools) and ids-input's own rows; read as candidate structures and class rows only, never bundled or redistributed.",
+      "weakness": "Merged from several sources, and 4,064 of its 438,656 description rows name a component it gives no identifier. Its class-member rows are candidates a reviewer has not judged."
     },
     {
       "id": "babelstone",

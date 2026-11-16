@@ -60,14 +60,14 @@ from them by `han-decompose citations`.
 
 - Source: ids-input IDS corpus (data/ids-corpus.json.gz), <https://github.com/mkpoli/ids-input>
 - Role: candidates
-- Pin: commit f6dd3df481dacd870379075e8f8f739cef62c6ac (2026-11-15); retrieved 2026-11-16.
-- Licence: GPL-2.0-or-later. https://github.com/mkpoli/ids-input/blob/f6dd3df481dacd870379075e8f8f739cef62c6ac/docs/ids-corpus.md: the artifact is GPL-2.0-or-later because CHISE's IDS rows are inside it
-- Attribution: ids-input data/ids-corpus.json.gz, merging BabelStone IDS by Andrew West (魏安), File Date 2025-06-27, and CHISE IDS by the CHISE project; read as candidate structures only, never bundled or redistributed.
-- Limits: Phase 6 of docs/design.md adds zi.tools rows, ids-input's own rows and class rows; the pin moves to the commit that does.
+- Pin: commit ea2691e0c1ac37f27b858b2ee1353bd83536d3ed (2026-11-16); retrieved 2026-11-16.
+- Licence: GPL-2.0-or-later. https://github.com/mkpoli/ids-input/blob/ea2691e0c1ac37f27b858b2ee1353bd83536d3ed/docs/ids-corpus.md: the artifact is GPL-2.0-or-later because CHISE's IDS rows are inside it
+- Attribution: ids-input data/ids-corpus.json.gz, merging BabelStone IDS by Andrew West (魏安), File Date 2025-06-27, CHISE IDS by the CHISE project, Yi Bai's IDS data (MIT, zi.tools) and ids-input's own rows; read as candidate structures and class rows only, never bundled or redistributed.
+- Limits: Merged from several sources, and 4,064 of its 438,656 description rows name a component it gives no identifier. Its class-member rows are candidates a reviewer has not judged.
 
 | File | SHA-256 | Address |
 |---|---|---|
-| `ids-corpus.json.gz` | `b6a3cac59ca6809ee5feb1a895525222fdfdd6ba71e374dadeb4b94b53578361` | <https://raw.githubusercontent.com/mkpoli/ids-input/f6dd3df481dacd870379075e8f8f739cef62c6ac/data/ids-corpus.json.gz> |
+| `ids-corpus.json.gz` | `cf089a1c6c0b0785feeaba05a2296dafeb42da05b92881a395c42f4e89a4a305` | <https://raw.githubusercontent.com/mkpoli/ids-input/ea2691e0c1ac37f27b858b2ee1353bd83536d3ed/data/ids-corpus.json.gz> |
 
 ### `babelstone`
 
