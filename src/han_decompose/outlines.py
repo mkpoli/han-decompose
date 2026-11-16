@@ -2,7 +2,9 @@
 written in the blocks of `docs/format.md` (4) as outline files of format 2.
 
 A block is written whole by one process, so the files do not depend on how many processes ran,
-and a block whose file is there is left as it is.
+and a block whose file is there is left as it is. A block with a glyph that could not be read is
+written without it beside a `<block>.failed.txt` that names the glyph and why; the next run reads
+that block again.
 """
 
 from collections.abc import Iterator, Sequence
@@ -47,7 +49,8 @@ def write_block(drawing: Drawing, block: str, selectors: Sequence[str], out: Pat
     font = drawing.id
     result = Block(font, block)
     path = out / "outlines" / font / f"{block}.json.gz"
-    if path.exists():
+    marker = path.with_name(f"{block}.failed.txt")
+    if path.exists() and not marker.exists():
         result.kept = True
         return result
     file = outline_head(font, row)
@@ -68,6 +71,10 @@ def write_block(drawing: Drawing, block: str, selectors: Sequence[str], out: Pat
     partial.parent.mkdir(parents=True, exist_ok=True)
     partial.write_bytes(compressed(dumps(file)))
     partial.replace(path)
+    if result.failed:
+        marker.write_text("".join(f"{selector}\t{error}\n" for selector, error in result.failed), encoding="utf-8")
+    else:
+        marker.unlink(missing_ok=True)
     return result
 
 
