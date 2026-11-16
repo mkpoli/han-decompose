@@ -134,8 +134,9 @@ the release data names none of them.
 variation indicator `〾`, and components written as characters. A component no code point names is
 one token between `&` and `;`, so it never reads as inner nodes: its own IDS where any input gives
 one (`&⿸⿹丅丿丨;`), and otherwise its identifier in ids-input's component ledger (`&X-00777;`).
-`⿰&⿸⿹丅丿丨;土` is a two-operand structure whose left leaf is that shape. The names inputs give such a component (`{42}`,
-`&CDP-8958;`, `#(丿𠃊)`) are aliases in `components.tsv`, so a search by any of them finds it.
+`⿰&⿸⿹丅丿丨;土` is a two-operand structure whose left leaf is that shape. The names inputs give
+such a component (`{42}`, `&CDP-8958;`, `#(丿𠃊)`) are resolved through ids-input's ledger when
+candidates are read and are not published.
 
 **Component** — a typed reference, written compactly:
 
@@ -149,12 +150,10 @@ one (`&⿸⿹丅丿丨;`), and otherwise its identifier in ids-input's component
 Relations between components other than class membership live in `components.tsv`, one row
 per relation, each with its basis and tier:
 
-- `aj1:1815` `alias` `&AJ1-01815;` (basis: the entity's name; tier `source`).
 - `aj1:1815` `glyph-of` `u:5F62` (basis: Adobe-Japan1 CID order, CIDs 1125–7477 follow JIS X 0208
-  kanji order; tier `derived`). Cuts of the entity are then listed as glyph variants of 形.
-- `u:2E9D` `alias` `&CDP-8958;` (basis `difference`, status `verified` in ids-input's
-  component ledger, entry `X-00777`; tier `derived`). A candidate written with the entity is read
-  with ⺝.
+  kanji order; tier `derived`). Cuts of the CID's glyph are then listed as glyph variants of 形.
+- `x:X-00777` `equivalent` `u:2E9D` (basis: the same shape, verified on more than one character;
+  tier `derived`). A candidate naming that ledger component is read with ⺝.
 
 ids-input's component registry holds 164 `&AJ1-NNNNN;` entities. Adobe's own table (adobe-type-tools/Adobe-Japan1
 `aj17-kanji.txt`, version 2023-01-24, Ken Lunde and Masataka Hattori) maps every one of them: 118 are
@@ -229,10 +228,10 @@ table. The bases:
 
 | Basis | From | Tier | Examples |
 |---|---|---|---|
-| `unicode-equivalent` | Unicode `EquivalentUnifiedIdeograph.txt` 18.0.0, as copied into ids-input `component-forms.tsv` | `source` | ⺬ → 示, ⺭ → 礻, ⺼ → 肉, ⻏ → 邑, ⻖ → 阝 |
-| `radical-variant` | cjkvi-variants `radical-variants.txt` at e4f1da2, same copy, with its place where it states one | `source` | 礻 → 示, 氵 → 水 (left), 扌 → 手 (left), 忄 → 心, 亻 → 人 (left), 糹 纟 → 糸 (left), 訁 讠 → 言 (left), 釒 钅 → 金 (left), 飠 饣 → 食 (left), 衤 → 衣 (left), 王 𤣩 → 玉, 刂 → 刀 (right), 犭 → 犬 (left), 阝 → 邑 (right) |
-| `ucv` | IRG N2978 (UCV and NUCV lists, version 2026-10-20), via ids-input `ucv.json` | `source` | entry 362: 示 and 礻 unifiable, criterion JIS 161 and HYDCD 19 |
-| `radical-stroke` | Unihan `kRSUnicode` with no residual strokes | `derived` | 𱍐 (U+31350) is `113.0`: radical 示 itself |
+| `radical-form` | Unicode `EquivalentUnifiedIdeograph.txt` 18.0.0, as copied into ids-input `component-forms.tsv` | `source` | ⺬ → 示, ⺭ → 礻, ⺼ → 肉, ⻏ → 邑, ⻖ → 阝 |
+| `positional-form` | cjkvi-variants `radical-variants.txt` at e4f1da2, same copy, with its place where it states one | `source` | 礻 → 示, 氵 → 水 (left), 扌 → 手 (left), 忄 → 心, 亻 → 人 (left), 糹 纟 → 糸 (left), 訁 讠 → 言 (left), 釒 钅 → 金 (left), 飠 饣 → 食 (left), 衤 → 衣 (left), 王 𤣩 → 玉, 刂 → 刀 (right), 犭 → 犬 (left), 阝 → 邑 (right) |
+| `unifiable-variant` | IRG N2978 (UCV and NUCV lists, version 2026-10-20), via ids-input `ucv.json` | `source` | entry 362: 示 and 礻 unifiable, criterion JIS 161 and HYDCD 19 |
+| `radical-index` | Unihan `kRSUnicode` with no residual strokes | `derived` | 𱍐 (U+31350) is `113.0`: radical 示 itself |
 | `alignment` | the corpus's own alignment, one source writing the member where another writes the target for the same character | `derived` | the 62 existing number–entity pairs |
 | `editorial` | `review/classes.tsv`, a reviewer's row with name, date and note | `editorial` | `&⿸⿹丅丿丨;` → 示, reviewed 2026-11-16: 示 drawn without its first 一 |
 
@@ -476,7 +475,7 @@ same structure for machines. What shaped them:
 | `mountain-instances.json.gz`, `component-instances-口.json.gz` (山: 2,220 instances in 2,150 of 2,926 characters; 口: 5,033 in 4,731 of 26,446) | Readings with `tree`, `opened`, `depth`; `route` → `path`; `fit`, `disagreement`, `skeletonAway` and their `…Against` → evidence and checks; `skipped` → skipped rows; `shallower` and `closed` → the reading's depth and the reason the deeper one failed | Contour indices; the other operands' hands (dealt, then dropped); reason codes (free text carrying face and depth); calibration marker for 口; the 口 file still says `ids-input/mountain-instances`. Hand labels live apart in `analysis/mountain-fit/labels.json`, keyed `char#index`. |
 | `strokes` and `tiling` in the 山 file (`split_mountain_strokes.py`), the stroke lab (`feat/stroke-lab`, `lab/strokes/`) | The stroke layer (2.10): neck-cut strokes of 山, tier `machine` | Stroke types per contour set in the format; the neck cut's joins and curves. |
 | han-compose `js/src/component-forms.json` (hand cuts by IDS text and style, `positions`, `editorial`) | Pure contour selections → readings, method `hand`, component `ids:<text>`, `positions` → cuts with a named place note. Editorial compositions stay in han-compose | Host glyph per form (only `editorial.donors`); contour indices; description; evidence. Cut from static collection faces (SHA `b76b0433…`, `93069d8e…`), a different file from the variable fonts the other cutters pin, so indices have to be re-derived by matching outlines. |
-| `data/numbered-forms.json`, `numbered-sans-outlines.json.gz`, `numbered-five-context.json` | 69 numbered components (`{N}` an alias of each): the PUA glyph as a glyph of `babelstone-han-pua@1.472` (the reference shape, and the serif and kaisho form); the Sans cuts as `lift` cuts; `{5}` from 葭 as a cut at place `L` | Host and face of each Sans cut; scores; the `{N}`↔PUA map (keys are PUA characters); which nine fell back is listed, why is not. |
+| `data/numbered-forms.json`, `numbered-sans-outlines.json.gz`, `numbered-five-context.json` | 69 numbered components, each read through ids-input's ledger: the PUA glyph as a glyph of `babelstone-han-pua@1.472` (the reference shape, and the serif and kaisho form); the Sans cuts as `lift` cuts; `{5}` from 葭 as a cut at place `L` | Host and face of each Sans cut; scores; the `{N}`↔PUA map (keys are PUA characters); which nine fell back is listed, why is not. |
 | `data/custom-forms.json.gz` v2 (`forms`, `hosts`; Sans 446 entities and 7 chains, Serif 296 and 1; 353 and 189 host cuts) | Each form and each host entry → a `lift` cut in a reading of its host; `from`/`recipe`/`match`/`margin`/`agree`/`reference`/`single` → evidence and the form's basis; `hosts[style][text][place]` → library index | Contour indices (`c.p` is the simplified outline re-encoded, heavy delta zero); the face of a library entry (only `v`, first face or not); the description used; the lifted siblings as cuts of their own; failed hosts (only `tried`). `record.f`, `record.u`, `si`, `r`, `v`, `j` are composer fields and do not move. |
 | han-compose export host index (`p/` shards: `entry_record`, `cut_record`) | Bulk import: `c.k` → `contours` directly; `kv` → method `kanjivg`, else `axis`; `c: null` → skipped | Evidence and checks; reasons for a null cut; descriptions (its sequences come from its own vocabulary). Entries with `c.p` (a contour the glyph does not have) are left out. |
 | `kanjivg_cuts.py` | Method `kanjivg`: the cut is contours of the font, grouped as KanjiVG groups strokes; KanjiVG is cited in the docs | — |
@@ -749,7 +748,7 @@ reader to npm.
 7. **Review capacity.** Most machine cuts and styles will never be seen by a person. Status,
    tier and calibration are shown on every cut so unreviewed data is never mistaken for checked
    data.
-8. **Derived identities.** Cross-notation equivalences, `radical-stroke` class rows and the AJ1
+8. **Derived identities.** Ledger equivalences, `radical-index` class rows and the AJ1
    `glyph-of` relation are inferences. None of the pinned fonts is keyed to Adobe-Japan1, so no
    outline here verifies that a cut matches the CID's glyph.
 9. **The corpus's inputs.** The corpus records its own source digests; its BabelStone file

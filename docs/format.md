@@ -56,7 +56,7 @@ A slug as for a font, without a version: `source-han-sans`.
 
 A code point has one spelling: upper-case hex of at least four digits with no further leading zero
 (`U+50AC`, `U+20B36`), surrogates excluded. A code point selects GlyphWiki's glyph `u` plus the
-code point in lower-case hex (`u793e`), its aliases followed. The second code point of a sequence is a variation
+code point in lower-case hex (`u793e`), GlyphWiki's alias glyphs followed. The second code point of a sequence is a variation
 selector, U+FE00–U+FE0F or U+E0100–U+E01EF. Decimal numbers, here and in every other identifier,
 have no leading zero.
 
@@ -279,7 +279,7 @@ A cut:
 | `box` | yes | Box of the cut's contours. |
 | `frame` | | Box of the parent node's ink. |
 | `gap`, `area`, `ink` | | Distance to the nearest sibling ink, filled area, and summed length of the contours' polygons. |
-| `evidence` | | Scores of the cut: `fit` or `match`, `margin`, `agree`, `reference`, and `referenceGlyph`, the glyph `reference` was measured against; `importedFrom`, the project a cut made elsewhere was taken from. |
+| `evidence` | | Scores of the cut: `fit` or `match`, `margin`, `agree`, `reference`, and `referenceGlyph`, the glyph `reference` was measured against. |
 | `checks` | | Per check: `value`, `limit`, `pass`, and `against`, the glyph compared with. A dealt cut has `filled`, `skeleton`, `windows` and `likeness`, the last per class member; a lifted component has the one that decided it, `reference`, `agree` or `single`. |
 | `calibrated` | | The component whose reviewed labels set the checks' limits, or `false`. |
 | `division` | yes | `source` for a `kage` division, `machine`, `reviewed` or `hand`. |
@@ -395,7 +395,7 @@ distinct drawn IDS it takes, separated by spaces.
 | `target` | The component the row resolves it to. |
 | `canonical` | Where the rows lead: the class's canonical member. |
 | `place` | The place the row applies at (4.3), or empty for every place. |
-| `basis` | `unicode-equivalent`, `radical-variant`, `ucv`, `radical-stroke`, `alignment` or `editorial`. |
+| `basis` | `radical-form` (a radical's own code point and its unified ideograph), `positional-form` (the form a component takes at a place), `unifiable-variant` (shapes the IRG treats as one), `radical-index` (indexed as the radical with no further strokes), `alignment` (written for one another in descriptions of one character) or `editorial`. |
 | `tier` | `source` (a table states it), `derived` (inferred from a table) or `editorial` (the project's own reviewed row). |
 | `note` | For an editorial row, the reviewer's reason and date: `示 drawn without its first 一; 2026-11-16`. |
 
@@ -416,8 +416,8 @@ class. Components without a row are compared as themselves.
 | `component` | Component reference. |
 | `kind` | By the reference's kind: `character` (`u`), `subtree` (`ids`), `ledger` (`x`) or `adobe-japan1` (`aj1`). |
 | `text` | The component as written (2.4); empty for an Adobe-Japan1 glyph. |
-| `relation` | `alias` (another name for it: `{42}`, `&CDP-8958;`, `#(丿𠃊)`), `glyph-of` (a glyph of a character) or `equivalent` (the same shape under another reference). |
-| `target` | The other component, or for an alias the name as written. |
+| `relation` | `glyph-of` (a glyph of a character) or `equivalent` (the same shape under another reference). |
+| `target` | The other component. |
 | `basis` | What the relation rests on. |
 | `tier` | `source` when a table states the relation, `derived` when it is inferred. |
 
