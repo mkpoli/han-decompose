@@ -305,7 +305,8 @@ the structures of every member of its class are tried, and the one that fits set
 **The `kage` method.** GlyphWiki is read as a glyph source of its own. The build takes the latest
 dump at build time (`https://glyphwiki.org/dump.tar.gz`), draws every glyph with the KAGE engine's
 Mincho style without joining strokes, and records the dump's date and SHA-256 in the font row and
-the release manifest, so a release can be rebuilt from the same dump. A glyph whose data is a list
+the release manifest. Each release mirrors the dump it read as a release asset of this repository,
+as it mirrors BabelStone Han PUA, and a rebuild reads that mirror. A glyph whose data is a list
 of type-99 lines places one component glyph per line in a box; the placed glyph's name gives the
 style (`u793b-01` is 礻's left form); the strokes each placed glyph draws are its cut, exactly. The
 reading's operands are matched to the placed components in reading order by class, through each
@@ -565,8 +566,9 @@ han-decompose releases. Each side pins the other by SHA-256.
   verified on every read; a mismatch stops the build. A file whose upstream address is replaced in
   place (BabelStone Han PUA) gets a mirror that serves the pinned bytes: an archived copy,
   or an asset of this repository's releases.
-- GlyphWiki's dump is the latest at build time. The release records its date and SHA-256, so a
-  build from the same dump gives the same bytes.
+- GlyphWiki's dump is the latest at build time. The release records its date and SHA-256 and
+  mirrors it as a release asset; a rebuild of that release reads the mirror and gives the same
+  bytes.
 - Tools are pinned in `uv.lock`; the KAGE engine by commit.
 - Output is deterministic: integer coordinates, sorted keys, fixed separators, gzip mtime 0,
   results merged in code point order whatever the worker count, no dates in data files.

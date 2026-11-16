@@ -176,7 +176,7 @@ other file is under CC0-1.0, and `LICENSES/` holds the licence texts.
 | `design` | yes | Design identifier. |
 
 GlyphWiki is one font, `glyphwiki@<YYYYMMDD>` after the date of the dump read: its `url` and
-`sha256` are the dump's, `file` its cache name, `upem` 200, `licence` `LicenseRef-GlyphWiki`, and
+`sha256` are the dump's, `mirrors` names the copy this repository keeps as a release asset, `file` its cache name, `upem` 200, `licence` `LicenseRef-GlyphWiki`, and
 `renderer` names the KAGE engine's commit and style (`mincho`). Its contours are the polygons the
 engine draws per stroke, not joined.
 
