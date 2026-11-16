@@ -146,7 +146,9 @@ class Store:
     """Readings, skipped attempts, drawn IDS, strokes and the glyphs they name, gathered and then
     written as files."""
 
-    def __init__(self) -> None:
+    def __init__(self, rows: dict[str, Json] | None = None) -> None:
+        #: Registry rows of fonts the registry does not hold, by identifier: GlyphWiki's.
+        self.rows = rows or {}
         self.glyphs: dict[str, dict[str, Json]] = {}
         self.readings: dict[str, list[Json]] = {}
         self.skipped: dict[str, list[Json]] = {}
@@ -208,10 +210,12 @@ class Store:
         out: dict[str, Json] = {}
         for font, held in self.glyphs.items():
             for selector in sorted(held, key=I.order):
-                file = out.setdefault(f"outlines/{font}/{I.shard(selector)}.json.gz", outline_head(font))
+                file = out.setdefault(
+                    f"outlines/{font}/{I.shard(selector)}.json.gz", outline_head(font, self.rows.get(font))
+                )
                 file["glyphs"][selector] = held[selector]
         for font, cut_strokes in self.strokes.items():
-            row = pins.font(font)
+            row = self.rows.get(font) or pins.font(font)
             head = {"format": STROKES, "font": font, "licence": row["licence"], "copyright": row["copyright"]}
             if notice := change_notice(row):
                 head["notice"] = notice
@@ -219,7 +223,7 @@ class Store:
                 file = out.setdefault(f"strokes/{font}/{I.shard(selector)}.json.gz", {**head, "glyphs": {}})
                 file["glyphs"][selector] = cut_strokes[selector]
         for font in sorted({*self.readings, *self.skipped, *self.drawn}):
-            design = pins.font(font)["design"]
+            design = (self.rows.get(font) or pins.font(font))["design"]
 
             def file_of(selector: str, font: str = font, design: str = design) -> Json:
                 return out.setdefault(

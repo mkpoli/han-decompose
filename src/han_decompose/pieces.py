@@ -166,6 +166,8 @@ class Glyph:
     #: The contour indices of each piece; empty for a piece no contour lies in.
     members: list[list[int]]
     advance: float
+    #: GlyphWiki glyphs only: each stroke's type and the contours it drew.
+    strokes: list[Json] | None = None
     _edges: dict[int, G.Array] = field(default_factory=dict, repr=False)
     _tiles: bool | None = field(default=None, repr=False)
 
@@ -215,12 +217,52 @@ class Glyph:
         if not self.contours:
             raise ValueError(f"{self.font}/{self.selector} draws no ink.")
         advance = int(self.advance) if self.advance == int(self.advance) else self.advance
-        return {
+        out: Json = {
             "contours": [[letters, points] for letters, points in self.contours],
             "pieces": self.partition(),
             "box": box(self.contours, range(len(self.contours))),
             "advance": advance,
         }
+        if self.strokes is not None:
+            out["strokes"] = self.strokes
+        return out
+
+
+def assemble(
+    font: str, selector: str, contours: list[Contour], paths: list[G.Path], outline: G.Path, advance: float
+) -> Glyph:
+    """A glyph from its contours, each as a shape on its own, and the shape of all of them: the
+    outline is merged and divided into pieces, and each contour is given to one."""
+    members: list[list[int]] = []
+    try:
+        outline.simplify()
+        pieces = pieces_of(outline)
+    except pathops.PathOpsError:
+        pieces = []
+    if pieces:
+        members, joined = members_of(paths, pieces)
+        if joined:
+            # Pieces one contour runs through are one piece: whole contours cannot part them.
+            groups = _merged(pieces, joined)
+            both = sorted(
+                (
+                    (_together([pieces[j] for j in group]) if len(group) > 1 else pieces[group[0]], group)
+                    for group in groups
+                ),
+                key=lambda pair: G.piece_order(pair[0]),
+            )
+            pieces = [piece for piece, _ in both]
+            members = [sorted(index for j in group for index in members[j]) for _, group in both]
+    return Glyph(
+        font=font,
+        selector=selector,
+        contours=contours,
+        paths=paths,
+        outline=outline,
+        pieces=pieces,
+        members=members,
+        advance=advance,
+    )
 
 
 class Drawing:
@@ -271,34 +313,11 @@ class Drawing:
             if call[0] in ("closePath", "endPath"):
                 paths.append(draw(current))
                 current = []
-        outline = draw(pen.value)
-        members: list[list[int]] = []
-        try:
-            outline.simplify()
-            pieces = pieces_of(outline)
-        except pathops.PathOpsError:
-            pieces = []
-        if pieces:
-            members, joined = members_of(paths, pieces)
-            if joined:
-                # Pieces one contour runs through are one piece: whole contours cannot part them.
-                groups = _merged(pieces, joined)
-                both = sorted(
-                    (
-                        (_together([pieces[j] for j in group]) if len(group) > 1 else pieces[group[0]], group)
-                        for group in groups
-                    ),
-                    key=lambda pair: G.piece_order(pair[0]),
-                )
-                pieces = [piece for piece, _ in both]
-                members = [sorted(index for j in group for index in members[j]) for _, group in both]
-        return Glyph(
-            font=face.id,
-            selector=selector,
-            contours=commands(pen.value, face._scale),
-            paths=paths,
-            outline=outline,
-            pieces=pieces,
-            members=members,
-            advance=round(face._glyphs[name].width * EM / face.upem, 2),
+        return assemble(
+            face.id,
+            selector,
+            commands(pen.value, face._scale),
+            paths,
+            draw(pen.value),
+            round(face._glyphs[name].width * EM / face.upem, 2),
         )

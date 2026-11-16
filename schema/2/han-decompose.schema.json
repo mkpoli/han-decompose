@@ -543,6 +543,11 @@
                 "minimum": 1,
                 "maximum": 7
               },
+              "option": {
+                "description": "The hundreds of the KAGE stroke type, where it has any: 103 is type 3 with option 1.",
+                "type": "integer",
+                "minimum": 1
+              },
               "contours": {
                 "$ref": "#/$defs/contourSet"
               }
@@ -777,6 +782,10 @@
             },
             "likeness": {
               "type": "number"
+            },
+            "glyph": {
+              "description": "The glyph a kage cut was placed as, by its name.",
+              "$ref": "#/$defs/glyphId"
             },
             "tier": {
               "$ref": "#/$defs/tier"
@@ -1026,6 +1035,7 @@
                 "unlike-whole",
                 "unreadable-description",
                 "unlike-division",
+                "no-division",
                 "unnamed-component"
               ]
             },

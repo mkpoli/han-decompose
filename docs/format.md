@@ -151,7 +151,7 @@ LICENSES/  README.md  SHA256SUMS
 
 `<block>` is the glyph's code point divided by 256, in lower-case hex of at least three digits:
 `050` holds U+5000–U+50FF and `20b` holds U+20B00–U+20BFF. A variation sequence goes by its base.
-Glyphs selected by index are in `gid`, glyphs selected by name in `name`. A skipped attempt without a glyph (no font draws
+Glyphs selected by index are in `gid`. A glyph selected by name goes by the code point its name starts with (`name.u793e-j` in `079`) and is in `name` where its name holds none. A skipped attempt without a glyph (no font draws
 the subject, or the glyph has no ink) is filed by the subject's code point, in the files of the
 design's first font; a subject that is no character, in `gid`.
 
@@ -231,7 +231,7 @@ A glyph:
 | `pieces` | The contour indices of each piece, ascending; pieces ordered by their first index. Every contour is in exactly one piece. |
 | `box` | The box of all contours. |
 | `advance` | The advance width in units. |
-| `strokes` | GlyphWiki glyphs only: per stroke in KAGE order, `type` (1–7) and the contour indices it drew. |
+| `strokes` | GlyphWiki glyphs only: per stroke in KAGE order, `type` (1–7), `option` (the hundreds of KAGE's type where it has any: 103 is type 3 with option 1) and the contour indices it drew. |
 
 `commands` is a string of pen commands. `points` holds x and y interleaved, in command order.
 
@@ -301,7 +301,7 @@ A cut:
 | `path` | yes | Operand indices into the reading's structure. |
 | `place` | yes | Where the node stands in its parent: `L`, `C`, `R` under `⿰` and `⿲`; `T`, `M`, `B` under `⿱` and `⿳`; otherwise the operator and the operand index, as `⿸0`. Empty for the root. |
 | `class` | yes | Component reference of the node as the structure writes it: a class's canonical member, or a component in no class. |
-| `style` | | `member` (the component reference of the form the drawing matched: a class member, an IVD sequence of one, or a UCV form; the component itself when it is in no class), `basis` (`kage`, `match`, `cluster` or `hand`), `likeness`, `tier` (`source`, `machine` or `reviewed`). A layer opened from the cut is read with the member's structures. |
+| `style` | | `member` (the component reference of the form the drawing matched: a class member, an IVD sequence of one, or a UCV form; the component itself when it is in no class), `basis` (`kage`, `match`, `cluster` or `hand`), `likeness`, `glyph` (a `kage` cut's placed glyph, as `glyphwiki@20261115/name.u793b-01`, whose suffix is the form's own name), `tier` (`source`, `machine` or `reviewed`). A layer opened from the cut is read with the member's structures. |
 | `contours` | yes | Contour indices, ascending. |
 | `box` | yes | Box of the cut's contours. |
 | `frame` | | Box of the parent node's ink. |
@@ -345,6 +345,7 @@ A skipped attempt holds `subject`, `glyph` when a font draws the subject, `layer
 | `unlike-whole` | The operands, each drawn where its pieces sit, do not come out as the glyph. |
 | `unreadable-description` | The candidate does not read as a tree. |
 | `unlike-division` | GlyphWiki's placed components do not match the structure's operands. |
+| `no-division` | GlyphWiki draws the glyph from strokes alone, so it places no component to divide it by. |
 | `unnamed-component` | The description names a component the corpus gives no identifier: a stroke chain, or an entity it does not hold. |
 
 ### 4.4 Form and library files

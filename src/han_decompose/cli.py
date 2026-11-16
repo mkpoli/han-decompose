@@ -7,8 +7,10 @@ from typing import Annotated
 import typer
 
 from . import __version__, aj1, descriptions, numbered, pins, tsv
+from . import glyphwiki as wiki
 from . import identifiers as I
 from . import outlines as outline_files
+from .cutters import kage_run
 from .cutters import library as libraries
 from .cutters import lift as lifts
 from .cutters import survey as surveys
@@ -288,6 +290,40 @@ def outlines(
     if failures:
         typer.echo(f"unreadable glyphs\t{len(failures)}", err=True)
         raise typer.Exit(1)
+
+
+@app.command()
+def kage(
+    out: Annotated[Path, typer.Argument(help="A folder to write the outline and cut files into.")],
+    source: Annotated[
+        list[str] | None, typer.Option(help="A description source; all three when none is given.")
+    ] = None,
+    workers: Annotated[int, typer.Option(help="How many processes cut at once; each holds the dump.")] = 2,
+    blocks: Annotated[list[str] | None, typer.Option(help="Blocks of 256 code points to read, as `04e`.")] = None,
+    cache: Annotated[Path | None, typer.Option(help="The cache folder the pinned files are in.")] = None,
+) -> None:
+    """Write the outline files of every Han glyph of the GlyphWiki dump, and read each under the
+    structures of its character from the components GlyphWiki placed to draw it. A block already
+    written is left as it is, so a run that stopped goes on where it was."""
+    try:
+        dump = wiki.fetch_dump(cache)
+        for block, counts in kage_run.run(dump, out, workers, source or kage_run.SOURCES, cache, blocks):
+            typer.echo(f"{block}\t{counts.glyphs}\t{counts.readings}", err=True)
+    except (pins.PinError, KeyError, OSError) as error:
+        typer.echo(str(error.args[0]) if isinstance(error, KeyError) else str(error), err=True)
+        raise typer.Exit(1) from error
+    total = kage_run.totals(out)
+    typer.echo(f"font\tglyphwiki@{dump.date}")
+    typer.echo(f"glyphs\t{total.glyphs}")
+    typer.echo(f"glyphs with a candidate structure\t{total.attempted}")
+    typer.echo(f"glyphs with a reading\t{total.divided}")
+    typer.echo(f"readings\t{total.readings}")
+    typer.echo(f"cuts\t{total.cuts}")
+    for code, number in sorted(total.skipped.items()):
+        typer.echo(f"skipped: {code}\t{number}")
+    for reason, number in sorted(total.failed.items()):
+        typer.echo(f"not drawn: {reason}\t{number}")
+    typer.echo(f"names without a selector\t{total.unspelled}")
 
 
 @app.command()
