@@ -71,7 +71,7 @@ DESIGNS = {"sans": ("source-han-sans", "plangothic"), "serif": ("source-han-seri
 
 def pinned(chain: str) -> tuple[dict[str, Table], list[Drawing], dict[str, tuple[str, G.Array | None]]]:
     try:
-        tables = {source: descriptions.table(source) for source in ("chise", "babelstone")}
+        tables = {descriptions.CORPUS: descriptions.table(descriptions.CORPUS)}
         paths = pins.source_paths(pins.source("glyphwiki"), fetch=False)
         names = descriptions.corpus_names()
     except pins.PinError:
@@ -120,7 +120,7 @@ def test_a_subtraction_is_read_as_a_cut_of_the_component_itself() -> None:
     tables, drawings, references = pinned("sans")
     row = entity("&CDP-8958;")
     assert row["subtraction"] == "\u31ef冐⺜"
-    recipe = lift.recipes(row, tables["chise"])[0]
+    recipe = lift.recipes(row, tables[descriptions.CORPUS])[0]
     assert (recipe.host, recipe.parts, recipe.op) == ("冐", ["⺜"], "㇯")
     found = lift.record(lift.lift(drawings, recipe), row["text"])
     assert found["subject"] == "chise:CDP-8958" and found["layer"] == [] and found["text"] == "㇯冐⺜"
@@ -154,7 +154,7 @@ def test_a_chain_and_an_entity_the_corpus_lacks_are_left_out_with_their_reason()
 def test_a_host_that_gives_nothing_is_filed_with_the_glyph_that_was_read() -> None:
     tables, drawings, _ = pinned("sans")
     row = entity("&CDP-8958;")
-    for recipe in lift.recipes(row, tables["chise"]):
+    for recipe in lift.recipes(row, tables[descriptions.CORPUS]):
         try:
             lift.lift(drawings, recipe)
         except Skipped as reason:

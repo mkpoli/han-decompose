@@ -205,7 +205,7 @@ def _work(job: tuple[str, list[str]]) -> list[Outcome]:
 def run(
     target: str,
     designs: Sequence[str] = ("source-han-sans", "plangothic"),
-    source: str = "babelstone",
+    source: str = descriptions.CORPUS,
     workers: int = 4,
     cache: Path | None = None,
 ) -> Iterator[Outcome]:

@@ -98,15 +98,20 @@ A variation selector a level writes stays in its text, its hash and its tree.
 ### 2.6 Structure
 
 `s.<h8>`, `<h8>` being the first eight hex digits of the SHA-256 of the structure's text in
-UTF-8. The text is the canonical tree of glyph-atlas's decision 0012: a part that spells a
-character is that character, a ⿰ or ⿱ chain flattens, and every component is written as its
-class's canonical member (section 5.3):
-`⿰礻土` and `⿰示土` are both the structure `⿰示土`, `s.0a1c0fdb`.
+UTF-8. The text is the canonical tree of glyph-atlas's decision 0012:
 
-Current rule: the cutters write the identifier of the description's text as the source wrote it
-(after its components are named, 2.4), with no class folding and no flattening of ⿰ and ⿱ chains.
-The canonical tree described above comes with the cutting run that builds classes, before any
-release; a structure identifier written now is then replaced.
+- a part that spells a character is that character (`⿰亻匕` is 化); the description itself is
+  never renamed;
+- a ⿰ or ⿱ chain flattens: `⿱X⿱YZ` and `⿱⿱XYZ` are `⿳XYZ`, and the same for ⿰ and ⿲;
+- every component is written as its class's canonical member at the place it stands (section 5.3),
+  and so is a shape the IRG lists as unifiable at level 1, where a class row says it;
+- a variation selector is dropped, and a tree is read again until it is stable.
+
+`⿰礻土` and `⿰示土` are both the structure `⿰示土`, `s.0a1c0fdb`. A character's structures are
+the distinct canonical trees of all its descriptions in the corpus, and none is marked by the
+source or region that gave it. A description with an approximate (〾) or subtracting (㇯) operator,
+a part no character names (？), a mark of the form or stroke level, or a component the corpus gives
+no identifier is no structure.
 
 Eight hex digits do not keep every structure apart. A structure identifier is used together with
 its glyph or character, and the text stands beside it wherever it appears.

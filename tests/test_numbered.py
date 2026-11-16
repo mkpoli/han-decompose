@@ -60,7 +60,7 @@ def test_a_numbered_component_is_lifted_and_held_against_its_private_use_glyph()
     references = lift.numbered(table, Drawing(pinned_face(numbered.FONT)))
     assert references["&bsp:50;"][0] == "babelstone-han-pua@1.472/U+F319"
     row = next(row for row in lift.registry()[0] if row["text"] == "&bsp:55;")
-    outcome = lift.component(row, {"babelstone": table, "chise": table}, drawings, references)
+    outcome = lift.component(row, {descriptions.CORPUS: descriptions.table(descriptions.CORPUS)}, drawings, references)
     assert outcome.component == "bsp:55" and outcome.kind == "numbered" and outcome.form is not None
     assert outcome.form["basis"] == "reference"
     chosen = next(cut for found in outcome.readings for cut in found["cuts"] if cut["id"] == outcome.form["cut"])
@@ -74,7 +74,7 @@ def test_the_private_use_glyph_confirms_a_cut_and_does_not_overrule_the_hosts() 
     references = lift.numbered(table, Drawing(pinned_face(numbered.FONT)))
     row = next(row for row in lift.registry()[0] if row["text"] == "&bsp:50;")
     # {50}: three hosts leave the same コ, which is unlike the thin Song-style glyph of the PUA font.
-    outcome = lift.component(row, {"babelstone": table, "chise": table}, drawings, references)
+    outcome = lift.component(row, {descriptions.CORPUS: descriptions.table(descriptions.CORPUS)}, drawings, references)
     assert outcome.form is not None and outcome.form["basis"] == "agree"
     chosen = next(cut for found in outcome.readings for cut in found["cuts"] if cut["id"] == outcome.form["cut"])
     assert chosen["evidence"]["reference"] < lift.REFERENCE and chosen["status"] == "accepted"

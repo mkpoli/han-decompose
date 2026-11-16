@@ -14,6 +14,8 @@ from pathlib import Path
 from . import corpus, ids, pins
 
 SOURCES = ("babelstone", "chise", "zi-tools")
+#: The table of canonical structures the corpus gives (`structures.py`), which the cutters read.
+CORPUS = "ids-corpus"
 
 _BABELSTONE = re.compile(r"\^(?P<ids>[^$]+)\$(?:\((?P<regions>[^)]*)\))?")
 _NUMBERED = re.compile(
@@ -211,7 +213,10 @@ def corpus_names(cache_folder: Path | None = None) -> frozenset[str]:
 
 @cache
 def table(source: str, cache_folder: Path | None = None) -> Table:
-    """The pinned table of a description source, read from the cache."""
+    """The pinned table of a description source, read from the cache. `CORPUS` is every character's
+    canonical structures, one description each, with no source or tag."""
+    if source == CORPUS:
+        return _corpus_table(cache_folder)
     if source not in SOURCES:
         raise KeyError(f"{source} is not a description source.")
     paths = pins.source_paths(pins.source(source), cache_folder, fetch=False)
@@ -221,3 +226,16 @@ def table(source: str, cache_folder: Path | None = None) -> Table:
     if source == "chise":
         return chise(paths.values(), names)
     return zi_tools(paths["ids_lv1.txt"], names)
+
+
+def _corpus_table(cache_folder: Path | None) -> Table:
+    from . import structures
+
+    out = Table(CORPUS, names=corpus_names(cache_folder))
+    # Whether a component stands for a character is a fact of note 6 of IDS.TXT, which the corpus keeps
+    # as components and not as characters.
+    out.numbered = table("babelstone", cache_folder).numbered
+    for char, found in structures.pinned(cache_folder).by_char.items():
+        for structure in found:
+            out.add(char, structure)
+    return out

@@ -70,7 +70,7 @@ ENCLOSING = frozenset("⿴⿵⿶⿷⿸⿹⿺⿼⿽")
 #: The operators whose operands make a component's library of places.
 LEARNED = frozenset("⿰⿱⿸⿺⿵⿹⿶⿴⿷")
 #: The source of the descriptions a kind of component is found in.
-SOURCE_OF = {"entity": "chise", "numbered": "babelstone"}
+SOURCE_OF = {"entity": descriptions.CORPUS, "numbered": descriptions.CORPUS}
 #: The source a subtraction is recorded in.
 REGISTRY = "ids-input-components"
 
@@ -547,11 +547,12 @@ _STATE: dict[str, Any] = {}
 def _open(designs: Sequence[str], cache: Path | None) -> None:
     _STATE["drawings"] = [Drawing(face) for face in Chain.pinned(designs, cache).faces]
     _STATE["tables"] = {source: descriptions.table(source, cache) for source in set(SOURCE_OF.values())}
+    _STATE["note6"] = descriptions.table("babelstone", cache)
     paths = pins.source_paths(pins.source("glyphwiki"), cache, fetch=False)
     _STATE["references"] = glyphwiki(
         json.loads(gzip.decompress(paths["custom-outlines.json.gz"].read_bytes())), descriptions.corpus_names(cache)
     )
-    _STATE["references"] |= numbered(_STATE["tables"]["babelstone"], Drawing(Face.pinned(PUA, cache)))
+    _STATE["references"] |= numbered(_STATE["note6"], Drawing(Face.pinned(PUA, cache)))
 
 
 def _work(rows: list[Json]) -> list[Outcome]:

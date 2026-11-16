@@ -97,7 +97,7 @@ def survey(
     design: Annotated[
         list[str] | None, typer.Option(help="A design whose fonts the glyphs are read in, in order of preference.")
     ] = None,
-    source: Annotated[str, typer.Option(help="The description source.")] = "babelstone",
+    source: Annotated[str, typer.Option(help="The description table.")] = descriptions.CORPUS,
     out: Annotated[Path | None, typer.Option(help="A folder to write outline and cut files into.")] = None,
     workers: Annotated[int, typer.Option(help="How many processes cut at once.")] = 4,
     cache: Annotated[Path | None, typer.Option(help="The cache folder the pinned files are in.")] = None,
@@ -221,13 +221,13 @@ def read(
     design: Annotated[
         list[str] | None, typer.Option(help="A design whose fonts the glyphs are read in, in order of preference.")
     ] = None,
-    source: Annotated[str, typer.Option(help="The description source.")] = "babelstone",
+    source: Annotated[str, typer.Option(help="The description table.")] = descriptions.CORPUS,
     workers: Annotated[int, typer.Option(help="How many processes cut at once.")] = 4,
     blocks: Annotated[list[str] | None, typer.Option(help="Blocks of 256 code points to read, as `04e`.")] = None,
     cache: Annotated[Path | None, typer.Option(help="The cache folder the pinned files are in.")] = None,
 ) -> None:
-    """Read every description of a source in a design: each glyph dealt to the components of its
-    description, and deeper where they can be told apart. A block already written under the
+    """Read every structure of a description table in a design: each glyph dealt to the components of its
+    structure, and deeper where they can be told apart. A block already written under the
     folder is left as it is, so a run that stopped goes on where it was."""
     designs = design or DESIGNS
     total = libraries.Counts()
