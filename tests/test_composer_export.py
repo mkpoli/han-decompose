@@ -183,11 +183,17 @@ def test_the_parity_command_fails_on_a_difference(
     assert short.exit_code == 1 and "shards\t4\tof 5" in short.stdout
 
 
+#: The designs each export was written from, in the order of its chain.
+DESIGNS = {"sans": ["source-han-sans", "plangothic"], "serif": ["source-han-serif", "jigmo"]}
+
+
 @pytest.mark.parametrize("name", ["sans", "serif"])
 def test_the_pinned_fonts_draw_what_han_compose_exported(name: str) -> None:
     fixture = json.loads((FIXTURES / f"{name}.json").read_text(encoding="utf-8"))
-    chain = pinned_chain(name)
-    assert {record["font"] for record in fixture["records"].values()} == {font["id"] for font in pins.chain(name)}
+    chain = pinned_chain(*DESIGNS[name])
+    assert {record["font"] for record in fixture["records"].values()} == {
+        font["id"] for design in DESIGNS[name] for font in pins.chain(design)
+    }
     for selector, record in fixture["records"].items():
         face = chain.face(selector)
         assert face is not None and face.id == record["font"], selector

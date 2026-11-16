@@ -1,22 +1,39 @@
-"""The Adobe-Japan1 glyphs that CHISE's descriptions name, as rows of the component tables.
+"""The Adobe-Japan1 glyphs that descriptions name, as rows of the component tables.
 
-CHISE writes a glyph of the Adobe-Japan1 collection that has no code point of its own as an
+Descriptions write a glyph of the Adobe-Japan1 collection that has no code point of its own as an
 entity, `&AJ1-01815;`: CID 1815. Adobe's kanji table says which character each CID is a glyph of:
 the kanji of JIS X 0208 it is the base glyph of, the code point the UniJIS CMap reaches it
-from, or the variation sequence registered for it. Each entity gives two rows: the entity is the CID, and the
-CID is a glyph of a character.
+from, or the variation sequence registered for it. Each CID gives a row: it is a glyph of a character.
 """
 
-import gzip
-import json
 import re
+from collections.abc import Iterable
 from pathlib import Path
 
 from . import identifiers as I
 from . import pins
-from .schema import COMPONENT_KINDS, Json
+from .schema import Json
 
-_ENTITY = re.compile(r"&AJ1-([0-9]+);")
+#: The CIDs of Adobe-Japan1 that descriptions write as an entity `&AJ1-NNNNN;`: the 164 of the
+#: component registry of ids-input at commit be70733a179085a16e48f7049b6cfec5e07f4496.
+# fmt: off
+CIDS = (
+    1148, 1189, 1227, 1245, 1276, 1341, 1384, 1394, 1405, 1445, 1455, 1480,
+    1562, 1586, 1614, 1620, 1679, 1706, 1731, 1755, 1771, 1792, 1815, 1829,
+    1866, 1885, 1925, 1939, 2014, 2062, 2067, 2089, 2109, 2115, 2116, 2164,
+    2174, 2180, 2215, 2267, 2349, 2356, 2362, 2399, 2413, 2423, 2541, 2585,
+    2653, 2665, 2686, 2708, 2755, 2761, 2873, 3011, 3071, 3080, 3126, 3180,
+    3231, 3246, 3273, 3314, 3446, 3523, 3652, 3690, 3724, 3729, 3790, 3831,
+    3910, 4017, 4110, 4209, 4215, 4216, 4270, 4307, 4312, 4319, 4352, 4376,
+    4449, 4551, 4632, 4636, 4721, 4830, 4956, 5344, 5455, 5511, 5564, 5603,
+    5786, 5807, 5916, 5917, 6205, 6233, 6323, 6479, 6608, 6773, 6885, 7006,
+    7042, 7070, 7078, 7146, 7208, 7300, 7417, 7430, 7443, 7449, 7672, 7826,
+    8403, 8425, 8598, 8627, 13342, 13365, 13698, 13701, 13763, 14417, 14521, 14542,
+    15044, 15391, 16955, 17085, 17236, 17246, 17466, 17535, 17537, 17560, 17590, 17632,
+    17729, 17810, 17839, 18030, 18056, 18113, 18194, 18400, 18448, 18690, 19346, 19486,
+    21076, 21105, 21253, 21281, 21323, 21334, 21605, 21607,
+)
+# fmt: on
 _SEQUENCE = re.compile(r"<U\+([0-9A-F]+),U\+([0-9A-F]+)>")
 _POINT = re.compile(r"U\+([0-9A-F]+)")
 
@@ -60,47 +77,28 @@ def glyph_of(fields: list[str]) -> tuple[str, str, str]:
     return target, "aj17-kanji.txt " + "; ".join(basis), kind
 
 
-def rows(entities: list[str], kanji: dict[int, list[str]]) -> list[Json]:
-    """Two rows of the component tables per entity `&AJ1-NNNNN;`: the entity is the CID (CHISE's
-    name for it), and the CID is a glyph of a character (Adobe's table)."""
+def rows(cids: Iterable[int], kanji: dict[int, list[str]]) -> list[Json]:
+    """A row of the component tables per CID: the CID is a glyph of a character (Adobe's table)."""
     out: list[Json] = []
-    for text in entities:
-        match = _ENTITY.fullmatch(text)
-        if match is None:
-            raise ValueError(f"{text} is not an Adobe-Japan1 entity.")
-        cid = int(match[1])
+    for cid in sorted(cids):
         if cid not in kanji:
             raise ValueError(f"aj17-kanji.txt has no CID {cid}.")
-        entity, glyph = I.component_of(text), I.component("aj1", str(cid))
         target, basis, _ = glyph_of(kanji[cid])
-        out.append(_row(entity, text, "same", glyph, "the entity's name gives the CID", "source", "chise"))
-        out.append(_row(glyph, "", "glyph-of", target, basis, "source", "adobe-japan1"))
+        out.append(
+            {
+                "component": I.component("aj1", str(cid)),
+                "kind": "adobe-japan1",
+                "text": "",
+                "relation": "glyph-of",
+                "target": target,
+                "basis": basis,
+                "tier": "source",
+            }
+        )
     return out
 
 
-def _row(component: str, text: str, relation: str, target: str, basis: str, tier: str, source: str) -> Json:
-    kind = COMPONENT_KINDS[I.split_component(component)[0]]
-    return {
-        "component": component,
-        "kind": kind,
-        "text": text,
-        "relation": relation,
-        "target": target,
-        "basis": basis,
-        "tier": tier,
-        "source": source,
-    }
-
-
-def entities(cache: Path | None = None) -> list[str]:
-    """The Adobe-Japan1 entities of the pinned component registry, by CID."""
-    paths = pins.source_paths(pins.source("ids-input-components"), cache, fetch=False)
-    registry = json.loads(gzip.decompress(paths["custom-components.json.gz"].read_bytes()))
-    found = [row["text"] for row in registry["components"] if _ENTITY.fullmatch(row["text"])]
-    return sorted(found, key=lambda text: int(text[5:-1]))
-
-
 def pinned(cache: Path | None = None) -> list[Json]:
-    """The rows for every Adobe-Japan1 entity of the pinned registry, from the pinned table."""
+    """The rows for every CID of `CIDS`, from the pinned table."""
     paths = pins.source_paths(pins.source("adobe-japan1"), cache, fetch=False)
-    return rows(entities(cache), table(paths["aj17-kanji.txt"]))
+    return rows(CIDS, table(paths["aj17-kanji.txt"]))
