@@ -32,6 +32,12 @@ of their own. [`licensing.md`](licensing.md) says which file is under which term
    strokes are drawn as overlapping contours; in Plangothic P1 it lowers it in 28 and in Jigmo2 in 33.
    A piece is always a union of whole raw contours, so every existing cut can be written as a set
    of contour indices, and han-compose can cut inside a piece the ids-input cutters must refuse.
+   The variable faces keep strokes as separate overlapping contours, as interpolation needs. At
+   `wght` 400 (measured 2026-11-16): Noto Sans CJK JP draws 十 as two 4-point contours, 山 as four,
+   土 as three, 社 as eight (礻 five, 土 three), and fuses only some corner joins (口 is an 8-point
+   ㇑ and ㇕ and a 4-point ㇐); Noto Serif CJK JP keeps even those apart (口 is 4, 13 and 13
+   points). In these faces a contour is almost always one stroke or part of one, and v0.1.0's
+   dealing at piece grain merged that away.
 3. **The export's host entry mixes neutral facts with composer-specific ones.** Host, operator,
    operand index, box, frame, gap and contour set are facts about the cut. Rank `r`, sibling ink
    `si`, `v`, `j`, the 71 shape features `f` and the usual boxes `u` belong to one layout model
@@ -110,7 +116,9 @@ All identifiers are strings, stable across rebuilds while their inputs are uncha
 `glyphwiki@20261115` for the GlyphWiki dump of that date. Each face of a collection is a font with a
 slug of its own. The registry row holds file name, URL, SHA-256, name-table version string,
 instance, units per em, licence, copyright line, reserved font names, style (`sans`, `serif`,
-`kaisho`, `fangsong`) and design. GlyphWiki's row holds the dump's address, date and digest and the
+`kaisho`, `fangsong`), design and grain. The instance is pinned: `wght` 400. The fvar default is
+100 in Noto Sans CJK JP and 200 in Noto Serif CJK JP, so a reader that takes the default draws a
+lighter glyph; a variable font has the same contours in the same order at every instance. GlyphWiki's row holds the dump's address, date and digest and the
 KAGE engine's commit instead of a font file.
 
 **Design** — a slug: `source-han-sans`, `plangothic`, `source-han-serif`, `glyphwiki`, `ipamj`,
@@ -289,6 +297,12 @@ A reading holds:
   cut), `kanjivg` (along KanjiVG groups), `hand` (a person chose the contours). With tool name,
   version and commit, and `grain` (`piece` or `contour`).
 - `complete`: every contour claimed and every leaf present.
+
+**Grain.** A font's registry row names the grain its cutters work at. The variable Source Han
+faces and GlyphWiki's drawing are cut at `contour` grain: contours are assigned to nodes and
+overlapping contours are never united into pieces first. Pieces serve the fonts whose contours are
+already merged: static faces with overlaps removed, Plangothic and BabelStone Han PUA, at `piece`
+grain. Pieces are written for every glyph either way.
 - `evidence` for the reading as a whole: `likeness`, `margin`, `redrawn`, `tried`.
 - `cuts`: one per labelled node. Inner nodes are not stored where their contour set is the union of
   their children's.
@@ -449,7 +463,9 @@ type and its ink. Two inputs give it.
   the stroke's outline is that group, and the placed components say which component it belongs
   to. These strokes are tier `source` and are the reference the
   other method is measured against.
-- **Font outlines.** KanjiVG's centrelines say which contours a stroke runs through: han-compose's
+- **Font outlines.** In the variable Source Han faces this is mostly assigning contours to
+  strokes, since a contour is almost always one stroke or part of one (finding 2). KanjiVG's
+  centrelines say which contours a stroke runs through: han-compose's
   `Cutter.owners` and `groups` in `kanjivg_cuts.py` (han-compose PR #40, 2026-10-29) map each
   contour to the strokes whose centrelines run inside it and mark contours two strokes share. A
   stroke that owns whole contours is lifted as those contours, an index set like any cut. Contours
@@ -457,8 +473,13 @@ type and its ink. Two inputs give it.
   methods tried on 25 donor glyphs (run 2026-11-02), which tiled all 2,220 山 instances into
   ㇑㇄㇑ with area 1.0 and overlap 0; and by the scanline graft, which cuts a fused contour along a
   scanline at the same places in both masters (ids-input `docs/enclosure-graft.md`, PR #512,
-  2026-11-05). The lab code is kept on this repository's branch `feat/stroke-lab` under
-  `lab/strokes/`.
+  2026-11-05). Seams are needed only for fused contours, such as Noto Sans's corner joins. The
+  lab code is kept on this repository's branch `feat/stroke-lab` under `lab/strokes/`.
+- **The weight axis, to try.** A variable font draws each point at its `wght` masters (100 and 900
+  in Noto Sans CJK JP, 200 and 900 in Noto Serif CJK JP). Points on a stroke's two edges move apart
+  along that stroke's normal as the weight grows, so the points of a fused contour should cluster
+  by stroke direction, and the clusters say where the seam runs. This is a method to try; it has
+  not been measured.
 
 A stroke cut at a seam is new geometry: it is written as an outline of its own beside the contour
 indices it came from, under the font's licence, in stroke files per font (`format.md` 4.5). The neck cut leaves
@@ -750,10 +771,12 @@ chains; the viewer and its deployment.
   strokes lifted.
 - 14.3 The neck cut and the scanline graft moved from `feat/stroke-lab` for shared contours;
   stroke files in the format.
-- 14.4 Stroke cuts scored against GlyphWiki strokes; stroke review in the viewer.
-- 14.5 The stroke level of drawn IDS, written from the stroke layer where a glyph has one.
+- 14.4 The weight-axis method tried on the fused contours of Noto Sans CJK JP and measured against
+  the neck cut.
+- 14.5 Stroke cuts scored against GlyphWiki strokes; stroke review in the viewer.
+- 14.6 The stroke level of drawn IDS, written from the stroke layer where a glyph has one.
 
-**Later** — dealing at contour grain inside fused pieces of the variable faces; hand forms;
+**Later** — hand forms;
 hosted verdicts; more designs (kaisho, fangsong); publishing the JavaScript
 reader to npm.
 

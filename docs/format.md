@@ -180,7 +180,7 @@ other file is under CC0-1.0, and `LICENSES/` holds the licence texts.
 | `sha256` | yes | Digest of the font file. |
 | `archive` | | `{sha256, member}`: digest of the archive that `url` and the mirrors serve, and the member that is the font. |
 | `index` | | The face's index when the file is a collection. |
-| `instance` | | Axis values the outlines are read at: `{"wght": 400}`. |
+| `instance` | | Axis values the outlines are read at: `{"wght": 400}`. Required for a variable font, whose fvar default (100 in Noto Sans CJK JP, 200 in Noto Serif CJK JP) is not read. |
 | `upem` | yes | The font's units per em. |
 | `licence` | yes | SPDX expression. |
 | `licenceEvidence` | | Where the font states its terms. |
@@ -189,6 +189,7 @@ other file is under CC0-1.0, and `LICENSES/` holds the licence texts.
 | `reservedNames` | | Reserved Font Names. |
 | `style` | yes | `sans`, `serif`, `kaisho`, `fangsong` or `other`. |
 | `design` | yes | Design identifier. |
+| `grain` | yes | `contour` when the cutters assign single contours (a variable font, GlyphWiki), `piece` when they assign pieces (a font with its overlaps merged). |
 
 GlyphWiki is one font, `glyphwiki@<YYYYMMDD>` after the date of the dump read: its `url` and
 `sha256` are the dump's, `mirrors` names the copy this repository keeps as a release asset,
