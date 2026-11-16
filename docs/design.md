@@ -321,14 +321,16 @@ of type-99 lines places one component glyph per line in a box; the placed glyph'
 style (`u793b-01` is 礻's left form); counting the strokes each type-99 line expands to gives the
 range of strokes, and so of contours, that the placed glyph draws, which is its cut, exactly. The
 reading's operands are matched to the placed components in reading order by class, through each
-placed glyph's `related` code point. The division's tier is `source` (GlyphWiki's editors drew it);
+placed glyph's name: `u793b-01` is a glyph of U+793B, its code point in the name before the first
+hyphen. GlyphWiki's `related` field is not used, since it can hold 〓 (U+3013), as it does for
+`u793e` and `u4eba-01`. The division's tier is `source` (GlyphWiki's editors drew it);
 the match to the structure is `machine`. Limits:
 
 - Boxes overlap (礻 0–180, 土 64–197), so a box is no ink boundary; the strokes are.
 - A glyph drawn as strokes alone has no division, and its reading falls to the outline cutters,
   which work on its stroke contours.
-- A placed glyph whose `related` field names no code point is matched only through its own
-  division.
+- A placed glyph whose name holds no code point (`cdp-…`, `koseki-…`) is matched only through its
+  own division.
 - It labels the `glyphwiki` design. Its cuts serve the other designs as style references and as a
   check of the outline cutters, and its strokes are the first stroke layer.
 
