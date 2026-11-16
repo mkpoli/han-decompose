@@ -1,5 +1,6 @@
 import gzip
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -123,6 +124,12 @@ def test_a_character_the_component_does_not_reach_is_not_attempted() -> None:
     assert list(survey.survey(found, drawings, "口", only="仙")) == []
 
 
+def as_written(tree: str) -> str:
+    """A tree with its components as the sources write them, which is how ids-input's survey has
+    them: `{42}` for `&bsp:42;` and `&CDP-8958;` for `&chise:CDP-8958;`."""
+    return re.sub(r"&chise:([^&;]+);", r"&\1;", re.sub(r"&bsp:([0-9]+);", r"{\1}", tree))
+
+
 def reference(target: str) -> dict[str, tuple[str, int, list[tuple[int, float, float, float]]]]:
     out = {}
     for line in gzip.decompress((FIXTURES / f"{target}.tsv.gz").read_bytes()).decode("utf-8").splitlines()[1:]:
@@ -153,7 +160,7 @@ def test_the_survey_of_ids_input_reproduces(target: str) -> None:
                 )
                 for cut in found
             )
-            mine[outcome.char] = (outcome.readings[0]["tree"], outcome.opened, rows)
+            mine[outcome.char] = (as_written(outcome.readings[0]["tree"]), outcome.opened, rows)
     assert "".join(sorted(set(wanted) - set(mine))) == expected["lost"]
     assert "".join(sorted(set(mine) - set(wanted))) == expected["gained"]
     differ = []
