@@ -7,7 +7,7 @@ import { loadEngine } from "./engine.ts";
  * Reads glyph names (one per line) from stdin or `--list FILE` and writes one JSON line per glyph:
  * the drawing, or {name, error: {reason, message}}.
  *
- *   bun packages/kage/src/cli.ts --dump dump_newest_only.txt [--engine DIR] [--list FILE]
+ *   bun packages/kage/src/cli.ts --dump dump_newest_only.txt [--dump versions.txt] [--engine DIR] [--list FILE]
  */
 const args = process.argv.slice(2);
 const option = (flag: string): string | undefined => {
@@ -15,9 +15,9 @@ const option = (flag: string): string | undefined => {
   return i >= 0 ? args[i + 1] : undefined;
 };
 
-const dumpPath = option("--dump");
-if (!dumpPath) {
-  console.error("usage: cli.ts --dump DUMP [--engine DIR] [--list FILE]  (names on stdin)");
+const dumps = args.flatMap((a, i) => (a === "--dump" && args[i + 1] ? [args[i + 1] as string] : []));
+if (dumps.length === 0) {
+  console.error("usage: cli.ts --dump DUMP [--dump MORE] [--engine DIR] [--list FILE]  (names on stdin)");
   process.exit(2);
 }
 const list = option("--list");
@@ -25,7 +25,7 @@ const input = list ? readFileSync(list, "utf8") : await Bun.stdin.text();
 const names = input.split("\n").map((s) => s.trim()).filter((s) => s !== "");
 
 const engine = loadEngine(option("--engine"));
-const glyphs = await readDump(dumpPath);
+const glyphs = await readDump(...dumps);
 
 const out: string[] = [];
 const flush = () => {

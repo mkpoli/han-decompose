@@ -28,6 +28,8 @@ from han_decompose.schema import Json
 
 DUMP_URL = "https://glyphwiki.org/dump.tar.gz"
 DUMP_MEMBER = "dump_newest_only.txt"
+VERSIONS_MEMBER = "dump_all_versions.txt"
+VERSIONS_USED = "versions_used.txt"
 KAGE_CLI = Path(__file__).resolve().parents[2] / "packages" / "kage" / "src" / "cli.ts"
 UPEM = 200
 
@@ -61,6 +63,41 @@ def read_dump(path: Path) -> dict[str, str]:
     return glyphs
 
 
+def pinned_versions(glyphs: dict[str, str]) -> set[str]:
+    """Names of the form `u5927-04@2` that glyph data places: a version of a glyph, which the
+    newest-only dump does not hold."""
+    wanted: set[str] = set()
+    for data in glyphs.values():
+        if "@" not in data:
+            continue
+        for line in data.split("$"):
+            columns = line.split(":")
+            if columns[0] == "99" and len(columns) > 7 and "@" in columns[7]:
+                wanted.add(columns[7])
+    return wanted
+
+
+def extract_versions(all_versions: Path, newest: dict[str, str], out: Path) -> int:
+    """Write the versions that glyph data pins, and those they pin in turn, to `out` in the dump's
+    layout. `dump_all_versions.txt` names a version `name\\@N`; the data places it as `name@N`."""
+    found: dict[str, str] = {}
+    wanted = pinned_versions(newest)
+    while pending := wanted - found.keys():
+        before = len(found)
+        with all_versions.open(encoding="utf-8") as lines:
+            for line in lines:
+                row = parse_dump_line(line)
+                if row is not None and (name := row[0].replace("\\@", "@")) in pending:
+                    found[name] = row[1]
+        if len(found) == before:
+            break  # what is left is not in the dump
+        wanted |= pinned_versions(found)
+    with out.open("w", encoding="utf-8") as sink:
+        for name in sorted(found):
+            sink.write(f" {name} | | {found[name]}\n")
+    return len(found)
+
+
 @dataclass(frozen=True)
 class Dump:
     path: Path
@@ -69,6 +106,11 @@ class Dump:
     sha256: str
     modified: str
     """The archive's Last-Modified, in GMT, as an ISO time."""
+
+    @property
+    def versions(self) -> Path:
+        """The versions the glyph data pins (`u5927-04@2`), which `path` lacks."""
+        return self.path.with_name(VERSIONS_USED)
 
     @property
     def date(self) -> str:
@@ -81,7 +123,7 @@ def fetch_dump(cache: Path | None = None, url: str = DUMP_URL) -> Dump:
     folder = cache_dir(cache)
     record = folder / "dump.json"
     member = folder / "dump" / DUMP_MEMBER
-    if record.exists() and member.exists():
+    if record.exists() and member.exists() and member.with_name(VERSIONS_USED).exists():
         row = json.loads(record.read_text(encoding="utf-8"))
         return Dump(member, row["url"], row["size"], row["sha256"], row["modified"])
     folder.mkdir(parents=True, exist_ok=True)
@@ -97,8 +139,11 @@ def fetch_dump(cache: Path | None = None, url: str = DUMP_URL) -> Dump:
     (folder / "dump").mkdir(exist_ok=True)
     with tarfile.open(archive) as tar:
         tar.extract(tar.getmember(DUMP_MEMBER), folder / "dump", filter="data")
-        for extra in ("LICENSE.txt", "README_en.txt"):
+        for extra in ("LICENSE.txt", "README_en.txt", VERSIONS_MEMBER):
             tar.extract(tar.getmember(extra), folder / "dump", filter="data")
+    all_versions = folder / "dump" / VERSIONS_MEMBER
+    extract_versions(all_versions, read_dump(member), member.with_name(VERSIONS_USED))
+    all_versions.unlink()
     row = {
         "url": url,
         "size": archive.stat().st_size,
@@ -244,16 +289,18 @@ def parse_drawing(row: Json) -> Drawing:
 
 
 def _bun() -> str:
-    found = shutil.which("bun")
+    found = shutil.which("bun") or shutil.which("bun", path=str(Path.home() / ".bun" / "bin"))
     if found is None:
         raise RuntimeError("bun is needed to run the KAGE engine")
     return found
 
 
-def draw_rows(names: Iterable[str], dump: Path, workers: int = 1) -> Iterator[Json]:
+def draw_rows(names: Iterable[str], dump: Path | Dump, workers: int = 1) -> Iterator[Json]:
     """JSON rows from `packages/kage`, one per name: a drawing, or `{name, error}`. At most 4 workers."""
     names = list(names)
     workers = max(1, min(workers, 4, len(names)))
+    files = [dump.path, dump.versions] if isinstance(dump, Dump) else [dump]
+    dump_args = [arg for f in files if f.exists() for arg in ("--dump", str(f))]
     with tempfile.TemporaryDirectory() as tmp:
         procs: list[subprocess.Popen[str]] = []
         for k in range(workers):
@@ -261,7 +308,7 @@ def draw_rows(names: Iterable[str], dump: Path, workers: int = 1) -> Iterator[Js
             part.write_text("\n".join(names[k::workers]) + "\n", encoding="utf-8")
             procs.append(
                 subprocess.Popen(
-                    [_bun(), str(KAGE_CLI), "--dump", str(dump), "--list", str(part)],
+                    [_bun(), str(KAGE_CLI), *dump_args, "--list", str(part)],
                     stdout=subprocess.PIPE,
                     text=True,
                     encoding="utf-8",
@@ -303,8 +350,8 @@ def _merge(procs: list[subprocess.Popen[str]]) -> Iterator[Json]:
             yield json.loads(line)
 
 
-def draw(names: Iterable[str], dump: Path, workers: int = 1) -> Iterator[Drawing | Failure]:
-    """The drawings of `names`, read from `dump` (the dump's text file)."""
+def draw(names: Iterable[str], dump: Path | Dump, workers: int = 1) -> Iterator[Drawing | Failure]:
+    """The drawings of `names`, read from the dump: its text file, or a `Dump` with the pinned versions."""
     for row in draw_rows(names, dump, workers):
         if "error" in row:
             yield Failure(row["name"], row["error"]["reason"], row["error"]["message"])
@@ -329,7 +376,7 @@ def batch(output: Path, dump: Dump, workers: int = 4) -> BatchResult:
     names = sorted(cjk_names(read_dump(dump.path)))
     result = BatchResult()
     with gzip.open(output, "wt", encoding="utf-8", compresslevel=6) as out:
-        for row in draw_rows(names, dump.path, workers):
+        for row in draw_rows(names, dump, workers):
             if "error" in row:
                 reason = row["error"]["reason"]
                 result.failures[reason] = result.failures.get(reason, 0) + 1

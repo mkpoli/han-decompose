@@ -4,12 +4,13 @@ import pytest
 
 from han_decompose import glyphwiki as gw
 
-DUMP = Path(__file__).parent / "fixtures" / "glyphwiki" / "dump.txt"
+FIXTURES = Path(__file__).parent / "fixtures" / "glyphwiki"
+DUMP = FIXTURES / "dump.txt"
 
 
 def test_dump_is_read_as_name_to_data() -> None:
     glyphs = gw.read_dump(DUMP)
-    assert len(glyphs) == 10
+    assert len(glyphs) == 15
     assert glyphs["u793e-j"] == "99:0:0:0:0:180:200:u793b-01$99:0:0:64:0:197:200:u571f-j"
     assert "name" not in glyphs
 
@@ -95,3 +96,32 @@ def test_ivs_glyph_places_its_form_components() -> None:
     (drawing,) = gw.draw(["u845b-ue0100"], DUMP)
     assert isinstance(drawing, gw.Drawing)
     assert [p.glyph for p in drawing.leaves()] == ["u8279-03", "u66f7-var-002"]
+
+
+def test_pinned_versions_are_found_in_the_data() -> None:
+    assert gw.pinned_versions(gw.read_dump(DUMP)) == {"u458d-j@3"}
+
+
+def test_a_pinned_version_is_read_from_the_versions_file() -> None:
+    dump = gw.Dump(DUMP, gw.DUMP_URL, 0, "", "2026-11-15T17:01:31Z")
+    assert dump.versions.name == "versions_used.txt"
+    (without,) = gw.draw(["u235b3"], DUMP)
+    assert isinstance(without, gw.Drawing)
+    assert without.missing == ("u458d-j@3",)
+    assert [p.glyph for p in without.leaves()] == ["u6728-01"]
+    (with_versions,) = gw.draw(["u235b3"], dump)
+    assert isinstance(with_versions, gw.Drawing)
+    assert with_versions.missing == ()
+    assert [p.glyph for p in with_versions.leaves()] == ["u6728-01", "u864d-05"]
+
+
+def test_versions_are_extracted_from_the_all_versions_dump(tmp_path: Path) -> None:
+    all_versions = tmp_path / "all.txt"
+    all_versions.write_text(
+        " name | related | data\n u458d-j\\@2 | | 1:0:0:1:1:2:2\n u458d-j\\@3 | | 99:0:0:0:0:200:200:u458d\n"
+        " u458d\\@1 | | 1:0:0:3:3:4:4\n",
+        encoding="utf-8",
+    )
+    out = tmp_path / "used.txt"
+    assert gw.extract_versions(all_versions, gw.read_dump(DUMP), out) == 1
+    assert gw.read_dump(out) == {"u458d-j@3": "99:0:0:0:0:200:200:u458d"}

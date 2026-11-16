@@ -12,9 +12,14 @@ export function parseDumpLine(line: string): [name: string, data: string] | null
   return [name, line.slice(j + 1).trim()];
 }
 
-/** Reads the dump into name → KAGE data; `related` is not read. */
-export async function readDump(path: string): Promise<Map<string, string>> {
+/** Reads dump files into name → KAGE data; `related` is not read. Later files add to earlier ones. */
+export async function readDump(...paths: string[]): Promise<Map<string, string>> {
   const glyphs = new Map<string, string>();
+  for (const path of paths) await readInto(glyphs, path);
+  return glyphs;
+}
+
+async function readInto(glyphs: Map<string, string>, path: string): Promise<void> {
   const decoder = new TextDecoder();
   let rest = "";
   const take = (line: string) => {
@@ -27,5 +32,4 @@ export async function readDump(path: string): Promise<Map<string, string>> {
     for (const line of lines) take(line);
   }
   take(rest + decoder.decode());
-  return glyphs;
 }

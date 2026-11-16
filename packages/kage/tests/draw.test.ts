@@ -9,7 +9,7 @@ const glyphs = await readDump(new URL("../../../tests/fixtures/glyphwiki/dump.tx
 test("reads name to data and skips header, rule and count", () => {
   expect(glyphs.get("u793e-j")).toBe("99:0:0:0:0:180:200:u793b-01$99:0:0:64:0:197:200:u571f-j");
   expect(glyphs.has("name")).toBe(false);
-  expect(glyphs.size).toBe(10);
+  expect(glyphs.size).toBe(15);
 });
 
 test("社 resolves through its alias to the placements of 礻 and 土", () => {
