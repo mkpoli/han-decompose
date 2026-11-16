@@ -566,33 +566,33 @@ cutters reproduce ids-input's cuts and is rerun in phase 9.
 
 ```mermaid
 flowchart LR
-  pins["pins: fonts, designs, sources"] --> fetch["han-decompose fetch"]
-  corpus["candidates"] --> structures["structures and classes"]
-  fetch --> outlines["outlines"]
-  glyphwiki["GlyphWiki dump"] --> render["KAGE drawing"]
-  render --> outlines
-  render --> kage["cut: kage"]
-  outlines --> deal["cut: deal"]
-  outlines --> lift["cut: lift"]
-  structures --> deal
-  structures --> lift
-  structures --> kage
-  export["composer export"] --> imp["import: axis, kanjivg"]
-  deal --> gate["gates"]
-  lift --> gate
-  kage --> gate
-  imp --> gate
-  verdicts["review/verdicts.tsv"] --> gate
-  gate --> styles["styles"]
-  styles --> drawn["drawn IDS"]
-  drawn --> index["library index per design"]
-  index --> out["release builder"]
-  out --> check["check"]
-  check --> release["GitHub Release"]
-  drawn --> strokes["stroke layer"]
-  strokes --> index
-  release --> site["viewer"]
-  release --> consumers["han-compose, ids-input"]
+  N1["pins: fonts, designs, sources"] --> N2["han-decompose fetch"]
+  N3["candidates"] --> N4["structures and classes"]
+  N2 --> N5["outlines"]
+  N6["GlyphWiki dump"] --> N7["KAGE drawing"]
+  N7 --> N5
+  N7 --> N8["cut: kage"]
+  N5 --> N9["cut: deal"]
+  N5 --> N10["cut: lift"]
+  N4 --> N9
+  N4 --> N10
+  N4 --> N8
+  N11["composer export"] --> N12["import: axis, kanjivg"]
+  N9 --> N13["gates"]
+  N10 --> N13
+  N8 --> N13
+  N12 --> N13
+  N14["review/verdicts.tsv"] --> N13
+  N13 --> N15["styles"]
+  N15 --> N16["drawn IDS"]
+  N16 --> N17["library index per design"]
+  N17 --> N18["release builder"]
+  N18 --> N19["check"]
+  N19 --> N20["GitHub Release"]
+  N16 --> N21["stroke layer"]
+  N21 --> N17
+  N20 --> N22["viewer"]
+  N20 --> N23["han-compose, ids-input"]
 ```
 
 ### 5.3 What moves, what stays
