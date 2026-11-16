@@ -1,11 +1,10 @@
 import gzip
 import json
-import re
 from pathlib import Path
 
 import pytest
 
-from han_decompose import descriptions, ids, pins
+from han_decompose import classes, descriptions, ids, pins, structures
 from han_decompose import identifiers as I
 from han_decompose.cutters import reading, survey
 from han_decompose.descriptions import Table
@@ -124,10 +123,14 @@ def test_a_character_the_component_does_not_reach_is_not_attempted() -> None:
     assert list(survey.survey(found, drawings, "口", only="仙")) == []
 
 
-def as_written(tree: str) -> str:
-    """A tree with its components as the sources write them, which is how ids-input's survey has
-    them: `{42}` for `&bsp:42;` and `&CDP-8958;` for `&chise:CDP-8958;`."""
-    return re.sub(r"&chise:([^&;]+);", r"&\1;", re.sub(r"&bsp:([0-9]+);", r"{\1}", tree))
+def canonical(tree: str) -> str:
+    """A tree as ids-input's survey wrote it (`{42}` and `&CDP-8958;`) as the structure level writes
+    it, with the corpus's identifiers and the classes' canonical members: 亻 at the left is 人."""
+    named, _ = descriptions.name_components(tree, descriptions.corpus_names())
+    try:
+        return structures.text(structures.Reader(classes.pinned()).canonical(structures.tree(ids.parse(named))))
+    except ValueError:
+        return tree
 
 
 def reference(target: str) -> dict[str, tuple[str, int, list[tuple[int, float, float, float]]]]:
@@ -142,11 +145,11 @@ def reference(target: str) -> dict[str, tuple[str, int, list[tuple[int, float, f
 @pytest.mark.reproduction
 @pytest.mark.parametrize("target", ["山", "口"])
 def test_the_survey_of_ids_input_reproduces(target: str) -> None:
-    """Every character of ids-input's survey has the same reading here: the same tree, the same
-    depth and, for each instance, the same three scores. `expected.json` names the characters
-    that differ, each for a reason `docs/reproduction.md` gives."""
+    """Every character of ids-input's survey has the same reading here: the same tree, written as
+    a structure, the same depth and, for each instance, the same three scores. `expected.json`
+    names the characters that differ, each for a reason `docs/reproduction.md` gives."""
     pinned()
-    wanted = reference(target)
+    wanted = {char: (canonical(tree), opened, rows) for char, (tree, opened, rows) in reference(target).items()}
     expected = json.loads((FIXTURES / "expected.json").read_text(encoding="utf-8"))[target]
     mine = {}
     for outcome in survey.run(target):
@@ -160,7 +163,7 @@ def test_the_survey_of_ids_input_reproduces(target: str) -> None:
                 )
                 for cut in found
             )
-            mine[outcome.char] = (as_written(outcome.readings[0]["tree"]), outcome.opened, rows)
+            mine[outcome.char] = (canonical(outcome.readings[0]["tree"]), outcome.opened, rows)
     assert "".join(sorted(set(wanted) - set(mine))) == expected["lost"]
     assert "".join(sorted(set(mine) - set(wanted))) == expected["gained"]
     differ = []

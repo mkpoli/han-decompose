@@ -6,6 +6,45 @@ fonts and the same descriptions, and only then changed. This page records how cl
 `uv run pytest -m reproduction` runs the surveys again and holds them against
 `tests/fixtures/survey/`; it takes minutes and needs the pinned fonts and tables in the cache.
 
+## Cutting from the corpus
+
+The tables below were first measured with BabelStone's or CHISE's first description of each
+character. The cutters now read every character's canonical structures from ids-input's corpus
+(`docs/format.md`, 2.6), the first structure of a character being the one the survey cuts, and the
+reproduction tests compare the trees of ids-input's survey as structures: `⿰亻山` is `⿰人山`.
+`expected.json` holds the characters and components that differ from ids-input's files. The
+sections after this one record the earlier reading, in which the surveys used BabelStone's
+descriptions alone and the lifts CHISE's.
+
+Before components are compared with every member of their class, a glyph that draws 亻, 扌 or 氵
+is compared with 人, 手 or 水, so the numbers in this section are lower than they will be once
+classes are used.
+
+| | Attempted | Characters with the component | Instances |
+|---|---|---|---|
+| 山, ids-input | 2,926 | 2,150 | 2,220 |
+| 山, canonical structures | 3,114 | 2,146 | 2,217 |
+| 口, ids-input | 26,446 | 4,731 | 5,033 |
+| 口, canonical structures | 29,843 | 4,319 | 4,636 |
+
+| | Entities | Library cuts |
+|---|---|---|
+| Sans forms, ids-input | 446 | 353 |
+| Sans forms, canonical structures | 403 | 267 |
+
+The characters that differ from ids-input's survey, by what differs:
+
+- **Gained, 156 of 山 and 328 of 口.** Characters BabelStone does not describe, which the corpus
+  does through CHISE and zi.tools (the whole of Extension I among them), and characters whose first
+  structure now closes where BabelStone's did not.
+- **Lost, 160 of 山 and 740 of 口.** A part that a glyph draws as 亻, 扌 or 氵 is compared with the
+  canonical 人, 手 or 水 and falls under the floor of likeness (仙, 催, 汕); a character whose first
+  structure in the corpus is another than BabelStone's (炭 is `⿸屵火` first); a chain that flattens
+  into a three-way division the glyph's pieces do not follow.
+- **Differ.** The same character read with the same instances at another depth, because a part
+  that spells a character (`⿱山王`) is that character and is opened into its parts one level down,
+  or with another tree, because the first structure of the corpus is not BabelStone's.
+
 ## Two grains
 
 ids-input cuts along the outlines that are left once a glyph's overlapping contours are merged.
