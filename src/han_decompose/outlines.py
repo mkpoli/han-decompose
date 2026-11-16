@@ -11,11 +11,11 @@ from collections.abc import Iterator, Sequence
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 
 from . import identifiers as I
 from .outline import Face
-from .pieces import Drawing
+from .pieces import Drawing, Glyph
 from .schema import Json
 from .store import compressed, dumps, outline_head
 
@@ -34,6 +34,15 @@ class Block:
     kept: bool = False
 
 
+class Source(Protocol):
+    """What the writer reads a font's glyphs from: a font's drawing, or GlyphWiki's."""
+
+    id: str
+    kept: dict[Any, Any]
+
+    def glyph(self, selector: str) -> Glyph | None: ...
+
+
 def blocks_of(selectors: Sequence[str]) -> dict[str, list[str]]:
     """Selectors by the block of their file, each block in the order glyphs are written."""
     out: dict[str, list[str]] = {}
@@ -42,7 +51,7 @@ def blocks_of(selectors: Sequence[str]) -> dict[str, list[str]]:
     return out
 
 
-def write_block(drawing: Drawing, block: str, selectors: Sequence[str], out: Path, row: Json | None = None) -> Block:
+def write_block(drawing: Source, block: str, selectors: Sequence[str], out: Path, row: Json | None = None) -> Block:
     """One block's outline file under `out`, unless it is there or no glyph of the block draws
     anything. A glyph that draws nothing has no record; a glyph that cannot be read is reported and
     left out."""
