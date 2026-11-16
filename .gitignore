@@ -8,3 +8,4 @@ __pycache__/
 /dist/
 node_modules/
 /packages/*/dist/
+/lab/strokes/donor/donor-strokes-lab.json
