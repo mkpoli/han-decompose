@@ -65,8 +65,10 @@ have no leading zero.
 Structures and drawn IDS are written in ids-input's IDS extension: the grammar of ids-input's
 `data/baishi-ids.ebnf` (zi.tools' notation) with a variation selector allowed after a component
 character and an entity token `&…;` allowed as a component. A component is written as its
-character. A component no code point names is one token between `&` and `;`: its own IDS where one
-is known (`&⿸⿹丅丿丨;`), else its identifier in ids-input's component ledger (`&X-00777;`).
+character. A component no code point names is one token between `&` and `;`: the identifier the
+ids-corpus gives it (`&bsp:42;` for BabelStone's numbered component `{42}`, `&chise:CDP-8958;` for a
+CHISE entity), its own IDS where one is known (`&⿸⿹丅丿丨;`), else its identifier in ids-input's
+component ledger (`&X-00777;`).
 Inside the token the IDS is one leaf, so `⿰&⿸⿹丅丿丨;土` has two operands.
 
 Each level of a drawn IDS uses part of the notation:
@@ -87,6 +89,8 @@ A variation selector a level writes stays in its text, its hash and its tree.
 |---|---|---|---|
 | character | `u:5C71`, `u:845B.E0100` | 山 | Code point in hex, with a variation selector after a dot. |
 | subtree | `ids:⿸⿹丅丿丨` | `&⿸⿹丅丿丨;` | The component's IDS, starting with its operator. |
+| numbered component | `bsp:42` | `&bsp:42;` | BabelStone's `{42}`: the number the ids-corpus gives it. |
+| entity | `chise:CDP-8958` | `&chise:CDP-8958;` | A CHISE entity, by the name the ids-corpus gives it. |
 | ledger | `x:X-00777` | `&X-00777;` | The ledger identifier. |
 | UCV form | `ucv:8a.2` | `烕q008a2` | The IRG UCV entry and the form's position in it. |
 | Adobe-Japan1 glyph | `aj1:1815` | — | The CID. |
@@ -237,7 +241,8 @@ A glyph:
 A contour closes with a straight line from its last point to its first. Where the font closes it
 with a curve, that curve's end point repeats the first point. Curves are kept as the font has them.
 
-Only glyphs that a reading, a skipped attempt or a reference names are written.
+An outline file holds every glyph its font maps, by code point and variation sequence, so that a
+reader can draw any character the font has. A glyph that draws no ink has no record.
 
 ### 4.3 Cut files
 
@@ -256,10 +261,11 @@ A drawn IDS:
 
 | Property | Required | Value |
 |---|---|---|
-| `structure` | yes | Structure identifier and `text`, the canonical tree (2.6): `⿰示土`. |
+| `structure` | yes | Structure identifier (2.6). |
+| `text` | yes | The canonical tree the identifier names: `⿰示土`. |
 | `form` | yes | The structure with each component written as the form its cut's style names, opened layers in place: `⿰礻土`. |
 | `stroke` | | The form with every stroke-level difference the stroke layer shows, and `strokeTier` (`machine` or `reviewed`). Absent where the glyph has no stroke layer. |
-| `readings` | yes | The readings it is written from, as their layer steps. |
+| `readings` | yes | The readings it is written from: for each, its `layer` (the steps from the glyph to the cut it divides; empty for the glyph's own), the glyph's first. |
 | `tier` | yes | Of the form level: `machine`, or `reviewed` when every style in it is. |
 | `first` | yes | Whether the viewer shows it first for the glyph: the reviewer's pick, else the best evidence. |
 
@@ -334,6 +340,7 @@ A skipped attempt holds `subject`, `glyph` when a font draws the subject, `layer
 | `unlike-whole` | The operands, each drawn where its pieces sit, do not come out as the glyph. |
 | `unreadable-description` | The candidate does not read as a tree. |
 | `unlike-division` | GlyphWiki's placed components do not match the structure's operands. |
+| `unnamed-component` | The description names a component the corpus gives no identifier: a stroke chain, or an entity it does not hold. |
 
 ### 4.4 Form and library files
 
@@ -359,13 +366,14 @@ subtraction that several components share is read once, under the first of them.
 ### 4.5 Stroke files
 
 `strokes/<font>/<block>.json.gz`, `format` `han-decompose/strokes@2.0`: `font`, `licence` and
-`copyright` as in the outline file, and `glyphs`, selector → the strokes of each leaf cut.
+`copyright` as in the outline file, and `glyphs`, selector → a list with one entry for each leaf cut of
+that glyph whose strokes are given.
 
 | Property | Required | Value |
 |---|---|---|
 | `cut` | yes | The leaf cut the strokes divide. |
 | `strokes` | yes | In writing order, each with `type` (a CJK stroke character such as ㇑, or the KAGE line type for a GlyphWiki glyph), `method` (`kage`, `lift`, `neck` or `graft`), `contours` (the indices it covers) and `tier` (`source` for `kage`, else `machine` or `reviewed`). |
-| `outline` | | Per stroke cut at a seam: its own contours, `[commands, points]` as in 4.2. |
+| `outline` | | Per stroke cut at a seam, by the stroke's index in `strokes` (a decimal string): its own contours, each `[commands, points]` as in 4.2. |
 
 A stroke file holds outline geometry wherever a stroke is cut at a seam, so it is under the font's
 licence, as the outline files are.
@@ -444,7 +452,7 @@ class. Components without a row are compared as themselves.
 | Column | Value |
 |---|---|
 | `component` | Component reference. |
-| `kind` | By the reference's kind: `character` (`u`), `subtree` (`ids`), `ledger` (`x`) or `adobe-japan1` (`aj1`). |
+| `kind` | By the reference's kind: `character` (`u`), `subtree` (`ids`), `ledger` (`x`), `numbered` (`bsp`), `entity` (`chise`) or `adobe-japan1` (`aj1`). |
 | `text` | The component as written (2.4); empty for an Adobe-Japan1 glyph. |
 | `relation` | `glyph-of` (a glyph of a character) or `equivalent` (the same shape under another reference). |
 | `target` | The other component. |
@@ -476,3 +484,19 @@ under GlyphWiki's licence. Every other file is under CC0-1.0.
 The outline is the font's. A division is `source` (GlyphWiki's), `machine`, `reviewed` or `hand`;
 a style is `source`, `machine` or `reviewed`; a class row is `source`, `derived` or `editorial`; a
 relation is `source` or `derived`. Nothing derived is presented as attested.
+
+## 8. The input registry
+
+`pins/sources.json`, `format` `han-decompose/sources@2.0`, is not part of a release; it pins the
+tables a build reads. `sources` lists one object per input:
+
+| Property | Required | Value |
+|---|---|---|
+| `id` | yes | A slug: `ids-corpus`, `kanjivg`, `adobe-japan1`, `unihan`. |
+| `name`, `url` | yes | What it is called and where it is published. |
+| `role` | yes | `candidates`, `guide`, `identity`, `classes`, or `description`, `reference` and `cuts` for the tables of earlier formats that cutters still read. |
+| `pin` | yes | A release, a commit or a file date. |
+| `retrieved` | yes | `YYYY-MM-DD`. |
+| `files` | | Per file: `file`, `url`, `mirrors` and the `sha256` every read checks. |
+| `licence`, `attribution` | yes | SPDX expression, and the credit line. |
+| `licenceEvidence`, `licenceFile`, `weakness` | | Where the terms are stated, the text under `LICENSES/`, and what limits the input. |

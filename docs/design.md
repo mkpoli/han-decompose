@@ -144,7 +144,9 @@ grammar as ids-input states it (`data/baishi-ids.ebnf`, after NightFurySL2001's 
 component character, and an entity token between `&` and `;` as a component. Which constructs a
 text may use depends on its level (2.7). A component no code point names is one token, so it
 never reads as inner nodes: its own IDS where any input gives one (`&⿸⿹丅丿丨;`), and otherwise
-its identifier in ids-input's component ledger (`&X-00777;`). `⿰&⿸⿹丅丿丨;土` is a two-operand
+its identifier in ids-input's component ledger (`&X-00777;`); BabelStone's numbered components and
+CHISE entities are the tokens of the identifiers the ids-corpus gives them (`&bsp:42;`,
+`&chise:CDP-8958;`). `⿰&⿸⿹丅丿丨;土` is a two-operand
 structure whose left leaf is that shape. Variation selectors are kept wherever a level writes
 them: in its texts, its hashes and its trees. The names inputs give
 such a component (`{42}`, `&CDP-8958;`, `#(丿𠃊)`) are resolved through ids-input's ledger when
@@ -156,6 +158,8 @@ candidates are read and are not published.
 |---|---|---|---|
 | character | `u:5C71`, `u:845B.E0100` | 山 | Hex code point, optional variation selector. |
 | subtree | `ids:⿸⿹丅丿丨` | `&⿸⿹丅丿丨;` | A component no code point names, as its IDS. |
+| numbered component | `bsp:42` | `&bsp:42;` | BabelStone's `{42}`, by the ids-corpus's number. |
+| entity | `chise:CDP-8958` | `&chise:CDP-8958;` | A CHISE entity, by the ids-corpus's name. |
 | ledger | `x:X-00777` | `&X-00777;` | An unencoded component with no IDS of its own. |
 | Adobe-Japan1 CID | `aj1:1815` | — | A glyph variant reached through `glyph-of`. |
 
@@ -203,7 +207,7 @@ One record per glyph, in files that hold a single font:
   whole contours tells them apart.
 - `box`, `advance`.
 
-Only glyphs that a reading, a skipped attempt or a reference names are written. Whole-font dumps are a non-goal.
+An outline file holds every glyph its font maps, so that the viewer can draw any character.
 
 ### 2.4 Candidates
 
@@ -365,7 +369,7 @@ derived is presented as attested.
 Attempts that closed no reading are kept in `skipped`, one row per glyph, layer and structure,
 with a reason code (`too-few-pieces`, `unlike-element`, `layout-mismatch`, `ambiguous`,
 `does-not-tile`, `no-reference-glyph`, `no-enclosure`, `no-face`, `too-many-pieces`, `no-ink`,
-`unlike-whole`, `unreadable-description`, `unlike-division`) and the builder's sentence.
+`unlike-whole`, `unreadable-description`, `unlike-division`, `unnamed-component`) and the builder's sentence.
 
 ### 2.7 Drawn IDS
 
@@ -538,18 +542,19 @@ han-decompose/
   pins/            fonts.json  sources.json  README.md (written from the two)
   src/han_decompose/   the Python package and the `han-decompose` command (uv)
     identifiers.py schema.py tsv.py pins.py outline.py pieces.py ids.py
-    geometry.py resources.py store.py cli.py    kept; store.py also writes stroke files
-    aj1.py                                      kept: `glyph-of` rows from aj17-kanji.txt
-    numbered.py                                 removed in phase 7.1; returns for the PUA reference
-                                                glyphs, numbers read through ids-input's ledger
-    corpus.py classes.py                        planned: candidates, structures, classes;
-                                                they replace descriptions.py
-    cutters/  deal.py survey.py library.py reading.py
-              lift.py kage.py layers.py         lift.py was removed in phase 7.1 and returns over the
-                                                component ledger; kage.py, layers.py planned
+    geometry.py resources.py store.py cli.py    store.py also writes stroke files
+    outlines.py                                 every cmap glyph of a pinned font, by block
+    aj1.py                                      `glyph-of` rows from aj17-kanji.txt
+    numbered.py                                 the PUA reference glyphs and rows of numbered components
+    descriptions.py                             reads BabelStone, CHISE and zi.tools tables, names their
+                                                components as the corpus does; replaced by
+                                                corpus.py in phase 9
+    corpus.py classes.py                        planned: candidates, structures, classes
+    cutters/  deal.py lift.py survey.py library.py reading.py
+              kage.py layers.py                 planned
     styles.py drawn.py                          planned
     gates/    filled.py skeleton.py
-    importers/ composer_export.py               numbered_forms.py was removed in phase 7.1 with lift.py
+    importers/ composer_export.py numbered_forms.py
     release.py
   analysis/        gate tuning and the studies behind the limits
   review/          verdicts.tsv, fixtures
