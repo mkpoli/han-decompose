@@ -7,11 +7,12 @@ import pytest
 from han_decompose import descriptions, ids, pins
 from han_decompose.cutters import library
 from han_decompose.descriptions import Table
+from han_decompose.outline import Face
 from han_decompose.pieces import Drawing
 from han_decompose.schema import problems
 from han_decompose.store import Store
 
-from .fonts import pinned_chain
+from .fonts import build, pinned_chain
 
 
 def table() -> Table:
@@ -123,3 +124,23 @@ def test_a_block_is_written_once_and_a_second_run_goes_on_after_it(tmp_path: Pat
         font, selector = glyph.split("/")
         shard = f"{int(selector[2:], 16) >> 8:03x}"
         assert selector in files[f"outlines/{font}/{shard}.json.gz"]["glyphs"], glyph
+
+
+@pytest.mark.parametrize(
+    ("source", "text"), [("chise", "&U-i001+2FF1;千北"), ("zi-tools", "千北"), ("zi-tools", "&x-y;一")]
+)
+def test_a_text_that_is_no_structure_is_skipped_without_an_identifier(tmp_path: Path, source: str, text: str) -> None:
+    row = {"id": "test@1", "upem": 1024}
+    drawing = Drawing(Face(row, build(tmp_path / "test.ttf")))
+    found = Table(source)
+    found.add("一", text)
+    description = found.first("一")
+    assert description is not None
+    store, counts = Store(), library.Counts()
+    library.one(description, [drawing], found, store, counts)
+    ((_, skipped),) = store.skipped.items()
+    (attempt,) = skipped
+    assert "structure" not in attempt and attempt["text"] == description.structure
+    assert attempt["reason"]["code"] == "unreadable-description" and counts.skipped == {"unreadable-description": 1}
+    file = {"format": "han-decompose/cuts@2.0", "font": "test@1", "design": "x", "drawn": {}, "readings": []}
+    assert problems("cuts", {**file, "skipped": [attempt]}) == []

@@ -177,7 +177,7 @@ def skipped_rows(cuts: Json) -> list[Row]:
             "glyph": I.split_glyph_id(row["glyph"])[1] if "glyph" in row else "",
             "char": _char(row["subject"]),
             "layer": _layer(row["layer"]),
-            "structure": row["structure"],
+            "structure": row.get("structure", ""),
             "text": row["text"],
             "reason_code": row["reason"]["code"],
             "reason": row["reason"]["text"],

@@ -132,7 +132,8 @@ export interface Skipped {
   subject: string;
   glyph?: string;
   layer: Step[];
-  structure: string;
+  /** Absent where the text starts with no operator and so is no structure. */
+  structure?: string;
   text: string;
   reason: { code: string; text: string };
 }

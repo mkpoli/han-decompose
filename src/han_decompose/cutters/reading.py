@@ -14,18 +14,13 @@ from .. import __version__
 from .. import identifiers as I
 from ..descriptions import Description, Unnamed
 from ..ids import Node, spelled, walk
+from ..ids import place as ids_place
 from ..pieces import Glyph
 from ..schema import Json, box
 
 TOOL = "han-decompose"
 
-_PLACES = {"⿰": "LR", "⿱": "TB", "⿲": "LCR", "⿳": "TMB"}
-
-
-def place(operator: str, index: int) -> str:
-    """Where an operand stands in its parent: a letter in a row or a stack, else the operator and
-    the operand's index."""
-    return _PLACES[operator][index] if operator in _PLACES else f"{operator}{index}"
+place = ids_place
 
 
 def number(value: float, digits: int) -> float | int:
@@ -206,10 +201,12 @@ def skipped(description: Description, code: str, text: str, glyph: str | None = 
     out: Json = {
         "subject": subject_of(description),
         "layer": [],
-        "structure": I.structure_id(description.structure),
         "text": description.structure,
         "reason": {"code": code, "text": text},
     }
+    # A text that does not start with an operator is no structure and has no identifier.
+    if description.structure[:1] in I.OPERATORS:
+        out["structure"] = I.structure_id(description.structure)
     if glyph:
         out["glyph"] = glyph
     return out
