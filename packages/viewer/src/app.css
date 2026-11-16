@@ -1,5 +1,27 @@
 @import "./design/index.css";
 
+/* The ideographic description characters, for machines with no font that draws them. The four
+   after U+2FFB are newer than the pinned Noto Sans CJK, so they come from Jigmo; ㇯ (U+31EF), newer
+   still, comes from Plangothic. */
+@font-face {
+  font-family: "IDS Operators";
+  src: url("/fonts/NotoSansCJKjp-ids-operators.woff2") format("woff2");
+  font-display: swap;
+  unicode-range: U+2FF0-2FFB;
+}
+@font-face {
+  font-family: "IDS Operators";
+  src: url("/fonts/Jigmo-ids-operators.woff2") format("woff2");
+  font-display: swap;
+  unicode-range: U+2FFC-2FFF;
+}
+@font-face {
+  font-family: "IDS Operators";
+  src: url("/fonts/PlangothicP1-ids-operators.woff2") format("woff2");
+  font-display: swap;
+  unicode-range: U+31EF;
+}
+
 /* The viewer's own values: its accent, the colours of the nodes of a reading and the face of Han
    text. Everything else is the design system's. */
 :root {
@@ -10,6 +32,7 @@
   --ui-color-on-accent: light-dark(#ffffff, #07211f);
 
   --hd-cjk: "Noto Sans CJK JP", "Noto Sans JP", "Hiragino Sans", "Yu Gothic", "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+  --ids-font: "IDS Operators", var(--hd-cjk);
 
   /* One colour per node of a reading, by path order. */
   --hd-node-1: light-dark(#0072b2, #4aa3e0);

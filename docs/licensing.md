@@ -15,6 +15,7 @@ what each asks. It is a statement of how the project applies them and no legal a
 | `cuts.<source>.tsv.gz` | Row by row, as the cut file the row comes from. A table holds the rows of one description source. | `licence_outline`, `licence_description`, `licence_guide` on each row. |
 | `skipped.<source>.tsv.gz` | As the cut files of its source. It holds no outline and no cut. | `font` and `source` on each row, which name the terms in `fonts.json` and `sources.json`. |
 | `components.<source>.tsv` | The terms of the source the table is named for. The table of the ids-input registry is GPL-2.0-or-later. | `source` on each row. |
+| `packages/viewer/public/fonts/*.woff2` | Each subset under its font's licence, with the licence text beside it: Noto Sans CJK JP and Plangothic P1 under OFL-1.1, Jigmo under CC0-1.0. The Noto subset keeps no name with "Source". | — |
 | `fonts.json`, `sources.json` | MIT, as part of this repository. | Every font and source with its pin, licence and attribution. |
 
 An outline file holds one font, and a cut file holds one font and one description source. A flat

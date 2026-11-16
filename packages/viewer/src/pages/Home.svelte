@@ -118,6 +118,9 @@
   .find {
     max-inline-size: 720px;
   }
+  .find :global(.ui-input) {
+    font-family: var(--ids-font);
+  }
   .hits {
     margin-block-start: var(--ui-space-xs);
   }
