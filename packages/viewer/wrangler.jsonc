@@ -1,11 +1,14 @@
 {
   "name": "han-decompose",
   "compatibility_date": "2026-10-30",
-  // Assets only: any path that is no file answers with the app, which routes in the browser.
+  // The worker answers the app's routes with the app, which routes in the browser, and a path that
+  // is neither a route nor a file with 404. Files are served without it.
   // scripts/place-release.ts places the release pinned in release.json under /data/ in ./dist.
+  "main": "server/worker.ts",
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "single-page-application"
+    "binding": "ASSETS",
+    "run_worker_first": ["/", "/skipped*", "/review*", "/char/*", "/component/*", "/font/*"]
   },
   "routes": [{ "pattern": "decompose.mkpo.li", "custom_domain": true }],
   "workers_dev": false,
