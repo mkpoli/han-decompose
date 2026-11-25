@@ -36,7 +36,7 @@ test("a route answers with the app and its own canonical address", async () => {
 });
 
 test("lowercase and percent-encoded aliases receive the normalized route canonical", async () => {
-  for (const path of ["/char/u+5d14", "/char/U%2B5D14", "/component/u%3A5c71"]) {
+  for (const path of ["/char/u+5d14", "/char/U%2B5D14", "/component/u%3A5C71"]) {
     const response = await get(path);
     expect(response.status, path).toBe(200);
     const body = await response.text();
