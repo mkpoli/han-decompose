@@ -1,5 +1,5 @@
 /** The deployed viewer: the app's routes answer with the app, anything else that is no file answers 404. */
-import { parseRoute } from "../src/lib/router.ts";
+import { parseRoute, routeHref } from "../src/lib/router.ts";
 
 interface Env {
   ASSETS: { fetch(request: Request | string): Promise<Response> };
@@ -9,11 +9,11 @@ const ORIGIN = "https://decompose.mkpo.li";
 const escapeAttr = (value: string): string =>
   value.replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch] ?? ch);
 
-/** The app shell with its canonical address and og:url set to the path asked for. */
-async function shell(env: Env, url: URL, headOnly: boolean): Promise<Response> {
+/** The app shell with its canonical address and og:url set to the canonical route path. */
+async function shell(env: Env, url: URL, canonicalPath: string, headOnly: boolean): Promise<Response> {
   const asset = await env.ASSETS.fetch(new URL("/", url).toString());
   if (!asset.ok) return asset;
-  const canonical = ORIGIN + (url.pathname.replace(/\/+$/, "") || "/");
+  const canonical = ORIGIN + canonicalPath;
   let hasCanonical = false;
   let hasOgUrl = false;
   const rewritten = new HTMLRewriter()
@@ -49,7 +49,8 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     if (request.method !== "GET" && request.method !== "HEAD") return env.ASSETS.fetch(request);
     const url = new URL(request.url);
-    if (parseRoute(url.pathname).name === "missing") return env.ASSETS.fetch(request);
-    return shell(env, url, request.method === "HEAD");
+    const route = parseRoute(url.pathname);
+    if (route.name === "missing") return env.ASSETS.fetch(request);
+    return shell(env, url, routeHref(route), request.method === "HEAD");
   },
 };

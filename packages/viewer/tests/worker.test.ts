@@ -35,6 +35,19 @@ test("a route answers with the app and its own canonical address", async () => {
   }
 });
 
+test("lowercase and percent-encoded aliases receive the normalized route canonical", async () => {
+  for (const path of ["/char/u+5d14", "/char/U%2B5D14", "/component/u%3A5c71"]) {
+    const response = await get(path);
+    expect(response.status, path).toBe(200);
+    const body = await response.text();
+    const expected = path.startsWith("/char/")
+      ? "https://decompose.mkpo.li/char/U+5D14"
+      : "https://decompose.mkpo.li/component/u:5C71";
+    expect(body, path).toContain(`<link rel="canonical" href="${expected}">`);
+    expect(body, path).toContain(`<meta property="og:url" content="${expected}">`);
+  }
+});
+
 test("a HEAD request returns 200 without a body, and writes pass through to assets", async () => {
   const head = await get("/review", REAL_SHELL, { method: "HEAD" });
   expect(head.status).toBe(200);
