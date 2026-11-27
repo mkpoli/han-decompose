@@ -228,7 +228,7 @@ requires-dist = [
     { name = "jsonschema", specifier = ">=4.23" },
     { name = "numpy", specifier = ">=2.1" },
     { name = "skia-pathops", specifier = "==0.9.2" },
-    { name = "typer", specifier = ">=0.16" },
+    { name = "typer", specifier = ">=0.19" },
 ]
 
 [package.metadata.requires-dev]
