@@ -13,7 +13,7 @@ dependencies = [
     "jsonschema>=4.23",
     "numpy>=2.1",
     "skia-pathops==0.9.2",
-    "typer>=0.16",
+    "typer>=0.19",
 ]
 
 [project.urls]

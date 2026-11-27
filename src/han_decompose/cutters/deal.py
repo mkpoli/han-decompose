@@ -75,11 +75,11 @@ def count(number: int, thing: str) -> str:
     return f"{number} {thing}" + ("" if number == 1 else "s")
 
 
-def fingerprint(edges: G.Array, box: G.Box) -> G.Array:
+def fingerprint(edges: G.Array, box: G.Box, *, winding: bool = False) -> G.Array:
     """How much ink sits in each cell of a square grid over a box, as coverage fractions: a
     component is drawn with heavier strokes when it is squashed, and coverage survives that where
     a silhouette does not."""
-    return G.coverage(edges, box, GRID, SUBSAMPLE).ravel()
+    return G.coverage(edges, box, GRID, SUBSAMPLE, winding=winding).ravel()
 
 
 #: Documented positional and level-1 unifiable class members (`docs/design.md`, 2.5) used when a
@@ -87,8 +87,6 @@ def fingerprint(edges: G.Array, box: G.Box) -> G.Array:
 CLASS_FORMS: dict[str, tuple[str, ...]] = {
     "糸": ("糸", "糹", "纟"),
     "糹": ("糹", "糸", "纟"),
-    "八": ("八", "丷"),
-    "丷": ("丷", "八"),
     "龹": ("龹", "𠔉"),
     "𠔉": ("𠔉", "龹"),
     "示": ("示", "礻", "⺬", "⺭"),
@@ -252,7 +250,9 @@ class Cutter:
         key = tuple(sorted(group))
         if key not in self._prints:
             edges = np.concatenate([self._unit_edges(index) for index in key])
-            self._prints[key] = fingerprint(edges, G.box_of([self.pieces[index] for index in key]))
+            self._prints[key] = fingerprint(
+                edges, G.box_of([self.pieces[index] for index in key]), winding=self.grain == "contour"
+            )
         return self._prints[key]
 
     def extent(self, group: Sequence[int]) -> G.Box:
@@ -530,8 +530,10 @@ def _read_grain(
     cuts = []
     for node, group in hands:
         path = paths[id(node)]
-        area = abs(G.union_of([cutter.pieces[index] for index in group]).area) if grain == "contour" else sum(
-            abs(cutter.pieces[index].area) for index in group
+        area = (
+            abs(G.ink_of([cutter.pieces[index] for index in group]).area)
+            if grain == "contour"
+            else sum(abs(cutter.pieces[index].area) for index in group)
         )
         more: Json = {"area": reading.number(area, 2)}
         if path:
@@ -561,8 +563,10 @@ def _read_grain(
         if path and node.opened is not None:
             units = sorted({index for other, group in groups.items() if other[: len(path)] == path for index in group})
             below = cutter.contours_of(units)
-            area = abs(G.union_of([cutter.pieces[index] for index in units]).area) if grain == "contour" else sum(
-                abs(cutter.pieces[index].area) for index in units
+            area = (
+                abs(G.ink_of([cutter.pieces[index] for index in units]).area)
+                if grain == "contour"
+                else sum(abs(cutter.pieces[index].area) for index in units)
             )
             more = {"area": reading.number(area, 2)}
             under = [indices for other, indices in held.items() if other[: len(path) - 1] == path[:-1]]

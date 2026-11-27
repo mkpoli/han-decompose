@@ -233,3 +233,20 @@ def test_contour_grain_deals_touching_strokes_and_class_forms() -> None:
             "glyphs": {glyph.selector: glyph.record()},
         }
         assert problems("cuts", file, outlines) == []
+
+
+def test_winding_coverage_and_ink_preserve_overlaps_and_counters() -> None:
+    """Nonzero-winding ink keeps overlapping same-direction strokes filled and subtracts
+    opposite-winding inner counters."""
+    outer = box(0, 0, 100, 100)
+    duplicate = box(0, 0, 100, 100)
+    # Coincident same-direction contours stay filled under winding=True and have area 10000 (counted once).
+    both_edges = np.concatenate([G.edges_of(outer), G.edges_of(duplicate)])
+    assert float(deal.fingerprint(both_edges, outer.bounds, winding=True).mean()) == pytest.approx(1.0)
+    assert abs(G.ink_of([outer, duplicate]).area) == pytest.approx(10000.0)
+    # Opposite-winding inner counter (50x50 inside 100x100) subtracts to area 7500 and 75% coverage.
+    counter = box(25, 25, 75, 75)
+    counter.reverse()
+    ring_edges = np.concatenate([G.edges_of(outer), G.edges_of(counter)])
+    assert float(deal.fingerprint(ring_edges, outer.bounds, winding=True).mean()) == pytest.approx(0.75)
+    assert abs(G.ink_of([outer, counter]).area) == pytest.approx(7500.0)
