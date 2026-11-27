@@ -166,9 +166,12 @@ class Glyph:
     #: The contour indices of each piece; empty for a piece no contour lies in.
     members: list[list[int]]
     advance: float
+    #: Whether cutters work at merged `piece` grain or individual `contour` grain.
+    grain: str = "piece"
     #: GlyphWiki glyphs only: each stroke's type and the contours it drew.
     strokes: list[Json] | None = None
     _edges: dict[int, G.Array] = field(default_factory=dict, repr=False)
+    _contour_edges: dict[int, G.Array] = field(default_factory=dict, repr=False)
     _tiles: bool | None = field(default=None, repr=False)
 
     @property
@@ -201,6 +204,12 @@ class Glyph:
             self._edges[piece] = G.edges_of(self.pieces[piece])
         return self._edges[piece]
 
+    def contour_edges(self, index: int) -> G.Array:
+        """A single contour flattened to edges, kept once made."""
+        if index not in self._contour_edges:
+            self._contour_edges[index] = G.edges_of(self.paths[index])
+        return self._contour_edges[index]
+
     def contours_of(self, group: Sequence[int]) -> list[int]:
         """The contour indices of a group of pieces, ascending."""
         return sorted(index for piece in group for index in self.members[piece])
@@ -229,7 +238,13 @@ class Glyph:
 
 
 def assemble(
-    font: str, selector: str, contours: list[Contour], paths: list[G.Path], outline: G.Path, advance: float
+    font: str,
+    selector: str,
+    contours: list[Contour],
+    paths: list[G.Path],
+    outline: G.Path,
+    advance: float,
+    grain: str = "piece",
 ) -> Glyph:
     """A glyph from its contours, each as a shape on its own, and the shape of all of them: the
     outline is merged and divided into pieces, and each contour is given to one."""
@@ -262,6 +277,7 @@ def assemble(
         pieces=pieces,
         members=members,
         advance=advance,
+        grain=grain,
     )
 
 
@@ -320,4 +336,5 @@ class Drawing:
             paths,
             draw(pen.value),
             round(face._glyphs[name].width * EM / face.upem, 2),
+            str(face.row.get("grain", "piece")),
         )

@@ -2,7 +2,7 @@
 
 from concurrent.futures.process import BrokenProcessPool
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Literal
 
 import typer
 
@@ -100,6 +100,10 @@ def survey(
         list[str] | None, typer.Option(help="A design whose fonts the glyphs are read in, in order of preference.")
     ] = None,
     source: Annotated[str, typer.Option(help="The description source.")] = "babelstone",
+    grain: Annotated[
+        Literal["piece", "contour", "auto"],
+        typer.Option(help="Unit grain: merged pieces, individual contours, or the font's declared grain."),
+    ] = "piece",
     out: Annotated[Path | None, typer.Option(help="A folder to write outline and cut files into.")] = None,
     workers: Annotated[int, typer.Option(help="How many processes cut at once.")] = 4,
     cache: Annotated[Path | None, typer.Option(help="The cache folder the pinned files are in.")] = None,
@@ -115,7 +119,7 @@ def survey(
     read = accepted = characters = refused = 0
     reasons: dict[str, int] = {}
     try:
-        for outcome in surveys.run(component, designs, source, workers, cache):
+        for outcome in surveys.run(component, designs, source, workers, cache, grain=grain):
             for glyph, record in outcome.glyphs.items():
                 store.record(*I.split_glyph_id(glyph), record)
             if outcome.readings is not None:
@@ -224,6 +228,10 @@ def read(
         list[str] | None, typer.Option(help="A design whose fonts the glyphs are read in, in order of preference.")
     ] = None,
     source: Annotated[str, typer.Option(help="The description source.")] = "babelstone",
+    grain: Annotated[
+        Literal["piece", "contour", "auto"],
+        typer.Option(help="Unit grain: merged pieces, individual contours, or the font's declared grain."),
+    ] = "piece",
     workers: Annotated[int, typer.Option(help="How many processes cut at once.")] = 4,
     blocks: Annotated[list[str] | None, typer.Option(help="Blocks of 256 code points to read, as `04e`.")] = None,
     cache: Annotated[Path | None, typer.Option(help="The cache folder the pinned files are in.")] = None,
@@ -234,7 +242,7 @@ def read(
     designs = design or DESIGNS
     total = libraries.Counts()
     try:
-        for block, counts in libraries.run(designs, source, out, workers, cache, blocks):
+        for block, counts in libraries.run(designs, source, out, workers, cache, blocks, grain=grain):
             total.add(counts)
             typer.echo(f"{block}\t{counts.readings}\t{sum(counts.skipped.values())}", err=True)
         added = libraries.named(out, designs, cache)

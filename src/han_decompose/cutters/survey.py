@@ -24,7 +24,7 @@ from ..outline import Chain
 from ..pieces import Drawing
 from ..schema import Json
 from . import reading
-from .deal import Skipped, count, read
+from .deal import GrainChoice, Skipped, count, read
 
 #: How many components deep a description may be spelled out.
 MAX_LEVELS = 8
@@ -128,6 +128,7 @@ def survey(
     target: str,
     only: Sequence[str] | None = None,
     holds: set[str] | None = None,
+    grain: GrainChoice = "piece",
 ) -> Iterator[Outcome]:
     """Every character whose description reaches `target`, in code point order, read or skipped;
     with `only`, those of them it names, in its order. `holds` is `holders(table, target)` where
@@ -156,7 +157,7 @@ def survey(
                 assert glyph is not None
                 try:
                     others = [drawing, *(other for other in drawings if other is not drawing)]
-                    rows = read(glyph, others, description, root, table.glyph, whole=False, gate=gate)
+                    rows = read(glyph, others, description, root, table.glyph, whole=False, gate=gate, grain=grain)
                 except Skipped as reason:
                     last = (reason.code, f"{drawing.id}, {count(cap, 'component')} deep: {reason.text}")
                     continue
@@ -191,15 +192,16 @@ def survey(
 _STATE: dict[str, object] = {}
 
 
-def _open(designs: Sequence[str], source: str, target: str, cache: Path | None) -> None:
+def _open(designs: Sequence[str], source: str, target: str, cache: Path | None, grain: GrainChoice) -> None:
     _STATE["drawings"] = [Drawing(face) for face in Chain.pinned(designs, cache).faces]
     _STATE["table"] = descriptions.table(source, cache)
     _STATE["holds"] = holders(descriptions.table(source, cache), target)
+    _STATE["grain"] = grain
 
 
 def _work(job: tuple[str, list[str]]) -> list[Outcome]:
     target, chars = job
-    return list(survey(_STATE["table"], _STATE["drawings"], target, chars, _STATE["holds"]))  # type: ignore[arg-type]
+    return list(survey(_STATE["table"], _STATE["drawings"], target, chars, _STATE["holds"], _STATE["grain"]))  # type: ignore[arg-type]
 
 
 def run(
@@ -208,11 +210,12 @@ def run(
     source: str = "babelstone",
     workers: int = 4,
     cache: Path | None = None,
+    grain: GrainChoice = "piece",
 ) -> Iterator[Outcome]:
     """The survey of one component over the fonts of pinned designs and a pinned table, on several processes, in code
     point order whatever their number."""
     chars = sorted(holders(descriptions.table(source, cache), target))
     jobs = [(target, chars[at : at + 40]) for at in range(0, len(chars), 40)]
-    with ProcessPoolExecutor(workers, initializer=_open, initargs=(designs, source, target, cache)) as pool:
+    with ProcessPoolExecutor(workers, initializer=_open, initargs=(designs, source, target, cache, grain)) as pool:
         for outcomes in pool.map(_work, jobs):
             yield from outcomes
