@@ -201,3 +201,31 @@ def test_the_pinned_fonts_draw_what_han_compose_exported(name: str) -> None:
         drawn = X.coarsened(face.contours(selector) or [], fixture["quant"])
         assert drawn == X.recorded({"p": [[*contour, ""] for contour in record["p"]]}), selector
     assert any(I.selected(selector) and len(I.selected(selector) or "") == 2 for selector in fixture["records"])
+
+
+def test_format_7_export_parity_is_reproduced(tmp_path: Path, chain: Chain) -> None:
+    """Format 7 files shards under `g/<hh>/<hhhh>.json` keyed by raw character rather than SHA-256."""
+    digests = {face.id: face.row["sha256"] for face in chain.faces}
+    shards: dict[str, dict[str, Json]] = {}
+    for key, record in records().items():
+        shards.setdefault(X.key_hash(key)[:4], {})[key] = record
+    folder = tmp_path / "export-v7"
+    manifest = {
+        "format": 7,
+        "quant": 4,
+        "composer": {"font_sha256": digests},
+        "files": {"records": {"entries": len(records()), "files": len(shards)}},
+    }
+    folder.mkdir(parents=True)
+    (folder / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    for name, content in shards.items():
+        path = folder / "g" / name[:2] / f"{name}.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(content, ensure_ascii=False), encoding="utf-8")
+    result = X.parity(folder, chain)
+    assert (result.shards, result.records, result.glyphs, result.compared, result.same) == (5, 5, 4, 4, 4)
+    assert result.complete and result.exact and not result.different and not result.other_face
+    one = X.parity(folder, chain, [X.key_hash("山")[:4]])
+    assert (one.shards, one.glyphs, one.compared, one.same) == (1, 1, 1, 1) and one.exact
+    with pytest.raises(ValueError, match="four lower-case hex digits"):
+        X.parity(folder, chain, ["abc"])
