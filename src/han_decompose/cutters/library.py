@@ -26,7 +26,7 @@ from ..pieces import Drawing
 from ..schema import Json
 from ..store import Store, dumps, outline_head, write
 from . import reading
-from .deal import Skipped, read
+from .deal import GrainChoice, Skipped, read
 
 #: How many components deep a leaf may be opened.
 MAX_LEVELS = 6
@@ -86,7 +86,14 @@ class Counts:
         }
 
 
-def one(description: Description, drawings: Sequence[Drawing], table: Table, store: Store, counts: Counts) -> None:
+def one(
+    description: Description,
+    drawings: Sequence[Drawing],
+    table: Table,
+    store: Store,
+    counts: Counts,
+    grain: GrainChoice = "piece",
+) -> None:
     """One description read on its subject's glyph, in the first font of the chain where it closes."""
     selector = f"U+{ord(description.subject):04X}"
     try:
@@ -105,7 +112,9 @@ def one(description: Description, drawings: Sequence[Drawing], table: Table, sto
         assert glyph is not None
         others = [drawing, *(other for other in drawings if other is not drawing)]
         try:
-            rows = read(glyph, others, description, description.tree(), table.glyph, gate=gate, opener=opening)
+            rows = read(
+                glyph, others, description, description.tree(), table.glyph, gate=gate, opener=opening, grain=grain
+            )
         except Skipped as reason:
             last = (reason.code, f"{drawing.id}: {reason.text}")
             continue
@@ -143,18 +152,20 @@ def block_of(char: str) -> str:
 _STATE: dict[str, Any] = {}
 
 
-def _open(designs: Sequence[str], source: str, cache: Path | None) -> None:
+def _open(designs: Sequence[str], source: str, cache: Path | None, grain: GrainChoice) -> None:
     _STATE["drawings"] = [Drawing(face) for face in Chain.pinned(designs, cache).faces]
     _STATE["table"] = descriptions.table(source, cache)
+    _STATE["grain"] = grain
 
 
 def _work(job: tuple[str, list[str], str]) -> tuple[str, Counts]:
     block, chars, out = job
     store, counts = Store(), Counts()
     table: Table = _STATE["table"]
+    grain: GrainChoice = _STATE["grain"]
     for char in chars:
         for description in table.of(char):
-            one(description, _STATE["drawings"], table, store, counts)
+            one(description, _STATE["drawings"], table, store, counts, grain=grain)
     store.write(Path(out))
     # What a font keeps per component (fingerprints, gate references) is bounded, so a process
     # that reads a whole table does not grow without end.
@@ -176,6 +187,7 @@ def run(
     workers: int = 4,
     cache: Path | None = None,
     only: Sequence[str] | None = None,
+    grain: GrainChoice = "piece",
 ) -> Iterator[tuple[str, Counts]]:
     """Every description of a source read in the fonts of pinned designs, block by block, each block's files written
     under `out`. A block whose marker is already there is left as it is. `only` names blocks."""
@@ -190,7 +202,7 @@ def run(
         if (only is None or block in only) and not (out / "blocks" / f"{block}.json").exists()
     ]
     # Blocks differ in cost by an order of magnitude; one per task keeps the processes even.
-    with ProcessPoolExecutor(workers, initializer=_open, initargs=(designs, source, cache)) as pool:
+    with ProcessPoolExecutor(workers, initializer=_open, initargs=(designs, source, cache, grain)) as pool:
         yield from pool.map(_work, jobs, chunksize=1)
 
 

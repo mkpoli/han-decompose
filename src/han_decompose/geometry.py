@@ -37,6 +37,17 @@ def union_of(paths: Sequence[Path]) -> Path:
     return out
 
 
+def ink_of(paths: Sequence[Path]) -> Path:
+    """Contours drawn together with font winding preserved: overlapping same-direction strokes
+    unite so ink is counted once, and opposite-winding inner counters subtract."""
+    combined = pathops.Path()
+    pen = combined.getPen()
+    for path in paths:
+        path.draw(pen)
+    combined.simplify()
+    return combined
+
+
 def filled(contour: Any) -> Path:
     """One contour on its own, as a solid shape."""
     path = pathops.Path()
@@ -226,9 +237,11 @@ def windows(paths: Sequence[Path]) -> int:
     return found
 
 
-def coverage(edges: Array, box: Box, side: int, sub: int) -> Array:
-    """How much ink sits in each cell of a `side` × `side` grid laid over a box: even-odd fill
-    sampled at `sub` × `sub` points per cell, rows from the box's lower edge."""
+def coverage(edges: Array, box: Box, side: int, sub: int, *, winding: bool = False) -> Array:
+    """How much ink sits in each cell of a `side` × `side` grid laid over a box, sampled at
+    `sub` × `sub` points per cell, rows from the box's lower edge. Uses even-odd fill by default,
+    or nonzero winding when `winding=True` so overlapping strokes stay filled and opposite-winding
+    counters stay open."""
     minx, miny, maxx, maxy = box
     width, height = max(maxx - minx, 1e-6), max(maxy - miny, 1e-6)
     fine = side * sub
@@ -242,6 +255,14 @@ def coverage(edges: Array, box: Box, side: int, sub: int) -> Array:
             hit = (y0 > y) != (y1 > y)
             if not hit.any():
                 continue
-            crossings = np.sort(x0[hit] + (x1[hit] - x0[hit]) * (y - y0[hit]) / (y1[hit] - y0[hit]))
-            grid[row] = np.searchsorted(crossings, xs, side="left") % 2
+            xs_hit = x0[hit] + (x1[hit] - x0[hit]) * (y - y0[hit]) / (y1[hit] - y0[hit])
+            if not winding:
+                crossings = np.sort(xs_hit)
+                grid[row] = np.searchsorted(crossings, xs, side="left") % 2
+            else:
+                order = np.argsort(xs_hit)
+                crossings = xs_hit[order]
+                dirs = np.where(y1[hit][order] > y0[hit][order], 1, -1)
+                prefix = np.concatenate(([0], np.cumsum(dirs)))
+                grid[row] = (prefix[np.searchsorted(crossings, xs, side="left")] != 0).astype(np.float64)
     return grid.reshape(side, sub, side, sub).sum(axis=(1, 3)) / (sub * sub)

@@ -190,3 +190,63 @@ def test_the_fonts_start_with_the_glyphs_own() -> None:
     assert glyph is not None
     with pytest.raises(ValueError, match="start with the glyph's own"):
         deal.Cutter(glyph, drawings, table.glyph)
+
+
+def test_contour_grain_deals_touching_strokes_and_class_forms() -> None:
+    """At contour grain, overlapping strokes in variable Source Han faces are dealt directly without
+    merging into pieces first, and documented class forms (糸/糹, 八/丷, 龹/𠔉) match."""
+    table = cached_table()
+    drawings = [Drawing(pinned_face("noto-serif-cjk-jp@2.003"))]
+    # 紅 (⿰糸工, drawn with 糹 whose 幺 touches the three dots) and 券 (⿱龹刀, whose 丷 sits over 夫)
+    for char, target, expected_len in [
+        ("紅", "u:5E7A", 5),
+        ("玄", "u:5E7A", 5),
+        ("券", "u:4E37", 2),
+    ]:
+        glyph = drawings[0].glyph(f"U+{ord(char):04X}")
+        description = table.first(char)
+        assert glyph is not None and description is not None and glyph.grain == "contour"
+        root = description.tree()
+        if char == "紅":
+            inside = ids.parse("⿱幺小")
+            root.children[0] = ids.Node(root.children[0].text, inside.operator, inside.children, opened="⿱幺小")
+        elif char == "券":
+            inside = ids.parse("⿻丷夫")
+            root.children[0] = ids.Node(root.children[0].text, inside.operator, inside.children, opened="⿻丷夫")
+        rows = deal.read(glyph, drawings, description, root, table.glyph, whole=False, grain="auto")
+        assert all(row["method"]["grain"] == "contour" for row in rows)
+        cuts = [cut for row in rows for cut in row["cuts"] if cut["class"] == target]
+        assert len(cuts) == 1 and len(cuts[0]["contours"]) == expected_len
+        assert rows[0]["text"] == description.text and rows[0]["structure"].startswith("s.")
+        file = {
+            "format": "han-decompose/cuts@2.0",
+            "font": glyph.font,
+            "design": "source-han-serif",
+            "drawn": {},
+            "readings": rows,
+            "skipped": [],
+        }
+        outlines = {
+            "format": "han-decompose/outlines@2.0",
+            "font": glyph.font,
+            "design": "source-han-serif",
+            "glyphs": {glyph.selector: glyph.record()},
+        }
+        assert problems("cuts", file, outlines) == []
+
+
+def test_winding_coverage_and_ink_preserve_overlaps_and_counters() -> None:
+    """Nonzero-winding ink keeps overlapping same-direction strokes filled and subtracts
+    opposite-winding inner counters."""
+    outer = box(0, 0, 100, 100)
+    duplicate = box(0, 0, 100, 100)
+    # Coincident same-direction contours stay filled under winding=True and have area 10000 (counted once).
+    both_edges = np.concatenate([G.edges_of(outer), G.edges_of(duplicate)])
+    assert float(deal.fingerprint(both_edges, outer.bounds, winding=True).mean()) == pytest.approx(1.0)
+    assert abs(G.ink_of([outer, duplicate]).area) == pytest.approx(10000.0)
+    # Opposite-winding inner counter (50x50 inside 100x100) subtracts to area 7500 and 75% coverage.
+    counter = box(25, 25, 75, 75)
+    counter.reverse()
+    ring_edges = np.concatenate([G.edges_of(outer), G.edges_of(counter)])
+    assert float(deal.fingerprint(ring_edges, outer.bounds, winding=True).mean()) == pytest.approx(0.75)
+    assert abs(G.ink_of([outer, counter]).area) == pytest.approx(7500.0)

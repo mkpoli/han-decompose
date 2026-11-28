@@ -75,17 +75,70 @@ def count(number: int, thing: str) -> str:
     return f"{number} {thing}" + ("" if number == 1 else "s")
 
 
-def fingerprint(edges: G.Array, box: G.Box) -> G.Array:
+def fingerprint(edges: G.Array, box: G.Box, *, winding: bool = False) -> G.Array:
     """How much ink sits in each cell of a square grid over a box, as coverage fractions: a
     component is drawn with heavier strokes when it is squashed, and coverage survives that where
     a silhouette does not."""
-    return G.coverage(edges, box, GRID, SUBSAMPLE).ravel()
+    return G.coverage(edges, box, GRID, SUBSAMPLE, winding=winding).ravel()
+
+
+#: Documented positional and level-1 unifiable class members (`docs/design.md`, 2.5) used when a
+#: glyph draws a component in a contextual shape while a source writes its canonical form.
+CLASS_FORMS: dict[str, tuple[str, ...]] = {
+    "糸": ("糸", "糹", "纟"),
+    "糹": ("糹", "糸", "纟"),
+    "龹": ("龹", "𠔉"),
+    "𠔉": ("𠔉", "龹"),
+    "示": ("示", "礻", "⺬", "⺭"),
+    "礻": ("礻", "示"),
+    "水": ("水", "氵"),
+    "手": ("手", "扌"),
+    "人": ("人", "亻"),
+    "心": ("心", "忄"),
+    "刀": ("刀", "刂"),
+    "犬": ("犬", "犭"),
+    "言": ("言", "訁", "讠"),
+    "金": ("金", "釒", "钅"),
+    "食": ("食", "飠", "饣"),
+    "衣": ("衣", "衤"),
+    "肉": ("肉", "⺼"),
+    "玉": ("玉", "𤣩"),
+    "火": ("火", "灬"),
+    "艹": ("艹", "⺾", "⺿"),
+    "邑": ("邑", "阝"),
+    "阜": ("阜", "阝"),
+}
 
 
 def likeness(left: G.Array, right: G.Array) -> float:
     """Agreement between two fingerprints, 1 for the same ink everywhere."""
     total = float(np.maximum(left, right).sum())
     return float(np.minimum(left, right).sum()) / total if total else 0.0
+
+
+def _dilate(grid: G.Array) -> G.Array:
+    """One-cell 3×3 max dilation on the GRID×GRID fingerprint."""
+    square = grid.reshape(GRID, GRID)
+    padded = np.pad(square, 1, mode="constant")
+    out = square.copy()
+    for dy in range(3):
+        for dx in range(3):
+            out = np.maximum(out, padded[dy : dy + GRID, dx : dx + GRID])
+    return out.ravel()
+
+
+def soft_likeness(left: G.Array, right: G.Array) -> float:
+    """Blended strict + 1-cell dilated likeness so compressed contextual strokes (such as squashed
+    八/丷 or narrow 幺) still match without accepting unrelated shapes."""
+    strict = likeness(left, right)
+    dl, dr = _dilate(left), _dilate(right)
+    sum_l, sum_r = float(left.sum()), float(right.sum())
+    if not sum_l or not sum_r:
+        return strict
+    prec = float(np.minimum(left, dr).sum()) / sum_l
+    rec = float(np.minimum(right, dl).sum()) / sum_r
+    soft = (2 * prec * rec / (prec + rec)) if (prec + rec) else 0.0
+    return 0.60 * strict + 0.40 * soft
 
 
 def standing(drawing: Drawing, selector: str) -> G.Array | None:
@@ -143,77 +196,119 @@ def wraps(outer: G.Box, inner: G.Box, sides: Sequence[str]) -> bool:
     return True
 
 
-def ordered(first: G.Box, second: G.Box, axis: str) -> bool:
+def ordered(first: G.Box, second: G.Box, axis: str, max_overlap: float = 0.5) -> bool:
     """Whether two extents follow each other along the axis the operator runs on: the earlier one
-    starts and ends earlier, and neither stands in the other's span. Ends are compared, because
-    real glyphs interlock without either component taking the other's place."""
+    starts and ends earlier, its centre precedes the other's, and neither stands inside the other's
+    span. At `contour` grain, sweeping legs (龹 over 㔾/刀/力) and thin heads (㇒ over 糸) overlap
+    further than plain boxes, so a larger `max_overlap` fraction of the narrower span is allowed
+    while containment is still refused."""
     low, high = (1, 3) if axis == "y" else (0, 2)
+    c_first = (first[low] + first[high]) / 2
+    c_second = (second[low] + second[high]) / 2
     if axis == "y":
-        if first[1] <= second[1] - REACH or first[3] <= second[3] - REACH:
+        if first[1] <= second[1] - REACH or first[3] <= second[3] - REACH or c_first <= c_second:
             return False
-    elif first[0] >= second[0] + REACH or first[2] >= second[2] + REACH:
+    elif first[0] >= second[0] + REACH or first[2] >= second[2] + REACH or c_first >= c_second:
         return False
     overlap = min(first[high], second[high]) - max(first[low], second[low])
     narrower = min(first[high] - first[low], second[high] - second[low])
-    return overlap < 0.5 * narrower if narrower > 0 else True
+    return overlap < max_overlap * narrower if narrower > 0 else True
 
 
 class Cutter:
-    """Deals one glyph's pieces to the nodes of a description.
+    """Deals one glyph's pieces (or individual contours at `contour` grain) to the nodes of a
+    description.
 
     `drawings` are the fonts a component is looked for in, the glyph's own first. `glyph_of` gives
     the character a component is drawn as alone, or None for one that has no glyph.
     """
 
-    def __init__(self, glyph: Glyph, drawings: Sequence[Drawing], glyph_of: Callable[[str], str | None]):
+    def __init__(
+        self,
+        glyph: Glyph,
+        drawings: Sequence[Drawing],
+        glyph_of: Callable[[str], str | None],
+        grain: Literal["piece", "contour"] = "piece",
+    ):
         if not drawings or drawings[0].id != glyph.font:
             raise ValueError(f"The fonts a component is looked for in start with the glyph's own, {glyph.font}.")
         self.glyph, self.drawings, self.glyph_of = glyph, drawings, glyph_of
-        self.pieces = glyph.pieces
+        self.grain: Literal["piece", "contour"] = grain
+        self.pieces = glyph.paths if grain == "contour" else glyph.pieces
+        self._unit_edges = glyph.contour_edges if grain == "contour" else glyph.edges
         self._prints: dict[tuple[int, ...], G.Array] = {}
         self._boxes: dict[tuple[int, ...], G.Box] = {}
         #: The weakest agreement at each node dealt, and the margin it was won by.
         self.marks: list[float] = []
         self.margins: list[float] = []
 
+    def contours_of(self, group: Sequence[int]) -> list[int]:
+        """The font contour indices owned by `group`."""
+        return sorted(group) if self.grain == "contour" else self.glyph.contours_of(group)
+
     def group_print(self, group: Sequence[int]) -> G.Array:
         key = tuple(sorted(group))
         if key not in self._prints:
-            edges = np.concatenate([self.glyph.edges(index) for index in key])
-            self._prints[key] = fingerprint(edges, G.box_of([self.pieces[index] for index in key]))
+            edges = np.concatenate([self._unit_edges(index) for index in key])
+            self._prints[key] = fingerprint(
+                edges, G.box_of([self.pieces[index] for index in key]), winding=self.grain == "contour"
+            )
         return self._prints[key]
 
     def extent(self, group: Sequence[int]) -> G.Box:
-        """The box of a group's ink once its pieces are merged."""
+        """The box of a group's ink once its units are merged."""
         key = tuple(sorted(group))
         if key not in self._boxes:
             box: G.Box = G.union_of([self.pieces[index] for index in key]).bounds
             self._boxes[key] = box
         return self._boxes[key]
 
-    def template(self, text: str) -> tuple[G.Array, bool, Drawing] | None:
-        """A component as it is drawn alone, from the first font that has it, and whether that is
-        the glyph's own font. A drawing borrowed from another font ranks the divisions without
-        being held to the floor: how closely two fonts agree about one component is not a thing
-        to hold a font to."""
+    def templates(self, text: str) -> list[tuple[G.Array, bool, Drawing]]:
+        """Reference fingerprints for `text`, plus its documented class members at `contour` grain."""
         char = self.glyph_of(text)
         if char is None:
-            return None
-        selector = f"U+{ord(char):04X}"
-        for index, drawing in enumerate(self.drawings):
-            shape = standing(drawing, selector)
-            if shape is not None:
-                return shape, index == 0, drawing
-        return None
+            return []
+        members = CLASS_FORMS.get(char, (char,)) if self.grain == "contour" else (char,)
+        found: list[tuple[G.Array, bool, Drawing]] = []
+        for member in members:
+            selector = f"U+{ord(member):04X}"
+            for index, drawing in enumerate(self.drawings):
+                shape = standing(drawing, selector)
+                if shape is not None:
+                    found.append((shape, index == 0, drawing))
+                    break
+        return found
+
+    def template(self, text: str) -> tuple[G.Array, bool, Drawing] | None:
+        """A component as it is drawn alone, from the first font that has it, and whether that is
+        the glyph's own font."""
+        found = self.templates(text)
+        return found[0] if found else None
 
     def agreement(self, node: Node, group: Sequence[int]) -> tuple[float, bool] | None:
-        """How much a group of pieces looks like the component it is offered to, and whether the
-        glyph's own font drew the comparison. None where no font has a glyph for the component;
-        its operands are then judged a level down."""
-        found = self.template(node.text)
-        if found is None:
+        """How much a group of units looks like the component (or a documented class member at
+        `contour` grain) it is offered to, and whether the glyph's own font drew the comparison."""
+        refs = self.templates(node.text)
+        if not refs:
             return None
-        return likeness(self.group_print(group), found[0]), found[1]
+        actual = self.group_print(group)
+        compare = soft_likeness if self.grain == "contour" else likeness
+        return max((compare(actual, shape), own) for shape, own, _ in refs)
+
+    def _enclosure_units(self, group: Sequence[int], arity: int) -> list[list[int]]:
+        """At contour grain, collapse non-straddling contours in `group` back to their piece
+        clusters when enumerating every contour subset would exceed `MOST_DEALS`."""
+        if self.grain != "contour" or arity ** len(group) <= MOST_DEALS:
+            return [[index] for index in group]
+        wanted = set(group)
+        clusters = [sorted(c for c in members if c in wanted) for members in self.glyph.members]
+        clusters = [c for c in clusters if c]
+        assigned = {c for cluster in clusters for c in cluster}
+        for orphan in sorted(wanted - assigned):
+            clusters.append([orphan])
+        if arity ** len(clusters) > MOST_DEALS:
+            raise Skipped("too-many-pieces", f"covers {count(len(group), 'contour')}, too many to deal out")
+        return clusters
 
     def candidates(self, node: Node, group: Sequence[int]) -> list[list[list[int]]]:
         """The divisions of a node's pieces among its operands that lie as its operator says."""
@@ -226,19 +321,25 @@ class Cutter:
             else:
                 axis = "x"
                 order = sorted(group, key=lambda i: (sum(self.pieces[i].bounds[0::2]), -self.pieces[i].bounds[3]))
+            max_overlap = 0.78 if self.grain == "contour" else 0.5
             kept = [
                 option
                 for option in runs(order, arity)
-                if all(ordered(self.extent(first), self.extent(second), axis) for first, second in pairwise(option))
+                if all(
+                    ordered(self.extent(first), self.extent(second), axis, max_overlap)
+                    for first, second in pairwise(option)
+                )
             ]
             if not kept and len(group) >= arity:
                 raise Skipped(
                     "layout-mismatch", f"no division of {node.text} lays its operands out the way {node.operator} reads"
                 )
             return kept
-        if arity ** len(group) > MOST_DEALS:
+        clusters = self._enclosure_units(group, arity)
+        if arity ** len(clusters) > MOST_DEALS:
             raise Skipped("too-many-pieces", f"{node.text} covers {count(len(group), 'piece')}, too many to deal out")
-        offered = spreads(group, arity)
+        raw = spreads(list(range(len(clusters))), arity)
+        offered = [[[c for idx in part for c in clusters[idx]] for part in option] for option in raw]
         sides = CLOSED.get(node.operator or "")
         if not sides:
             return offered
@@ -361,7 +462,7 @@ def redrawn(cutter: Cutter, hands: Sequence[tuple[Node, Sequence[int]]]) -> floa
         composite.extend(G.scaled(drawn[0].pieces, G.box_of([cutter.pieces[index] for index in group])))
     box = G.box_of(cutter.pieces)
     again = fingerprint(np.concatenate([G.edges_of(path) for path in composite]), box)
-    glyph = fingerprint(np.concatenate([cutter.glyph.edges(index) for index in range(len(cutter.pieces))]), box)
+    glyph = fingerprint(np.concatenate([cutter.glyph.edges(index) for index in range(len(cutter.glyph.pieces))]), box)
     return likeness(again, glyph)
 
 
@@ -370,47 +471,43 @@ def redrawn(cutter: Cutter, hands: Sequence[tuple[Node, Sequence[int]]]) -> floa
 Gate = Callable[["Cutter", Node, Sequence[int]], tuple[Json, str | Literal[False]] | None]
 
 
-def cutter_for(glyph: Glyph, drawings: Sequence[Drawing], root: Node, glyph_of: Callable[[str], str | None]) -> Cutter:
+def cutter_for(
+    glyph: Glyph,
+    drawings: Sequence[Drawing],
+    root: Node,
+    glyph_of: Callable[[str], str | None],
+    grain: Literal["piece", "contour"] = "piece",
+) -> Cutter:
     """A cutter for a glyph that can be dealt out to a tree at all."""
     if not glyph.pieces:
         raise Skipped("no-ink", "the glyph draws no ink")
     if not glyph.tiles:
         raise Skipped("does-not-tile", "the pieces do not add up to the glyph the font draws")
-    if len(glyph.pieces) < len(leaves(root)):
+    units = glyph.paths if grain == "contour" else glyph.pieces
+    if len(units) < len(leaves(root)):
+        label = "contour" if grain == "contour" else "piece"
         raise Skipped(
             "too-few-pieces",
-            f"the glyph draws {count(len(glyph.pieces), 'piece')} for {count(len(leaves(root)), 'element')}",
+            f"the glyph draws {count(len(units), label)} for {count(len(leaves(root)), 'element')}",
         )
-    return Cutter(glyph, drawings, glyph_of)
+    return Cutter(glyph, drawings, glyph_of, grain=grain)
 
 
-def read(
+def _read_grain(
     glyph: Glyph,
     drawings: Sequence[Drawing],
     description: Description,
     root: Node,
     glyph_of: Callable[[str], str | None],
+    grain: Literal["piece", "contour"],
     whole: bool = True,
     gate: Gate | None = None,
     opener: Opener | None = None,
 ) -> list[Json]:
-    """One glyph read under a tree: every leaf with the contours dealt to it, as the readings of
-    its layers (`reading.reading`).
-
-    With `whole`, the reading is held against the glyph: a leaf may not enclose a window its
-    component never draws, and the reading drawn again has to look like the glyph. With an `opener`
-    a leaf is opened into its component's own description where its pieces allow. `gate` adds
-    checks of single leaves. A cut that fails a check is kept and marked refused.
-    """
-    for node in leaves(root):
-        try:
-            I.component_of(node.text)
-        except ValueError as error:
-            raise Skipped("unnamed-component", f"{error}") from error
-    cutter = cutter_for(glyph, drawings, root, glyph_of)
+    cutter = cutter_for(glyph, drawings, root, glyph_of, grain=grain)
     try:
         subject = glyph_of(description.subject) or description.subject
-        hands = cutter.cut(root, list(range(len(glyph.pieces))), opener, (subject,))
+        hands = cutter.cut(root, list(range(len(cutter.pieces))), opener, (subject,))
     except pathops.PathOpsError as error:
         raise Skipped("does-not-tile", "the outlines of a group of pieces could not be merged") from error
     evidence: Json = {}
@@ -429,11 +526,16 @@ def read(
             evidence["redrawn"] = reading.number(again, 4)
     paths = {id(node): path for path, node in walk(root)}
     groups = {paths[id(node)]: group for node, group in hands}
-    held = {path: glyph.contours_of(group) for path, group in groups.items()}
+    held = {path: cutter.contours_of(group) for path, group in groups.items()}
     cuts = []
     for node, group in hands:
         path = paths[id(node)]
-        more: Json = {"area": reading.number(sum(abs(glyph.pieces[index].area) for index in group), 2)}
+        area = (
+            abs(G.ink_of([cutter.pieces[index] for index in group]).area)
+            if grain == "contour"
+            else sum(abs(cutter.pieces[index].area) for index in group)
+        )
+        more: Json = {"area": reading.number(area, 2)}
         if path:
             under = [indices for other, indices in held.items() if other[: len(path) - 1] == path[:-1]]
             more["frame"] = reading.frame(glyph, under)
@@ -459,10 +561,45 @@ def read(
     # A node opened into a layer is a cut of the layer above, holding what its parts hold.
     for path, node in walk(root):
         if path and node.opened is not None:
-            pieces = sorted({index for other, group in groups.items() if other[: len(path)] == path for index in group})
-            below = glyph.contours_of(pieces)
-            more = {"area": reading.number(sum(abs(glyph.pieces[index].area) for index in pieces), 2)}
+            units = sorted({index for other, group in groups.items() if other[: len(path)] == path for index in group})
+            below = cutter.contours_of(units)
+            area = (
+                abs(G.ink_of([cutter.pieces[index] for index in units]).area)
+                if grain == "contour"
+                else sum(abs(cutter.pieces[index].area) for index in units)
+            )
+            more = {"area": reading.number(area, 2)}
             under = [indices for other, indices in held.items() if other[: len(path) - 1] == path[:-1]]
             more["frame"] = reading.frame(glyph, under)
             cuts.append(reading.cut(glyph, description, root, path, node, below, "accepted", **more))
-    return reading.reading(glyph, description, root, "deal", "piece", cuts, evidence)
+    return reading.reading(glyph, description, root, "deal", grain, cuts, evidence)
+
+
+Grain = Literal["piece", "contour"]
+GrainChoice = Literal["piece", "contour", "auto"]
+
+
+def read(
+    glyph: Glyph,
+    drawings: Sequence[Drawing],
+    description: Description,
+    root: Node,
+    glyph_of: Callable[[str], str | None],
+    whole: bool = True,
+    gate: Gate | None = None,
+    opener: Opener | None = None,
+    grain: GrainChoice = "piece",
+) -> list[Json]:
+    """One glyph read under a tree: every leaf with the contours dealt to it, as the readings of
+    its layers (`reading.reading`).
+
+    `grain` chooses whether to deal merged pieces (`piece`), individual font contours (`contour`),
+    or the grain declared in the font's registry row (`auto`, per `docs/design.md`, 2.6).
+    """
+    for node in leaves(root):
+        try:
+            I.component_of(node.text)
+        except ValueError as error:
+            raise Skipped("unnamed-component", f"{error}") from error
+    resolved: Grain = ("contour" if glyph.grain == "contour" else "piece") if grain == "auto" else grain
+    return _read_grain(glyph, drawings, description, root, glyph_of, resolved, whole=whole, gate=gate, opener=opener)
