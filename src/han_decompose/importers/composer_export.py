@@ -21,8 +21,9 @@ from .. import identifiers as I
 from ..outline import Chain, Contour, Q
 from ..schema import Json
 
-FORMAT = 6
-_SHARD = re.compile(r"[0-9a-f]{3}")
+FORMATS = (6, 7)
+FORMAT = 7
+_SHARD = re.compile(r"[0-9a-f]{3,4}")
 
 
 def key_hash(key: str) -> str:
@@ -31,14 +32,16 @@ def key_hash(key: str) -> str:
 
 
 def manifest(export: Path) -> Json:
-    """The export's manifest, refused unless it is of the format this module reads and states the
+    """The export's manifest, refused unless it is of a format this module reads and states the
     fonts it was written from, its point grid and how many records it holds."""
     path = export / "manifest.json"
     if not path.is_file():
         raise ValueError(f"{export} is not a han-compose export: it has no manifest.json.")
     value: Json = json.loads(path.read_text(encoding="utf-8"))
-    if value.get("format") != FORMAT:
-        raise ValueError(f"{export} is an export of format {value.get('format')}; this reads format {FORMAT}.")
+    if value.get("format") not in FORMATS:
+        raise ValueError(
+            f"{export} is an export of format {value.get('format')}; this reads formats {', '.join(map(str, FORMATS))}."
+        )
     try:
         (
             value["composer"]["font_sha256"],
@@ -51,9 +54,9 @@ def manifest(export: Path) -> Json:
     return value
 
 
-def shard(export: Path, name: str) -> dict[str, Json]:
-    """The records of `g/<name>.json`, by key hash; none when the export has no such shard."""
-    path = export / "g" / f"{name}.json"
+def shard(export: Path, name: str, fmt: int = 6) -> dict[str, Json]:
+    """The records of a record shard (`g/<hhh>.json` in format 6, `g/<hh>/<hhhh>.json` in format 7)."""
+    path = export / "g" / name[:2] / f"{name}.json" if fmt == 7 else export / "g" / f"{name}.json"
     if not path.exists():
         return {}
     raw = path.read_bytes()
@@ -109,23 +112,28 @@ def parity(export: Path, chain: Chain, shards: Iterable[str] | None = None) -> P
     The export must have been written from the chain's own font files; its manifest records their
     digests. A pass over the whole export also requires the shards and records the manifest states."""
     about = manifest(export)
+    fmt: int = about["format"]
+    prefix_len = 4 if fmt == 7 else 3
     theirs, ours = set(about["composer"]["font_sha256"].values()), {face.row["sha256"] for face in chain.faces}
     if theirs != ours:
         raise ValueError(f"{export} was written from other font files than the chain {chain.name}.")
     quant: int = about["quant"]
     wanted = None if shards is None else set(shards)
-    if wanted is not None and not all(_SHARD.fullmatch(name) for name in wanted):
-        raise ValueError("A shard is named by three lower-case hex digits.")
+    if wanted is not None and not all(len(name) == prefix_len and _SHARD.fullmatch(name) for name in wanted):
+        word = "four" if prefix_len == 4 else "three"
+        raise ValueError(f"A shard is named by {word} lower-case hex digits.")
     filed: dict[str, list[tuple[str, str]]] = {}
     for selector in chain.selectors():
-        name = key_hash(I.selected(selector) or "")
-        if wanted is None or name[:3] in wanted:
-            filed.setdefault(name[:3], []).append((name, selector))
+        text = I.selected(selector) or ""
+        hashed = key_hash(text)
+        prefix = hashed[:prefix_len]
+        if wanted is None or prefix in wanted:
+            filed.setdefault(prefix, []).append((text if fmt == 7 else hashed, selector))
     counts = about["files"]["records"]
     out = Parity(whole=wanted is None, stated=(counts["files"], counts["entries"]))
-    present = {path.stem for path in (export / "g").glob("*.json")}
+    present = {path.stem for path in ((export / "g").glob("*/*.json") if fmt == 7 else (export / "g").glob("*.json"))}
     for prefix in sorted(present if wanted is None else wanted & present):
-        records = shard(export, prefix)
+        records = shard(export, prefix, fmt)
         out.shards += 1
         out.records += len(records)
         out.glyphs += sum("G" in record for record in records.values())
